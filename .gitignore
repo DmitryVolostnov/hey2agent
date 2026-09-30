@@ -1,2 +1,4 @@
 __pycache__/
 *.pyc
+.build/
+HUD/VoiceLoopHUD.app/

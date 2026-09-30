@@ -376,7 +376,17 @@ def hook():
 
     take_control()  # drop stale clicks
     ui("speaking")
-    say(f"{project}: готово. {summary}", c)
+    sp = subprocess.Popen(["say", "-v", c["voice"], "-r", str(c["rate"]),
+                           f"{project}: готово. {summary}"])
+    while sp.poll() is None:  # HUD can skip (go straight to listening) or cancel
+        cmd = take_control()
+        if cmd:
+            sp.terminate()
+            if cmd == "cancel":
+                ui("released")
+                return
+            break
+        time.sleep(0.1)
     try:
         text = dictate(c, ui)
     except Exception:
