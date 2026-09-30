@@ -35,6 +35,7 @@ FLAG = STATE_DIR / "enabled"
 LOCK = STATE_DIR / "lock"
 LOG = STATE_DIR / "log.txt"
 STATE = STATE_DIR / "state.json"      # read by the HUD
+SESSIONS = STATE_DIR / "sessions.json"  # sessions in progress, read by the HUD
 CONTROL = STATE_DIR / "control"       # written by the HUD: send | cancel
 LAST = STATE_DIR / "last.json"  # dedupe: the Stop hook can fire twice for one turn
 CONFIG = STATE_DIR / "config.json"
@@ -346,6 +347,65 @@ def is_repeat(text):
     return _norm(text) in REPEAT_WORDS
 
 
+# ---------- sessions registry (for the HUD list) ----------
+
+def session_title(transcript_path, fallback):
+    """Latest custom-title from a Claude Code transcript (the name shown in the sidebar)."""
+    try:
+        with open(transcript_path, "rb") as f:
+            f.seek(0, 2)
+            f.seek(max(0, f.tell() - 400_000))
+            tail = f.read().decode("utf-8", "ignore")
+        titles = re.findall(r'"customTitle"\s*:\s*"((?:[^"\\]|\\.)*)"', tail)
+        if titles:
+            return json.loads(f'"{titles[-1]}"')
+    except (OSError, TypeError, ValueError):
+        pass
+    return fallback
+
+
+def update_session(data, status, prompt=None):
+    """status: working | waiting | done (removed)."""
+    sid = data.get("session_id")
+    if not sid:
+        return
+    STATE_DIR.mkdir(exist_ok=True)
+    with open(STATE_DIR / "sessions.lock", "w") as lk:
+        fcntl.flock(lk, fcntl.LOCK_EX)
+        try:
+            reg = json.loads(SESSIONS.read_text())
+        except Exception:
+            reg = {}
+        if status == "done":
+            reg.pop(sid, None)
+        else:
+            cur = reg.get(sid, {})
+            project = Path(data.get("cwd") or ".").name
+            fallback = cur.get("title") or (prompt or "").strip().split("\n")[0][:60] or project
+            cur.update(project=project, status=status, updated=time.time(),
+                       transcript=data.get("transcript_path"),
+                       title=session_title(data.get("transcript_path"), fallback))
+            cur.setdefault("since", time.time())
+            if status == "working" and cur.get("status_prev") != "working":
+                cur["since"] = time.time()
+            cur["status_prev"] = status
+            reg[sid] = cur
+        tmp = SESSIONS.with_suffix(".tmp")
+        tmp.write_text(json.dumps(reg, ensure_ascii=False))
+        os.replace(tmp, SESSIONS)
+
+
+def prompt_hook():
+    """Claude Code UserPromptSubmit: mark the session busy; remind about the spoken summary."""
+    try:
+        data = json.load(sys.stdin)
+    except Exception:
+        data = {}
+    update_session(data, "working", data.get("prompt"))
+    if FLAG.exists():
+        print(VOICE_CONTEXT)
+
+
 # ---------- hook ----------
 
 PIPER = SCRIPT.parent / ".venv" / "bin" / "piper"
@@ -506,23 +566,33 @@ def hook():
     except Exception:
         data = {}
     if not FLAG.exists() or os.environ.get("VOICE_LOOP_OFF"):
+        update_session(data, "done")
         return
     c = cfg()
     project = Path(data.get("cwd") or os.getcwd()).name
     if not project_allowed(project, c):
+        update_session(data, "done")
         return
     log(f"stop: project={project} session={data.get('session_id')} "
         f"entry={os.environ.get('CLAUDE_CODE_ENTRYPOINT')} active={data.get('stop_hook_active')}")
+    update_session(data, "waiting")
     lock = acquire_lock(c)
     if not lock:
         log("lock timeout, skipping")
+        update_session(data, "done")
         return
     text = last_assistant_text(data)
     if is_duplicate(data.get("session_id"), text):
         log("duplicate stop for the same turn, skipping")
         return
-    reply = converse(project, summarize(text, c["summary_chars"]), c)
+    update_session(data, "waiting")
+    try:
+        reply = converse(project, summarize(text, c["summary_chars"]), c)
+    except Exception:
+        update_session(data, "done")
+        raise
     log(f"heard: {reply!r}")
+    update_session(data, "working" if reply else "done")
     if reply:
         print(json.dumps({
             "decision": "block",
@@ -570,6 +640,37 @@ def install():
     print("ON" if FLAG.exists() else "voice is OFF — run: voice_loop.py on")
 
 
+CODEX_CONFIG = HOME / ".codex" / "config.toml"
+CODEX_MARK = "# voice-loop (managed by voice_loop.py install-codex)"
+
+
+def install_codex():
+    """Codex has a Stop hook with the same contract (decision=block → continue with reason)."""
+    text = CODEX_CONFIG.read_text() if CODEX_CONFIG.exists() else ""
+    if CODEX_MARK in text:
+        print("already installed in Codex")
+        return
+    backup = CODEX_CONFIG.with_suffix(".toml.voice-loop-backup")
+    if CODEX_CONFIG.exists() and not backup.exists():
+        shutil.copy(CODEX_CONFIG, backup)
+    block = (f"\n{CODEX_MARK}\n[[hooks.Stop]]\n[[hooks.Stop.hooks]]\n"
+             f"type = \"command\"\ncommand = {json.dumps(hook_command('hook'))}\n"
+             f"timeout = {HOOK_TIMEOUT + 20}\nstatusMessage = \"voice-loop\"\n{CODEX_MARK} end\n")
+    CODEX_CONFIG.write_text(text.rstrip("\n") + "\n" + block)
+    print(f"installed Stop hook into {CODEX_CONFIG} (backup: {backup.name})")
+    print("Codex asks to trust new hooks: open Codex and approve it in /hooks.")
+
+
+def uninstall_codex():
+    if not CODEX_CONFIG.exists():
+        return
+    text = CODEX_CONFIG.read_text()
+    text = re.sub(rf"\n?{re.escape(CODEX_MARK)}\n.*?{re.escape(CODEX_MARK)} end\n", "", text,
+                  flags=re.S)
+    CODEX_CONFIG.write_text(text)
+    print("uninstalled from Codex")
+
+
 def uninstall():
     if not CLAUDE_SETTINGS.exists():
         return
@@ -595,9 +696,11 @@ def main():
             hook()
         except Exception as e:  # never break the Claude session
             log(f"error: {e!r}")
-    elif cmd == "prompt":  # UserPromptSubmit: remind Claude to lead with a spoken summary
-        if FLAG.exists():
-            print(VOICE_CONTEXT)
+    elif cmd == "prompt":
+        try:
+            prompt_hook()
+        except Exception as e:
+            log(f"prompt hook error: {e!r}")
     elif cmd == "on":
         FLAG.touch()
         print("voice-loop ON")
@@ -610,6 +713,10 @@ def main():
         install()
     elif cmd == "uninstall":
         uninstall()
+    elif cmd == "install-codex":
+        install_codex()
+    elif cmd == "uninstall-codex":
+        uninstall_codex()
     elif cmd == "say":
         say(" ".join(sys.argv[2:]) or "Проверка голоса", cfg())
     elif cmd == "listen":
