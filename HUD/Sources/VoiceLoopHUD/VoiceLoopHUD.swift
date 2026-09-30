@@ -16,8 +16,13 @@ private let flagURL = stateDir.appendingPathComponent("enabled")
 private let configURL = stateDir.appendingPathComponent("config.json")
 private let logURL = stateDir.appendingPathComponent("log.txt")
 private let voicesDir = stateDir.appendingPathComponent("voices")
-private let script = FileManager.default.homeDirectoryForCurrentUser
-    .appendingPathComponent("SwiftUI/voice-loop/voice_loop.py")
+/// `voice_loop.py install` writes "<python>\n<script>" here so the HUD can call the script.
+private let scriptLocation: (python: String, script: String)? = {
+    guard let text = try? String(contentsOf: stateDir.appendingPathComponent("script_path"), encoding: .utf8)
+    else { return nil }
+    let lines = text.split(separator: "\n").map(String.init)
+    return lines.count >= 2 ? (lines[0], lines[1]) : nil
+}()
 
 struct VoiceState: Decodable, Equatable {
     var state: String
@@ -182,9 +187,10 @@ final class Model {
     }
 
     func previewVoice() {
+        guard let loc = scriptLocation else { return }
         let p = Process()
-        p.executableURL = URL(fileURLWithPath: "/opt/homebrew/bin/python3")
-        p.arguments = [script.path, "say", "Привет! Так я буду рассказывать, что сделал кодекс или клод."]
+        p.executableURL = URL(fileURLWithPath: loc.python)
+        p.arguments = [loc.script, "say", "Привет! Так я буду рассказывать, что сделал кодекс или клод."]
         try? p.run()
     }
 

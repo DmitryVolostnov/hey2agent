@@ -1,59 +1,78 @@
 # voice-loop
 
-Когда Claude Code заканчивает задачу, voice-loop озвучивает, что сделано, включает микрофон
-и отправляет продиктованное как следующую инструкцию в ту же сессию.
+**English** · [Русский](README.ru.md)
 
-Всё локально: `say` (голос Milena) → запись с микрофона через `ffmpeg` → `whisper-cli` (large-v3-turbo).
-Ничего не уходит с машины.
+**Talk to your coding agents without leaving the flow.** When Claude Code or Codex finishes a turn,
+voice-loop says what was done, opens the mic, and sends your spoken reply back into **the same
+session** as the next instruction. Fully local, Russian + English.
 
-## Как это работает
-Claude Code вызывает `voice_loop.py hook` на событии `Stop`. Скрипт:
-1. выходит сразу, если флаг выключен (`~/.voice-loop/enabled` отсутствует);
-2. берёт последний ответ ассистента из транскрипта, сокращает до 1–2 фраз и озвучивает;
-3. замеряет шум комнаты, играет сигнал «Tink» и слушает, пока не наступит пауза 2 с (если никто не заговорил за 8 с, сдаётся);
-4. распознаёт речь и возвращает `{"decision":"block","reason":"<текст>"}`, после чего Claude продолжает работу.
-
-Команды в конце фразы: «отправь» отправляет сразу; «подожди» / «надо подумать» оставляют
-микрофон включённым (до 30 с), чтобы договорить мысль; «отмена» сбрасывает сказанное.
-Пауза 1.2 с отправляет. На начало ответа после сигнала даётся 5 с.
-
-Пока режим включён, Claude начинает ответ строкой «**Кратко:** …», и озвучивается только она.
-
-Молчание или «стоп» / «хватит» / «всё» отпускают сессию (сигнал «Bottle»). Если параллельно работают
-несколько сессий, они говорят по очереди (общий lock).
-
-## Команды
 ```
-python3 voice_loop.py install     # добавляет Stop hook в ~/.claude/settings.json (делает backup)
-python3 voice_loop.py on | off    # включить / выключить
-python3 voice_loop.py status
-python3 voice_loop.py say "текст" # проверить голос
-python3 voice_loop.py listen      # проверить микрофон и распознавание
-python3 voice_loop.py uninstall
-```
-Настройки лежат в `~/.voice-loop/config.json` (переопределяют `DEFAULTS` в скрипте): голос, микрофон,
-пороги паузы и тишины, язык whisper, словарь-подсказка. Лог: `~/.voice-loop/log.txt`.
-
-## Codex
-`python3 voice_loop.py install-codex` добавляет тот же Stop hook в `~/.codex/config.toml` (с backup).
-Codex требует один раз одобрить новый hook через `/hooks`.
-
-## Тесты
-```
-python3 -m unittest discover tests                       # логика, быстро
-VOICE_LOOP_SLOW=1 python3 -m unittest tests.test_speech  # say → whisper, ~10 с
+Agent finishes ─► "Voice notification chat. Done. Added the HUD and tests. Commit now?"
+                     ▼  *tink*
+You: "Yes, commit and open a pull request"   (2 s pause)
+                     ▼
+Same session continues with your instruction
 ```
 
-## Плашка (HUD)
-`HUD/build.sh` собирает `HUD/VoiceLoopHUD.app`, дальше запуск через `open HUD/VoiceLoopHUD.app`. Иконка в меню-баре служит
-переключателем. Плавающая панель показывает, что происходит: говорю → слушаю (уровень, таймер) → распознаю
-→ отправлено; кнопки «Пропустить», «Отправить», «Отмена». Под плашкой виден список сессий в работе: оранжевая точка — думает, синяя — ждёт ответа
-(реестр `~/.voice-loop/sessions.json` ведут hooks, название берётся из транскрипта Claude Code).
-При наведении появляются шестерёнка с настройками (голос, паузы, проекты, автозапуск) и детали строк.
-Во время разговора можно ответить текстом. Связь со скриптом идёт через `~/.voice-loop/state.json`
-и `~/.voice-loop/control`, скрипт работает и без плашки.
+## Why
+- **Same session, no copy-paste.** Uses the agents' own Stop hooks (`decision: block`), so your reply
+  lands in the running Claude Code / Codex conversation — no MCP tool the agent must remember to call,
+  no typing into a terminal.
+- **Local only.** macOS `say` or Piper for speech, `whisper.cpp` for recognition. Nothing leaves the Mac.
+- **Built for mixed Russian/English dev speech.** Whisper prompt with dev jargon
+  («закоммить», «пул-реквест», «деплой») and Cyrillic-friendly spoken summaries.
+- **A HUD that shows what's going on.** Floating pill with every agent session in progress
+  (pulsing dot = thinking, blue = waiting for you), live mic level, send / cancel / skip / repeat,
+  and a text field when you'd rather type.
 
-## Ограничения
-- Пока hook слушает, сессия ждёт его (до 180 с), с клавиатуры в это время ничего не ввести.
-- Микрофон доступен процессу, который запустил Claude Code (Terminal, iTerm или приложение Claude).
-- Codex пока не поддерживается: его `notify` не умеет вернуть текст в сессию.
+## Voice commands
+| Say at the end of a phrase | Effect |
+|---|---|
+| *(pause 2 s)* or «отправь» / "send" | send |
+| «подожди», «надо подумать» / "wait" | keep listening (up to 30 s) |
+| «повтори» / "repeat" | replay the summary |
+| «отмена» / "cancel" | discard |
+| «стоп», «хватит» / silence | let the agent stop |
+
+While voice mode is on, the agent is asked to start every answer with a one-line
+**«Кратко:» / summary**, and only that line is spoken.
+
+## Install
+Requirements: macOS 15+ on Apple silicon, Python 3, `brew install whisper-cpp ffmpeg`.
+
+```bash
+git clone https://github.com/<you>/voice-loop && cd voice-loop
+python3 voice_loop.py install        # Claude Code hooks (+ downloads the whisper model if missing)
+python3 voice_loop.py install-codex  # optional: Codex Stop hook, then approve it in Codex via /hooks
+python3 voice_loop.py on
+HUD/build.sh && open HUD/VoiceLoopHUD.app
+```
+The process that runs your agent (Terminal, iTerm, Claude app) needs microphone permission.
+
+Optional neural voice: `python3 -m venv .venv && .venv/bin/pip install piper-tts`, then pick a Piper
+voice in the HUD settings (it sounds nicer in Russian but mispronounces English words).
+
+## How it works
+`voice_loop.py hook` runs on the agent's Stop event: summary → TTS → energy VAD over `ffmpeg` mic
+input → `whisper-cli` → `{"decision":"block","reason":"<your reply>"}`. A `UserPromptSubmit` hook keeps
+a registry of sessions in progress for the HUD. The HUD and the script talk through small files in
+`~/.voice-loop/` (`state.json`, `sessions.json`, `control`), so the script works without the HUD.
+
+```bash
+python3 -m unittest discover tests                       # logic
+VOICE_LOOP_SLOW=1 python3 -m unittest tests.test_speech  # say → whisper round trip
+```
+
+## Similar projects
+[Heard](https://github.com/heardlabs/heard) (closest; multi-agent voices, paid cloud tiers),
+[VoiceMode](https://github.com/mbailey/voicemode) (MCP `converse` tool),
+[spanderok/jarvis](https://github.com/spanderok/jarvis) (wake-word, Russian),
+and many speak-only Stop-hook scripts. voice-loop focuses on replying into the same session via hooks,
+a multi-session HUD across Claude Code and Codex, and local Russian/English.
+
+## Status
+Personal tool, early. Known limits: the hook blocks the session while listening (≤180 s);
+Codex sessions show the folder name instead of the chat title.
+
+## License
+MIT

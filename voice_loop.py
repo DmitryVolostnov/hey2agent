@@ -57,8 +57,7 @@ DEFAULTS = {
     "max_sec": 90.0,             # hard cap on one utterance
     "language": "ru",            # whisper language: ru | en | auto (auto is slower, misfires on short phrases)
     "whisper": "/opt/homebrew/bin/whisper-cli",
-    "model": str(HOME / ".cache/huggingface/hub/models--ggerganov--whisper.cpp/snapshots/"
-                 "5359861c739e955e79d9a303bcbc70fb988958b1/ggml-large-v3-turbo-q8_0.bin"),
+    "model": "",                 # whisper ggml model; empty = auto-detect (see find_model)
     # Vocabulary hint for whisper: dev jargon in mixed Russian/English.
     "prompt": "Закоммить, запушь, коммит, пул-реквест, ветка, тесты, билд, деплой, рефакторинг, "
               "Claude, Codex, hook, pipeline, SwiftUI, MCP, Screenpipe.",
@@ -84,6 +83,18 @@ HALLUCINATIONS = ["субтитры", "продолжение следует", "
                   "thanks for watching", "amara.org"]
 
 
+MODEL_NAME = "ggml-large-v3-turbo-q8_0.bin"
+MODEL_URL = f"https://huggingface.co/ggerganov/whisper.cpp/resolve/main/{MODEL_NAME}"
+
+
+def find_model():
+    """~/.voice-loop/models first, then the Hugging Face cache (Screenpipe puts it there)."""
+    candidates = sorted((STATE_DIR / "models").glob("ggml-*.bin"))
+    candidates += sorted((HOME / ".cache/huggingface/hub").glob(
+        f"models--ggerganov--whisper.cpp/snapshots/*/{MODEL_NAME}"))
+    return str(candidates[0]) if candidates else ""
+
+
 def cfg():
     c = dict(DEFAULTS)
     if CONFIG.exists():
@@ -91,6 +102,10 @@ def cfg():
             c.update(json.loads(CONFIG.read_text()))
         except Exception as e:
             log(f"bad config: {e}")
+    if not c["model"]:
+        c["model"] = find_model()
+    if c["whisper"] and not os.path.exists(c["whisper"]):
+        c["whisper"] = shutil.which("whisper-cli") or c["whisper"]
     return c
 
 
@@ -631,7 +646,18 @@ def _ours(group):
     return any("voice_loop.py" in h.get("command", "") for h in group.get("hooks", []))
 
 
+def ensure_model():
+    if find_model():
+        return
+    dest = STATE_DIR / "models" / MODEL_NAME
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    print(f"downloading whisper model (~870 MB) to {dest} …")
+    subprocess.run(["curl", "-L", "--fail", "-o", str(dest), MODEL_URL], check=True)
+
+
 def install():
+    (STATE_DIR / "script_path").write_text(f"{shutil.which('python3') or sys.executable}\n{SCRIPT}\n")
+    ensure_model()
     settings = json.loads(CLAUDE_SETTINGS.read_text()) if CLAUDE_SETTINGS.exists() else {}
     backup = CLAUDE_SETTINGS.with_suffix(".json.voice-loop-backup")
     if CLAUDE_SETTINGS.exists() and not backup.exists():
