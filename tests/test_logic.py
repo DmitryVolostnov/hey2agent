@@ -33,6 +33,12 @@ class Summary(unittest.TestCase):
         self.assertEqual(v.summarize(md, 220), "Смотри файл и код: готово.")
 
 
+class Speech(unittest.TestCase):
+    def test_quotes_removed_for_tts(self):
+        self.assertEqual(v.speech_text('нажмите «Разрешить» и “ОК” или "да"'),
+                         "нажмите Разрешить и ОК или да")
+
+
 class Commands(unittest.TestCase):
     def test_send(self):
         self.assertEqual(v.strip_tail("Сделай тесты. Отправить.", v.SEND_WORDS), "Сделай тесты")

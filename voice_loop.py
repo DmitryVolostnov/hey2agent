@@ -565,8 +565,14 @@ PIPER = SCRIPT.parent / ".venv" / "bin" / "piper"
 VOICES_DIR = STATE_DIR / "voices"
 
 
+def speech_text(text):
+    """Characters TTS reads out loud: Milena says «backslash» for «ёлочки»."""
+    return re.sub(r"[«»“”„‟\"]", "", text)
+
+
 def tts_process(text, c):
     """Start speaking text; returns the playing process."""
+    text = speech_text(text)
     if c["tts"] == "piper" and PIPER.exists():
         for old in Path(tempfile.gettempdir()).glob("voice-loop-tts-*.wav"):
             _rm(old)
