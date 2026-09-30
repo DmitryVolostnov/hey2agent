@@ -43,7 +43,9 @@ SCRIPT = Path(__file__).resolve()
 HOOK_TIMEOUT = 180  # seconds; Claude Code kills the hook after this
 
 DEFAULTS = {
-    "voice": "Milena",
+    "tts": "say",                # say (macOS voices) | piper (local neural, garbles English words)
+    "voice": "Milena",           # say voice; «Milena (Enhanced)» once downloaded in System Settings
+    "piper_voice": "ru_RU-irina-medium",
     "rate": 200,
     "mic": "default",            # avfoundation audio device name or index
     "speech_margin_db": 12,      # speech = this much louder than the room noise floor
@@ -177,7 +179,7 @@ def shorten(t, limit):
 # ---------- audio ----------
 
 def say(text, c):
-    subprocess.run(["say", "-v", c["voice"], "-r", str(c["rate"]), text], check=False)
+    tts_process(text, c).wait()
 
 
 def beep(name="Tink"):
@@ -346,9 +348,28 @@ def is_repeat(text):
 
 # ---------- hook ----------
 
+PIPER = SCRIPT.parent / ".venv" / "bin" / "piper"
+VOICES_DIR = STATE_DIR / "voices"
+
+
+def tts_process(text, c):
+    """Start speaking text; returns the playing process."""
+    if c["tts"] == "piper" and PIPER.exists():
+        for old in Path(tempfile.gettempdir()).glob("voice-loop-tts-*.wav"):
+            _rm(old)
+        wav = tempfile.mktemp(suffix=".wav", prefix="voice-loop-tts-")
+        model = VOICES_DIR / f"{c['piper_voice']}.onnx"
+        r = subprocess.run([str(PIPER), "-m", str(model), "-f", wav, "--", text],
+                           capture_output=True)
+        if r.returncode == 0:
+            return subprocess.Popen(["afplay", wav])
+        log(f"piper failed, falling back to say: {r.stderr[-200:]!r}")
+    return subprocess.Popen(["say", "-v", c["voice"], "-r", str(c["rate"]), text])
+
+
 def speak(text, c):
     """Speak text; the HUD can skip or cancel. Returns None | 'skip' | 'cancel' | 'text'."""
-    sp = subprocess.Popen(["say", "-v", c["voice"], "-r", str(c["rate"]), text])
+    sp = tts_process(text, c)
     try:
         while sp.poll() is None:
             cmd, payload = take_control()
@@ -516,7 +537,9 @@ VOICE_CONTEXT = (
     "Голосовой режим voice-loop включён: итог твоего ответа будет озвучен вслух. "
     "Начинай каждый финальный ответ отдельной строкой «**Кратко:** …» — 1–2 короткие "
     "разговорные фразы: что сделано и нужно ли что-то от пользователя. Без путей, кода, "
-    "ссылок и markdown внутри этой строки. Подробности — ниже, как обычно."
+    "ссылок и markdown внутри этой строки; английские термины пиши кириллицей, как их "
+    "произносят (кодекс, хук, пул-реквест). Если ждёшь ответа — задай вопрос в этой же "
+    "строке. Подробности — ниже, как обычно."
 )
 
 # event -> (subcommand, timeout)
