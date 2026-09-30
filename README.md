@@ -41,7 +41,7 @@ While voice mode is on, the agent is asked to start every answer with a one-line
 Requirements: macOS 15+ on Apple silicon, Python 3, `brew install whisper-cpp ffmpeg`.
 
 ```bash
-git clone https://github.com/<you>/voice-loop && cd voice-loop
+git clone https://github.com/DmitryVolostnov/voice-loop && cd voice-loop
 python3 voice_loop.py install        # Claude Code hooks (+ downloads the whisper model if missing)
 python3 voice_loop.py install-codex  # optional: Codex Stop hook, then approve it in Codex via /hooks
 python3 voice_loop.py on
