@@ -71,7 +71,13 @@ final class Model {
     var recent: [AgentSession] = []    // idle chats, newest first
     var enabled = FileManager.default.fileExists(atPath: flagURL.path)
     var muted = FileManager.default.fileExists(atPath: mutedURL.path)
-    var showHUD = true
+    var showHUD = UserDefaults.standard.object(forKey: "showHUD") as? Bool ?? true {
+        didSet { UserDefaults.standard.set(showHUD, forKey: "showHUD") }
+    }
+    /// The phone becomes the display: hide the Mac panel while an iPhone is connected.
+    var hideWhenPhone = UserDefaults.standard.object(forKey: "hideWhenPhone") as? Bool ?? true {
+        didSet { UserDefaults.standard.set(hideWhenPhone, forKey: "hideWhenPhone") }
+    }
     var expanded = false
     var config: [String: Any] = [:]
     var voices: [Voice] = []
@@ -104,7 +110,7 @@ final class Model {
         guard let s = current else { return nil }
         let age = Date().timeIntervalSince1970 - s.t
         switch s.state {
-        case "speaking", "listening", "transcribing", "confirming":
+        case "speaking", "listening", "transcribing", "confirming", "phone":
             return age < 200 ? s : nil  // hook dies at 180 s
         case "sent":
             let linger: Double = s.delivery == "clipboard" ? 12 : (s.cancellable == true ? 10 : 4)
@@ -115,7 +121,9 @@ final class Model {
         }
     }
 
-    var visible: Bool { showHUD && (enabled || active != nil) }
+    var visible: Bool {
+        showHUD && !(hideWhenPhone && phones > 0) && (enabled || active != nil)
+    }
 
     private var stateStamp: Date?
     private var sessionsStamp: Date?
@@ -158,6 +166,7 @@ final class Model {
         guard let data = try? Data(contentsOf: sessionsURL),
               let dict = try? JSONDecoder().decode([String: AgentSession].self, from: data) else { return [] }
         let now = Date().timeIntervalSince1970
+        let focusedAt = dict.values.contains { $0.status == "finished" } ? claudeAppFocus() : [:]
         return dict.compactMap { id, s -> AgentSession? in
             var s = s
             s.id = id
@@ -165,6 +174,12 @@ final class Model {
             if let path = s.transcript,
                let m = try? FileManager.default.attributesOfItem(atPath: path)[.modificationDate] as? Date {
                 lastSeen = max(lastSeen, m.timeIntervalSince1970)
+            }
+            // «готово» (finished while muted) is news only until seen: after 10 min, or once the
+            // chat was focused in the Claude app after it ended, it moves to «Недавние».
+            if s.status == "finished", let ended = s.ended,
+               now - ended > 10 * 60 || (focusedAt[id] ?? 0) > ended {
+                s.status = "idle"
             }
             if s.status == "working",
                FileManager.default.fileExists(atPath: stateDir.appendingPathComponent("cancel/\(id)").path) {
@@ -188,11 +203,20 @@ final class Model {
     /// Dictate a message for a chat that isn't waiting for an answer.
     private var dictation: Process?
 
-    func dictate(to session: AgentSession) {
+    /// Bring this chat to the front (Claude app deep link / Codex app).
+    func open(_ session: AgentSession) {
+        guard let loc = scriptLocation else { return }
+        let p = Process()
+        p.executableURL = URL(fileURLWithPath: loc.python)
+        p.arguments = [loc.script, "open", session.id]
+        try? p.run()
+    }
+
+    func dictate(to session: AgentSession, recording: String? = nil) {
         guard active == nil, dictation?.isRunning != true, let loc = scriptLocation else { return }
         let p = Process()
         p.executableURL = URL(fileURLWithPath: loc.python)
-        p.arguments = [loc.script, "dictate", session.id]
+        p.arguments = [loc.script, "dictate", session.id] + (recording.map { [$0] } ?? [])
         try? p.run()
         dictation = p
     }
@@ -278,6 +302,21 @@ final class Model {
         set("projects", list)
     }
 
+    /// Claude Code session id → when its chat was last focused in the Claude app (seconds).
+    private static func claudeAppFocus() -> [String: Double] {
+        let root = FileManager.default.homeDirectoryForCurrentUser
+            .appendingPathComponent("Library/Application Support/Claude/claude-code-sessions")
+        var out: [String: Double] = [:]
+        guard let e = FileManager.default.enumerator(at: root, includingPropertiesForKeys: nil) else { return out }
+        for case let url as URL in e where url.lastPathComponent.hasPrefix("local_") && url.pathExtension == "json" {
+            guard let d = try? Data(contentsOf: url),
+                  let o = try? JSONSerialization.jsonObject(with: d) as? [String: Any],
+                  let cli = o["cliSessionId"] as? String, let f = o["lastFocusedAt"] as? Double else { continue }
+            out[cli] = f / 1000
+        }
+        return out
+    }
+
     private static func installedVoices() -> [Voice] {
         var result: [Voice] = []
         let p = Process()
@@ -321,18 +360,21 @@ struct HUDRoot: View {
             }
             if !model.sessions.isEmpty {
                 Divider().opacity(0.4)
-                SessionList(sessions: model.sessions, detailed: model.expanded || model.active != nil) {
+                SessionList(sessions: model.sessions, detailed: model.expanded || model.active != nil,
+                            open: { model.open($0) }) {
                     s in s.status == "finished" && model.active == nil ? { model.dictate(to: s) } : nil
                 }
             }
             if model.expanded && model.active == nil && !model.recent.isEmpty {
                 Divider().opacity(0.4)
-                Text("Недавние — нажмите, чтобы надиктовать сообщение")
+                Text("Недавние: нажмите, чтобы открыть чат, 🎙 — надиктовать")
                     .font(.system(size: 10))
                     .foregroundStyle(.tertiary)
                     .padding(.horizontal, 12)
                     .padding(.top, 8)
-                SessionList(sessions: model.recent, detailed: true) { s in { model.dictate(to: s) } }
+                SessionList(sessions: model.recent, detailed: true, open: { model.open($0) }) { s in
+                    model.active == nil ? { model.dictate(to: s) } : nil
+                }
             }
         }
         .frame(width: 380, alignment: .leading)
@@ -517,6 +559,7 @@ struct ConversationView: View {
         case "speaking": "Говорю"
         case "listening": "Слушаю"
         case "transcribing": "Распознаю…"
+        case "phone": "Говорите в iPhone…"
         case "confirming": editMode ? "Исправьте текст"
             : s.left.map { "Отправлю через \(Int($0.rounded(.up))) с" } ?? "Отправлю, когда нажмёте ↩"
         case "sent" where cancelled: "Отменено, Claude остановится"
@@ -532,6 +575,7 @@ struct ConversationView: View {
         case "speaking": Image(systemName: "speaker.wave.2.fill").foregroundStyle(.blue)
         case "listening": Image(systemName: "mic.fill").foregroundStyle(.red)
         case "transcribing": ProgressView().controlSize(.small)
+        case "phone": Image(systemName: "iphone.radiowaves.left.and.right").foregroundStyle(.red)
         case "confirming": Image(systemName: "paperplane").foregroundStyle(.blue)
         case "error": Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
         case "sent": Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
@@ -543,14 +587,16 @@ struct ConversationView: View {
 struct SessionList: View {
     let sessions: [AgentSession]
     let detailed: Bool
-    /// Row action (dictate to this chat), or nil if the row isn't clickable.
+    /// Click on a row: open the chat.
+    var open: (AgentSession) -> Void = { _ in }
+    /// Mic button on a row (dictate to this chat), or nil if dictation isn't possible now.
     var action: (AgentSession) -> (() -> Void)? = { _ in nil }
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1)) { context in
             VStack(alignment: .leading, spacing: 2) {
                 ForEach(sessions) { s in
-                    SessionRow(action: action(s)) {
+                    SessionRow(open: { open(s) }, dictate: action(s)) {
                         row(s, now: context.date)
                     }
                 }
@@ -623,24 +669,29 @@ struct SessionList: View {
 
 /// A list row that highlights on hover and records a message for its chat on click.
 struct SessionRow<Content: View>: View {
-    let action: (() -> Void)?
+    let open: () -> Void
+    let dictate: (() -> Void)?
     @ViewBuilder let content: Content
     @State private var hover = false
 
     var body: some View {
         HStack(spacing: 6) {
             content
-            if action != nil && hover {
-                Image(systemName: "mic.fill").font(.system(size: 10)).foregroundStyle(.secondary)
+            if let dictate, hover {
+                Button(action: dictate) {
+                    Image(systemName: "mic.fill").font(.system(size: 11))
+                }
+                .buttonStyle(.borderless)
+                .help("Надиктовать сообщение в этот чат")
             }
         }
         .padding(.horizontal, 6)
         .padding(.vertical, 4)
-        .background(RoundedRectangle(cornerRadius: 6)
-            .fill(action != nil && hover ? Color.primary.opacity(0.07) : .clear))
+        .background(RoundedRectangle(cornerRadius: 6).fill(hover ? Color.primary.opacity(0.07) : .clear))
         .contentShape(Rectangle())
         .onHover { hover = $0 }
-        .onTapGesture { action?() }
+        .onTapGesture(perform: open)
+        .help("Открыть чат")
     }
 }
 
@@ -685,6 +736,7 @@ struct SettingsMenu: View {
             Divider()
             Toggle("Запускать при входе в систему", isOn: $model.launchAtLogin)
             Toggle("Показывать плашку", isOn: $model.showHUD)
+            Toggle("Прятать, когда подключён iPhone", isOn: $model.hideWhenPhone)
             Button("Открыть лог") { NSWorkspace.shared.open(logURL) }
             Button("Выйти") { NSApp.terminate(nil) }
         } label: {
@@ -763,6 +815,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var panel: HUDPanel?
     private var link: LinkServer?
     private var placed = false
+
+    /// Opening the app again (Spotlight, Finder, `open`) always brings the panel back.
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        model.showHUD = true
+        return false
+    }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)

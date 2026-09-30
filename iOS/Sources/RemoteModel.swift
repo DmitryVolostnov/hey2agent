@@ -38,6 +38,7 @@ final class RemoteModel {
         watchdog = Task { [weak self] in
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(5))
+                if let self, self.status == .connected { self.send(.ping) }
                 guard let self, self.link != nil, self.status == .connected,
                       Date().timeIntervalSince(self.lastMessage) > 15 else { continue }
                 self.link?.cancel()
@@ -116,6 +117,29 @@ final class RemoteModel {
         retry = Task { [weak self] in
             try? await Task.sleep(for: .seconds(2))
             self?.autoConnect()
+        }
+    }
+
+    let recorder = Recorder()
+    /// Which chat the phone is recording for; nil while recording = answer to the running conversation.
+    var recordingFor: LinkSession?
+    var recordingTitle = ""
+    var micDenied = false
+
+    /// Record on the phone and send the audio to the Mac.
+    func recordOnPhone(for session: LinkSession?) {
+        guard !recorder.active else { return }
+        recordingFor = session
+        recordingTitle = session?.title ?? snapshot?.active?.project ?? ""
+        if session == nil { send(.phoneRecording) }  // Mac stops listening to its own mic
+        recorder.start(waitForSpeech: session == nil ? 10 : 8) { [weak self] data in
+            guard let self else { return }
+            if let data {
+                self.send(.audio(session: session?.id, data: data))
+            } else if session == nil {
+                self.send(.control("cancel"))
+            }
+            self.recordingFor = nil
         }
     }
 

@@ -9,7 +9,7 @@ targets:
     type: application
     platform: iOS
     deploymentTarget: "17.0"
-    sources: [Sources]
+    sources: [Sources, Assets.xcassets]
     dependencies:
       - package: VoiceLoopLink
     info:
@@ -22,6 +22,7 @@ targets:
         UISupportedInterfaceOrientations~ipad: [UIInterfaceOrientationPortrait, UIInterfaceOrientationPortraitUpsideDown, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
         NSLocalNetworkUsageDescription: "Чтобы показывать плашку voice-loop с вашего Mac в домашней сети. Данные шифруются и не уходят в интернет."
         NSBonjourServices: [_voiceloop._tcp]
+        NSMicrophoneUsageDescription: "Чтобы надиктовать ответ агенту. Звук уходит только на ваш Mac по зашифрованному соединению, распознаётся там локально."
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: me.volostnov.voiceloop.remote
@@ -29,4 +30,4 @@ targets:
         CODE_SIGN_STYLE: Automatic
         SWIFT_VERSION: "5.0"
         TARGETED_DEVICE_FAMILY: "1,2"
-        ASSETCATALOG_COMPILER_APPICON_NAME: ""
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon

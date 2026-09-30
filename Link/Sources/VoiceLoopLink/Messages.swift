@@ -64,8 +64,16 @@ public enum LinkCommand: Codable, Equatable, Sendable {
     case reply(String)
     /// Record (with the Mac mic) a message for a chat that isn't waiting.
     case dictate(session: String)
+    /// Bring this chat to the front on the Mac.
+    case open(session: String)
     /// «Отменить» after sending.
     case cancelSent(session: String)
+    /// The user started recording on the iPhone: the Mac stops listening to its own mic.
+    case phoneRecording
+    /// A recording made on the iPhone (wav/m4a). session nil = answer to the running conversation.
+    case audio(session: String?, data: Data)
+    /// Phone heartbeat (every 5 s) so the Mac notices a vanished phone and shows its panel again.
+    case ping
     case setMuted(Bool)
     case setEnabled(Bool)
 }

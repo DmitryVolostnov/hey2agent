@@ -26,6 +26,8 @@
 	</array>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>Чтобы показывать плашку voice-loop с вашего Mac в домашней сети. Данные шифруются и не уходят в интернет.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Чтобы надиктовать ответ агенту. Звук уходит только на ваш Mac по зашифрованному соединению, распознаётся там локально.</string>
 	<key>UILaunchScreen</key>
 	<dict/>
 	<key>UIRequiresFullScreen</key>

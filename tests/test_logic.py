@@ -177,10 +177,25 @@ class Deliver(unittest.TestCase):
         self.assertEqual(how, "resumed")
         self.assertEqual(calls[0], ["claude", "-p", "--resume", "sid-1", "сделай тесты"])
 
-    def test_claude_app_uses_clipboard(self):
-        how, calls = self.run_with({"agent": "claude-desktop"})
+    def test_claude_app_uses_clipboard_and_opens_the_chat(self):
+        from unittest import mock
+        with mock.patch.object(v, "desktop_session_id", lambda sid: "local_abc"):
+            how, calls = self.run_with({"agent": "claude-desktop"})
         self.assertEqual(how, "clipboard")
-        self.assertEqual(calls, [["pbcopy"], ["open", "-a", "Claude"]])
+        self.assertEqual(calls, [["pbcopy"], ["open", "claude://code/continue?session=local_abc"]])
+
+    def test_desktop_session_lookup(self):
+        with tempfile.TemporaryDirectory() as d:
+            saved = v.CLAUDE_APP_SESSIONS
+            v.CLAUDE_APP_SESSIONS = Path(d)
+            try:
+                f = Path(d) / "a" / "b" / "local_xyz.json"
+                f.parent.mkdir(parents=True)
+                f.write_text(json.dumps({"sessionId": "local_xyz", "cliSessionId": "cli-1"}))
+                self.assertEqual(v.desktop_session_id("cli-1"), "local_xyz")
+                self.assertIsNone(v.desktop_session_id("cli-2"))
+            finally:
+                v.CLAUDE_APP_SESSIONS = saved
 
 
 class CancelAfterSend(unittest.TestCase):

@@ -283,8 +283,16 @@ class Listener:
             cmd, payload = take_control()
             if cmd in ("cancel", "repeat", "text"):
                 return None, cmd, payload
+            if cmd == "phone":  # the user is recording on the iPhone: ignore the Mac mic
+                self.phone = True
+                self.ui(state="phone")
+                continue
+            if cmd == "audio":  # recording from the iPhone
+                return read_wav(payload), "pause", None
             if cmd == "send" or (deadline and time.time() > deadline):
                 return (pcm if speaking else None), "send", None
+            if getattr(self, "phone", False):
+                continue
             if frames <= skip:
                 continue
             loud = db > self.floor + self.c["speech_margin_db"]
@@ -317,6 +325,18 @@ class Listener:
             self.p.wait(timeout=2)
         except subprocess.TimeoutExpired:
             pass
+
+
+def read_wav(path):
+    """16 kHz mono PCM of a wav (phone recordings are converted if needed)."""
+    out = tempfile.mktemp(suffix=".wav", prefix="voice-loop-phone-")
+    subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-i", path, "-ac", "1", "-ar", "16000",
+                    "-f", "s16le", out], check=False)
+    try:
+        return bytearray(Path(out).read_bytes())
+    finally:
+        _rm(out)
+        _rm(path)
 
 
 def to_wav(pcm):
@@ -475,6 +495,36 @@ def pretool_hook():
 CODEX_BIN = ["/Applications/ChatGPT.app/Contents/Resources/codex", "/Applications/Codex.app/Contents/Resources/codex"]
 
 
+CLAUDE_APP_SESSIONS = HOME / "Library/Application Support/Claude/claude-code-sessions"
+
+
+def desktop_session_id(cli_sid):
+    """Claude app keeps local_<id>.json per chat with the Claude Code session id inside."""
+    for f in CLAUDE_APP_SESSIONS.glob("*/*/local_*.json"):
+        try:
+            if cli_sid in f.read_text() and json.loads(f.read_text()).get("cliSessionId") == cli_sid:
+                return json.loads(f.read_text()).get("sessionId")
+        except (OSError, ValueError):
+            continue
+    return None
+
+
+def open_chat(sid, entry):
+    """Bring the chat to the front: Claude app via its own deep link, Codex app, or nothing."""
+    agent = (entry or {}).get("agent")
+    if (entry or {}).get("status") == "finished":
+        update_session({"session_id": sid}, "done")  # seen → moves to «Недавние»
+    if agent == "claude-desktop":
+        local = desktop_session_id(sid)
+        if local:
+            subprocess.run(["open", f"claude://code/continue?session={local}"])
+            return True
+        subprocess.run(["open", "-a", "Claude"])
+    elif agent == "codex":
+        subprocess.run(["open", "-b", "com.openai.codex"])
+    return False
+
+
 def deliver(sid, entry, text):
     """Returns a short human status. Claude app chats cannot be driven from outside,
     so the text goes to the clipboard and Claude is brought to the front."""
@@ -493,12 +543,13 @@ def deliver(sid, entry, text):
                          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
         return "resumed"
     subprocess.run(["pbcopy"], input=text, text=True)
-    subprocess.run(["open", "-a", "Claude"])
+    open_chat(sid, entry)  # the right chat is already open: just ⌘V ↩
     return "clipboard"
 
 
-def dictate_to(sid):
-    """HUD: dictate a message for a chat that is not currently waiting in a hook."""
+def dictate_to(sid, wav=None):
+    """HUD / iPhone: dictate a message for a chat that is not currently waiting in a hook.
+    wav: a recording made on the iPhone (then the Mac mic isn't used)."""
     c = cfg()
     entry = load_sessions().get(sid)
     if not entry:
@@ -520,6 +571,21 @@ def dictate_to(sid):
 
     take_control()
     deadline = time.time() + 170
+    if wav:
+        ui("transcribing")
+        pcm = read_wav(wav)
+        tmp = to_wav(pcm)
+        text = transcribe(tmp, c)
+        _rm(tmp)
+        log(f"phone phrase: {text!r}")
+        if not text or is_stop(text) or strip_tail(text, CANCEL_WORDS) is not None:
+            ui("released")
+            return
+        verdict, text = confirm(text, c, ui, deadline)
+        if verdict != "send":  # «again» from a phone recording = record again on the phone
+            ui("released")
+            return
+        return _deliver_and_report(sid, entry, text, ui)
     lis = Listener(c, ui)
     try:
         while True:
@@ -539,6 +605,10 @@ def dictate_to(sid):
             break
     finally:
         lis.close()
+    _deliver_and_report(sid, entry, text, ui)
+
+
+def _deliver_and_report(sid, entry, text, ui):
     how = deliver(sid, entry, text)
     log(f"dictate_to {sid} ({entry.get('agent')}): {how} {text!r}")
     ui("sent", text=text, delivery=how)
@@ -956,9 +1026,11 @@ def main():
     elif cmd == "cancel" and len(sys.argv) > 2:
         CANCEL_DIR.mkdir(parents=True, exist_ok=True)
         cancel_marker(sys.argv[2]).touch()
+    elif cmd == "open" and len(sys.argv) > 2:
+        open_chat(sys.argv[2], load_sessions().get(sys.argv[2]))
     elif cmd == "dictate" and len(sys.argv) > 2:
         try:
-            dictate_to(sys.argv[2])
+            dictate_to(sys.argv[2], sys.argv[3] if len(sys.argv) > 3 else None)
         except MicError:
             log("dictate: no mic access for the HUD")
             write_state("error", text="Нет доступа к микрофону. Разрешите его для VoiceLoopHUD: "

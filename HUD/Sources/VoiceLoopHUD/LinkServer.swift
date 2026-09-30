@@ -9,6 +9,7 @@ final class LinkServer {
     private var listener: NWListener?
     private var clients: [ObjectIdentifier: LinkConnection] = [:]
     private var pending: [ObjectIdentifier: LinkConnection] = [:]
+    private var seen: [ObjectIdentifier: Date] = [:]
     private var last: LinkSnapshot?
     private var lastSent = Date.distantPast
     private(set) var code: String
@@ -57,17 +58,20 @@ final class LinkServer {
             case .ready:
                 self.pending[key] = nil
                 self.clients[key] = c
+                self.seen[key] = Date()
                 self.model.phones = self.clients.count
                 c.send(LinkEnvelope(snapshot: self.model.snapshot()))
             case .failed, .cancelled:
                 self.pending[key] = nil
                 self.clients[key] = nil
+                self.seen[key] = nil
                 self.model.phones = self.clients.count
             default:
                 break
             }
         }
         c.onEnvelope = { [weak self] env in
+            self?.seen[key] = Date()
             if let cmd = env.command { self?.handle(cmd) }
         }
         c.start()
@@ -76,6 +80,13 @@ final class LinkServer {
     /// Called from the HUD tick: push a snapshot whenever something changed, and at least
     /// every 5 s as a heartbeat so the phone notices a dead connection.
     func tick() {
+        // A phone silent for 15 s (slept, left the Wi-Fi) is gone: drop it, the Mac panel returns.
+        for (key, at) in seen where Date().timeIntervalSince(at) > 15 {
+            clients[key]?.cancel()
+            clients[key] = nil
+            seen[key] = nil
+            model.phones = clients.count
+        }
         guard !clients.isEmpty else { return }
         let snap = model.snapshot()
         guard snap != last || Date().timeIntervalSince(lastSent) > 5 else { return }
@@ -93,6 +104,22 @@ final class LinkServer {
                 model.dictate(to: s)
             }
         case .cancelSent(let id): model.cancelSent(id)
+        case .open(let id):
+            if let s = (model.sessions + model.recent).first(where: { $0.id == id }) { model.open(s) }
+        case .ping:
+            break
+        case .phoneRecording:
+            if model.active?.state == "listening" { model.send("phone") }
+        case .audio(let session, let data):
+            let dir = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".voice-loop/tmp")
+            try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+            let url = dir.appendingPathComponent("phone-\(UUID().uuidString).m4a")
+            guard (try? data.write(to: url)) != nil else { return }
+            if let id = session, let s = (model.sessions + model.recent).first(where: { $0.id == id }) {
+                model.dictate(to: s, recording: url.path)
+            } else {
+                model.send("audio\n\(url.path)")  // the hook conversation picks it up
+            }
         case .setMuted(let on): model.setMuted(on)
         case .setEnabled(let on): model.setEnabled(on)
         }

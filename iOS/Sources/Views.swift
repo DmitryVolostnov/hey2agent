@@ -85,27 +85,31 @@ struct RemoteView: View {
             VStack(alignment: .leading, spacing: 18) {
                 header(snap)
                 if let a = snap?.active {
-                    ConversationCard(state: a, send: model.send)
+                    ConversationCard(state: a, send: model.send,
+                                     replyByPhone: { model.recordOnPhone(for: nil) })
                         .id("\(a.project ?? "")|\(a.state)")
                 } else {
                     IdleCard(snap: snap)
                 }
                 if let s = snap, !s.sessions.isEmpty {
-                    SessionSection(title: "В работе", sessions: s.sessions) { session in
+                    SessionSection(title: "В работе", sessions: s.sessions, model: model) { session in
                         session.status == "finished" && s.active == nil
-                            ? { model.send(.dictate(session: session.id)) } : nil
+                            ? { model.recordOnPhone(for: session) } : nil
                     }
                 }
                 if let s = snap, !s.recent.isEmpty {
-                    SessionSection(title: "Недавние — нажмите, чтобы надиктовать (микрофон Mac)",
-                                   sessions: s.recent) { session in
-                        s.active == nil ? { model.send(.dictate(session: session.id)) } : nil
+                    SessionSection(title: "Недавние: нажмите и говорите. Долгое нажатие: открыть на Mac",
+                                   sessions: s.recent, model: model) { session in
+                        s.active == nil ? { model.recordOnPhone(for: session) } : nil
                     }
                 }
             }
             .padding(20)
         }
         .background(Color.black.ignoresSafeArea())
+        .overlay(alignment: .bottom) {
+            if model.recorder.active { RecordingPanel(model: model).padding(16) }
+        }
     }
 
     @ViewBuilder private func header(_ snap: LinkSnapshot?) -> some View {
@@ -162,6 +166,7 @@ struct IdleCard: View {
 struct ConversationCard: View {
     let state: LinkVoiceState
     let send: (LinkCommand) -> Void
+    var replyByPhone: () -> Void = {}
     @State private var typed = ""
     @State private var editing = false
     @State private var cancelled = false
@@ -233,10 +238,11 @@ struct ConversationCard: View {
                 Spacer()
                 Button("Пропустить") { send(.control("skip")) }.buttonStyle(.borderedProminent)
             case "listening":
-                Button("Повторить") { send(.control("repeat")) }.buttonStyle(.bordered)
+                Button { replyByPhone() } label: { Label("Ответить с телефона", systemImage: "mic.fill") }
+                    .buttonStyle(.borderedProminent)
                 Spacer()
+                Button("Повторить") { send(.control("repeat")) }.buttonStyle(.bordered)
                 Button("Отмена") { send(.control("cancel")) }.buttonStyle(.bordered)
-                Button("Отправить") { send(.control("send")) }.buttonStyle(.borderedProminent)
             case "confirming" where !editing:
                 Button("Изменить") {
                     typed = state.text ?? ""
@@ -282,6 +288,7 @@ struct ConversationCard: View {
         case "speaking": "Говорю"
         case "listening": "Слушаю"
         case "transcribing": "Распознаю…"
+        case "phone": "Слушаю телефон"
         case "confirming": editing ? "Исправьте текст"
             : state.left.map { "Отправлю через \(Int($0.rounded(.up))) с" } ?? "Отправлю"
         case "sent": state.delivery == "clipboard" ? "В буфере обмена" : "Отправлено"
@@ -296,6 +303,7 @@ struct ConversationCard: View {
         case "speaking": Image(systemName: "speaker.wave.2.fill").foregroundStyle(.blue)
         case "listening": Image(systemName: "mic.fill").foregroundStyle(.red)
         case "transcribing": ProgressView()
+        case "phone": Image(systemName: "iphone.radiowaves.left.and.right").foregroundStyle(.red)
         case "confirming": Image(systemName: "paperplane").foregroundStyle(.blue)
         case "sent": Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
         case "error": Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
@@ -307,6 +315,7 @@ struct ConversationCard: View {
 struct SessionSection: View {
     let title: String
     let sessions: [LinkSession]
+    let model: RemoteModel
     let action: (LinkSession) -> (() -> Void)?
 
     var body: some View {
@@ -318,7 +327,16 @@ struct SessionSection: View {
                         let tap = action(s)
                         Button { tap?() } label: { row(s, now: ctx.date, tappable: tap != nil) }
                             .buttonStyle(.plain)
-                            .disabled(tap == nil)
+                            .contextMenu {
+                                Button { model.send(.open(session: s.id)) } label: {
+                                    Label("Открыть на Mac", systemImage: "macbook")
+                                }
+                                if tap != nil {
+                                    Button { model.send(.dictate(session: s.id)) } label: {
+                                        Label("Надиктовать микрофоном Mac", systemImage: "mic")
+                                    }
+                                }
+                            }
                     }
                 }
             }
@@ -372,5 +390,48 @@ struct SessionSection: View {
             return m < 1440 ? "\(m / 60) ч назад" : "\(m / 1440) д назад"
         }
         return sec < 60 ? "\(sec) с" : "\(m) мин"
+    }
+}
+
+
+struct RecordingPanel: View {
+    @Bindable var model: RemoteModel
+
+    var body: some View {
+        let r = model.recorder
+        VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                Image(systemName: "mic.fill").foregroundStyle(.red).font(.title2)
+                VStack(alignment: .leading) {
+                    Text(r.speaking ? "Слушаю…" : "Говорите").font(.title3.weight(.semibold))
+                    if !model.recordingTitle.isEmpty {
+                        Text(model.recordingTitle).font(.subheadline).foregroundStyle(.secondary).lineLimit(1)
+                    }
+                }
+                Spacer()
+                if let left = r.secondsLeft {
+                    Text("\(Int(left.rounded(.up))) с").font(.title3.monospacedDigit()).foregroundStyle(.secondary)
+                }
+            }
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(.quaternary)
+                    Capsule().fill(.red.gradient).frame(width: max(6, geo.size.width * r.level))
+                        .animation(.linear(duration: 0.1), value: r.level)
+                }
+            }
+            .frame(height: 8)
+            Text("Пауза 2 секунды — отправлю. Распознавание на Mac.")
+                .font(.footnote).foregroundStyle(.secondary)
+            HStack {
+                Button("Отмена", role: .cancel) { r.finish(send: false) }.buttonStyle(.bordered)
+                Spacer()
+                Button("Отправить") { r.finish(send: true) }.buttonStyle(.borderedProminent)
+                    .disabled(!r.speaking)
+            }
+            .controlSize(.large)
+        }
+        .padding(18)
+        .background(RoundedRectangle(cornerRadius: 22).fill(.regularMaterial))
     }
 }

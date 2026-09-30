@@ -5,8 +5,9 @@ cd "$(dirname "$0")"
 swift build -c release
 APP=VoiceLoopHUD.app
 rm -rf $APP
-mkdir -p $APP/Contents/MacOS
+mkdir -p $APP/Contents/MacOS $APP/Contents/Resources
 cp .build/release/VoiceLoopHUD $APP/Contents/MacOS/
+cp ../Branding/AppIcon.icns $APP/Contents/Resources/
 cat > $APP/Contents/Info.plist <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -15,6 +16,8 @@ cat > $APP/Contents/Info.plist <<PLIST
   <key>CFBundleName</key><string>VoiceLoopHUD</string>
   <key>CFBundleExecutable</key><string>VoiceLoopHUD</string>
   <key>CFBundlePackageType</key><string>APPL</string>
+  <key>CFBundleIconFile</key><string>AppIcon</string>
+  <key>CFBundleDisplayName</key><string>voice-loop</string>
   <key>CFBundleShortVersionString</key><string>0.1</string>
   <key>LSMinimumSystemVersion</key><string>15.0</string>
   <key>LSUIElement</key><true/>
@@ -24,4 +27,8 @@ cat > $APP/Contents/Info.plist <<PLIST
 </dict></plist>
 PLIST
 codesign --force --sign - $APP
-echo "built $PWD/$APP"
+# Install into ~/Applications so it can be found in Spotlight / Launchpad.
+mkdir -p ~/Applications
+rm -rf ~/Applications/$APP
+cp -R $APP ~/Applications/
+echo "built $PWD/$APP → ~/Applications/$APP"
