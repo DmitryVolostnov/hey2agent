@@ -445,11 +445,17 @@ def speak(text, c):
     return None
 
 
-def converse(project, summary, c):
+def spoken_name(title, max_words=6):
+    words = title.split()
+    return " ".join(words[:max_words]) + ("…" if len(words) > max_words else "")
+
+
+def converse(project, summary, c, title=None):
     """Speak the summary, then listen for the next instruction.
     Returns the instruction text, or None to let the agent stop."""
     deadline = time.time() + HOOK_TIMEOUT - 25  # leave time for the last transcription
-    session = {"project": project, "summary": summary}
+    title = title or project
+    session = {"project": title, "summary": summary}
 
     def ui(state=None, **kw):
         if state:
@@ -470,7 +476,7 @@ def converse(project, summary, c):
 
     take_control()  # drop stale clicks
     ui("speaking")
-    r = speak(f"{project}: готово. {summary}", c)
+    r = speak(f"{spoken_name(title)}. Готово. {summary}", c)
     if r == "cancel":
         return finish(None)
     if r == "text":
@@ -587,7 +593,8 @@ def hook():
         return
     update_session(data, "waiting")
     try:
-        reply = converse(project, summarize(text, c["summary_chars"]), c)
+        title = session_title(data.get("transcript_path"), project)
+        reply = converse(project, summarize(text, c["summary_chars"]), c, title)
     except Exception:
         update_session(data, "done")
         raise
