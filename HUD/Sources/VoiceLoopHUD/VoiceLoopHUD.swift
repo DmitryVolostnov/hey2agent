@@ -32,6 +32,7 @@ struct VoiceState: Decodable, Equatable {
     var text: String?
     var level: Double?
     var left: Double?
+    var delivery: String?  // queued | resumed | clipboard (message to a recent chat)
     var t: Double
 }
 
@@ -39,12 +40,14 @@ struct AgentSession: Decodable, Equatable, Identifiable {
     var id: String = ""
     var project: String
     var title: String
-    var status: String  // working | waiting | finished
+    var status: String  // working | waiting | finished | idle
     var since: Double
     var updated: Double
     var transcript: String?
+    var agent: String?
+    var ended: Double?
 
-    enum CodingKeys: String, CodingKey { case project, title, status, since, updated, transcript }
+    enum CodingKeys: String, CodingKey { case project, title, status, since, updated, transcript, agent, ended }
 }
 
 /// A voice the script can use: macOS `say` voice or a downloaded Piper model.
@@ -62,7 +65,8 @@ struct Voice: Hashable, Identifiable {
 @MainActor @Observable
 final class Model {
     var current: VoiceState?
-    var sessions: [AgentSession] = []
+    var sessions: [AgentSession] = []  // working / waiting / finished
+    var recent: [AgentSession] = []    // idle chats, newest first
     var enabled = FileManager.default.fileExists(atPath: flagURL.path)
     var muted = FileManager.default.fileExists(atPath: mutedURL.path)
     var showHUD = true
@@ -97,7 +101,7 @@ final class Model {
         switch s.state {
         case "speaking", "listening", "transcribing", "confirming":
             return age < 200 ? s : nil  // hook dies at 180 s
-        case "sent": return age < 4 ? s : nil
+        case "sent": return age < (s.delivery == "clipboard" ? 12 : 4) ? s : nil
         case "released": return age < 1.5 ? s : nil
         default: return nil
         }
@@ -112,14 +116,18 @@ final class Model {
            let s = try? JSONDecoder().decode(VoiceState.self, from: data), s != current {
             current = s
         }
-        let live = Self.liveSessions()
+        let all = Self.loadSessions()
+        let live = all.filter { $0.status != "idle" }.sorted { $0.since < $1.since }
+        let idle = Array(all.filter { $0.status == "idle" }
+            .sorted { ($0.ended ?? $0.updated) > ($1.ended ?? $1.updated) }.prefix(8))
         if live != sessions { sessions = live }
-        for p in live.map(\.project) where !knownProjects.contains(p) { knownProjects.append(p) }
+        if idle != recent { recent = idle }
+        for p in all.map(\.project) where !knownProjects.contains(p) { knownProjects.append(p) }
     }
 
-    /// Sessions in progress. A session whose transcript hasn't changed for 20 min was most
-    /// likely interrupted (no Stop hook fires then), so it is hidden.
-    private static func liveSessions() -> [AgentSession] {
+    /// All known sessions. One "in progress" whose transcript hasn't changed for 20 min was most
+    /// likely interrupted (no Stop hook fires then), so it is shown as idle.
+    private static func loadSessions() -> [AgentSession] {
         guard let data = try? Data(contentsOf: sessionsURL),
               let dict = try? JSONDecoder().decode([String: AgentSession].self, from: data) else { return [] }
         let now = Date().timeIntervalSince1970
@@ -131,15 +139,27 @@ final class Model {
                let m = try? FileManager.default.attributesOfItem(atPath: path)[.modificationDate] as? Date {
                 lastSeen = max(lastSeen, m.timeIntervalSince1970)
             }
-            return now - lastSeen < 20 * 60 ? s : nil
+            if s.status == "working" || s.status == "waiting", now - lastSeen > 20 * 60 {
+                s.status = "idle"
+                s.ended = s.ended ?? lastSeen
+            }
+            return s
         }
-        .sorted { $0.since < $1.since }
     }
 
     // MARK: commands
 
     func send(_ command: String) {
         try? command.write(to: controlURL, atomically: true, encoding: .utf8)
+    }
+
+    /// Dictate a message for a chat that isn't waiting for an answer.
+    func dictate(to session: AgentSession) {
+        guard active == nil, let loc = scriptLocation else { return }
+        let p = Process()
+        p.executableURL = URL(fileURLWithPath: loc.python)
+        p.arguments = [loc.script, "dictate", session.id]
+        try? p.run()
     }
 
     func reply(_ text: String) {
@@ -259,7 +279,18 @@ struct HUDRoot: View {
             }
             if !model.sessions.isEmpty {
                 Divider().opacity(0.4)
-                SessionList(sessions: model.sessions, detailed: model.expanded || model.active != nil)
+                SessionList(sessions: model.sessions, detailed: model.expanded || model.active != nil) {
+                    s in s.status == "finished" && model.active == nil ? { model.dictate(to: s) } : nil
+                }
+            }
+            if model.expanded && model.active == nil && !model.recent.isEmpty {
+                Divider().opacity(0.4)
+                Text("Недавние — нажмите, чтобы надиктовать сообщение")
+                    .font(.system(size: 10))
+                    .foregroundStyle(.tertiary)
+                    .padding(.horizontal, 12)
+                    .padding(.top, 8)
+                SessionList(sessions: model.recent, detailed: true) { s in { model.dictate(to: s) } }
             }
         }
         .frame(width: 380, alignment: .leading)
@@ -399,6 +430,8 @@ struct ConversationView: View {
     private var bodyText: String? {
         switch s.state {
         case "speaking": s.summary
+        case _ where s.state == "sent" && s.delivery == "clipboard":
+            "Скопировано. Вставьте в чат «\(s.project ?? "")» в Claude: ⌘V и ↩\n\n\(s.text ?? "")"
         case "listening", "transcribing", "sent": s.text
         case "confirming": nil  // shown in the editable field
         default: nil
@@ -411,7 +444,7 @@ struct ConversationView: View {
         case "listening": "Слушаю"
         case "transcribing": "Распознаю…"
         case "confirming": s.left.map { "Отправлю через \(Int($0.rounded(.up))) с" } ?? "Отправлю, когда нажмёте ↩"
-        case "sent": "Отправлено"
+        case "sent": s.delivery == "clipboard" ? "В буфере обмена" : s.delivery == "queued" ? "Добавлено в Codex" : "Отправлено"
         case "released": "Сессия отпущена"
         default: ""
         }
@@ -432,16 +465,31 @@ struct ConversationView: View {
 struct SessionList: View {
     let sessions: [AgentSession]
     let detailed: Bool
+    /// Row action (dictate to this chat), or nil if the row isn't clickable.
+    var action: (AgentSession) -> (() -> Void)? = { _ in nil }
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1)) { context in
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 2) {
                 ForEach(sessions) { s in
+                    SessionRow(action: action(s)) {
+                        row(s, now: context.date)
+                    }
+                }
+            }
+            .padding(.horizontal, 6)
+            .padding(.vertical, 6)
+        }
+    }
+
+    @ViewBuilder private func row(_ s: AgentSession, now: Date) -> some View {
                     HStack(spacing: 8) {
                         Image(systemName: s.status == "finished" ? "checkmark.circle.fill" : "circle.fill")
                             .font(.system(size: s.status == "finished" ? 9 : 7))
+                            .frame(width: 10)
                             .foregroundStyle(color(s.status))
-                            .symbolEffect(.pulse, options: .repeating, isActive: s.status != "finished")
+                            .symbolEffect(.pulse, options: .repeating,
+                                          isActive: s.status == "working" || s.status == "waiting")
                         Text(s.title)
                             .font(.system(size: 12))
                             .lineLimit(1)
@@ -452,23 +500,28 @@ struct SessionList: View {
                                 .font(.system(size: 11))
                                 .foregroundStyle(.secondary)
                                 .lineLimit(1)
-                            Text(elapsed(since: s.since, now: context.date))
+                            Text(s.status == "idle" || s.status == "finished"
+                                 ? ago(s.ended ?? s.updated, now: now)
+                                 : elapsed(since: s.since, now: now))
                                 .font(.system(size: 11).monospacedDigit())
                                 .foregroundStyle(.tertiary)
                         }
                     }
                     .help("\(s.project) · \(label(s))")
-                }
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 9)
-        }
+    }
+
+    private func ago(_ t: Double, now: Date) -> String {
+        let m = max(0, Int(now.timeIntervalSince1970 - t)) / 60
+        if m < 1 { return "только что" }
+        if m < 60 { return "\(m) мин назад" }
+        if m < 24 * 60 { return "\(m / 60) ч назад" }
+        return "\(m / 1440) д назад"
     }
 
     private func color(_ status: String) -> Color {
         switch status {
         case "waiting": .blue
-        case "finished": .green
+        case "finished", "idle": .green
         default: .orange
         }
     }
@@ -477,6 +530,7 @@ struct SessionList: View {
         switch s.status {
         case "waiting": "ждёт ответа"
         case "finished": "готово"
+        case "idle": s.project
         default: s.project
         }
     }
@@ -484,6 +538,29 @@ struct SessionList: View {
     private func elapsed(since: Double, now: Date) -> String {
         let sec = max(0, Int(now.timeIntervalSince1970 - since))
         return sec < 60 ? "\(sec) с" : "\(sec / 60) мин"
+    }
+}
+
+/// A list row that highlights on hover and records a message for its chat on click.
+struct SessionRow<Content: View>: View {
+    let action: (() -> Void)?
+    @ViewBuilder let content: Content
+    @State private var hover = false
+
+    var body: some View {
+        HStack(spacing: 6) {
+            content
+            if action != nil && hover {
+                Image(systemName: "mic.fill").font(.system(size: 10)).foregroundStyle(.secondary)
+            }
+        }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 4)
+        .background(RoundedRectangle(cornerRadius: 6)
+            .fill(action != nil && hover ? Color.primary.opacity(0.07) : .clear))
+        .contentShape(Rectangle())
+        .onHover { hover = $0 }
+        .onTapGesture { action?() }
     }
 }
 

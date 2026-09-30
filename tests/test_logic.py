@@ -143,3 +143,35 @@ class Mute(unittest.TestCase):
             finally:
                 v.STATE_DIR, v.FLAG, v.MUTED, v.SESSIONS = saved
                 sys.stdin = sys.__stdin__
+
+
+class Deliver(unittest.TestCase):
+    def run_with(self, entry, which=None):
+        from unittest import mock
+        calls = []
+
+        def fake_run(cmd, **kw):
+            calls.append(cmd)
+            return mock.Mock(returncode=0, stderr="")
+
+        with mock.patch.object(v.subprocess, "run", fake_run), \
+             mock.patch.object(v.subprocess, "Popen", lambda cmd, **kw: calls.append(cmd)), \
+             mock.patch.object(v.shutil, "which", lambda name: which and f"/bin/{name}"), \
+             mock.patch.object(v.os.path, "exists", lambda p: True):
+            how = v.deliver("sid-1", entry, "сделай тесты")
+        return how, calls
+
+    def test_codex_queue(self):
+        how, calls = self.run_with({"agent": "codex"}, which=True)
+        self.assertEqual(how, "queued")
+        self.assertEqual(calls[0][1:], ["queue", "--thread", "sid-1", "--message", "сделай тесты"])
+
+    def test_claude_cli_resumes(self):
+        how, calls = self.run_with({"agent": "claude-cli", "cwd": "/tmp"}, which=True)
+        self.assertEqual(how, "resumed")
+        self.assertEqual(calls[0], ["claude", "-p", "--resume", "sid-1", "сделай тесты"])
+
+    def test_claude_app_uses_clipboard(self):
+        how, calls = self.run_with({"agent": "claude-desktop"})
+        self.assertEqual(how, "clipboard")
+        self.assertEqual(calls, [["pbcopy"], ["open", "-a", "Claude"]])

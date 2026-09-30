@@ -382,35 +382,127 @@ def session_title(transcript_path, fallback):
     return fallback
 
 
+def agent_of(data):
+    t = data.get("transcript_path") or ""
+    if "/.codex/" in t:
+        return "codex"
+    return "claude-desktop" if os.environ.get("CLAUDE_CODE_ENTRYPOINT") == "claude-desktop" else "claude-cli"
+
+
+def load_sessions():
+    try:
+        return json.loads(SESSIONS.read_text())
+    except Exception:
+        return {}
+
+
 def update_session(data, status, prompt=None):
-    """status: working | waiting | finished (done while muted) | done (removed)."""
+    """status: working | waiting | finished (done while muted) | done → kept as «idle»
+    (recent chats in the HUD, pruned after 3 days)."""
     sid = data.get("session_id")
     if not sid:
         return
     STATE_DIR.mkdir(exist_ok=True)
     with open(STATE_DIR / "sessions.lock", "w") as lk:
         fcntl.flock(lk, fcntl.LOCK_EX)
-        try:
-            reg = json.loads(SESSIONS.read_text())
-        except Exception:
-            reg = {}
+        reg = load_sessions()
+        now = time.time()
+        cur = reg.get(sid, {})
+        project = Path(data.get("cwd") or cur.get("cwd") or ".").name
+        fallback = cur.get("title") or (prompt or "").strip().split("\n")[0][:60] or project
         if status == "done":
-            reg.pop(sid, None)
-        else:
-            cur = reg.get(sid, {})
-            project = Path(data.get("cwd") or ".").name
-            fallback = cur.get("title") or (prompt or "").strip().split("\n")[0][:60] or project
-            cur.update(project=project, status=status, updated=time.time(),
-                       transcript=data.get("transcript_path"),
-                       title=session_title(data.get("transcript_path"), fallback))
-            cur.setdefault("since", time.time())
-            if status == "working" and cur.get("status_prev") != "working":
-                cur["since"] = time.time()
-            cur["status_prev"] = status
-            reg[sid] = cur
+            status = "idle"
+        if status == "working" and cur.get("status") != "working":
+            cur["since"] = now
+        cur.setdefault("since", now)
+        cur.update(project=project, status=status, updated=now,
+                   cwd=data.get("cwd") or cur.get("cwd"),
+                   transcript=data.get("transcript_path") or cur.get("transcript"),
+                   agent=cur.get("agent") or agent_of(data),
+                   title=session_title(data.get("transcript_path") or cur.get("transcript"), fallback))
+        if status in ("idle", "finished"):
+            cur["ended"] = now
+        reg[sid] = cur
+        reg = {k: v for k, v in reg.items() if now - v.get("updated", 0) < 3 * 86400}
         tmp = SESSIONS.with_suffix(".tmp")
         tmp.write_text(json.dumps(reg, ensure_ascii=False))
         os.replace(tmp, SESSIONS)
+
+
+# ---------- sending to a chat that is not waiting (HUD: click a recent chat) ----------
+
+CODEX_BIN = ["/Applications/ChatGPT.app/Contents/Resources/codex", "/Applications/Codex.app/Contents/Resources/codex"]
+
+
+def deliver(sid, entry, text):
+    """Returns a short human status. Claude app chats cannot be driven from outside,
+    so the text goes to the clipboard and Claude is brought to the front."""
+    agent = entry.get("agent")
+    if agent == "codex":
+        codex = shutil.which("codex") or next((p for p in CODEX_BIN if os.path.exists(p)), None)
+        if codex:
+            r = subprocess.run([codex, "queue", "--thread", sid, "--message", text],
+                               capture_output=True, text=True, timeout=30)
+            if r.returncode == 0:
+                return "queued"
+            log(f"codex queue failed: {r.stderr[-300:]!r}")
+    elif agent == "claude-cli" and shutil.which("claude"):
+        # Headless continuation of the same session; its Stop hook speaks the answer.
+        subprocess.Popen(["claude", "-p", "--resume", sid, text], cwd=entry.get("cwd") or None,
+                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+        return "resumed"
+    subprocess.run(["pbcopy"], input=text, text=True)
+    subprocess.run(["open", "-a", "Claude"])
+    return "clipboard"
+
+
+def dictate_to(sid):
+    """HUD: dictate a message for a chat that is not currently waiting in a hook."""
+    c = cfg()
+    entry = load_sessions().get(sid)
+    if not entry:
+        return
+    lock = acquire_lock(c)
+    if not lock:
+        return
+    title = entry.get("title") or entry.get("project")
+    session = {"project": title, "summary": ""}
+
+    def ui(state=None, **kw):
+        if state:
+            session["state"] = state
+            session.pop("level", None)
+            session.pop("left", None)
+        session.update(kw)
+        write_state(session["state"], **{k: v for k, v in session.items() if k != "state"})
+
+    take_control()
+    deadline = time.time() + 170
+    lis = Listener(c, ui)
+    try:
+        while True:
+            text, typed = listen(lis, c, ui, "", deadline)
+            if not text or (not typed and is_stop(text)):
+                ui("released")
+                beep("Bottle")
+                return
+            verdict, text = confirm(text, c, ui, deadline) if not typed else ("send", text)
+            if verdict == "again":
+                lis.drop_backlog()
+                continue
+            if verdict == "cancel":
+                ui("released")
+                beep("Bottle")
+                return
+            break
+    finally:
+        lis.close()
+    how = deliver(sid, entry, text)
+    log(f"dictate_to {sid} ({entry.get('agent')}): {how} {text!r}")
+    ui("sent", text=text, delivery=how)
+    beep("Pop")
+    if how in ("queued", "resumed"):
+        update_session({"session_id": sid}, "working")
 
 
 def prompt_hook():
@@ -799,6 +891,12 @@ def main():
         print("voice-loop OFF")
     elif cmd == "status":
         print(("ON" if FLAG.exists() else "OFF") + (" (muted)" if MUTED.exists() else ""))
+    elif cmd == "dictate" and len(sys.argv) > 2:
+        try:
+            dictate_to(sys.argv[2])
+        except Exception as e:
+            log(f"dictate error: {e!r}")
+            write_state("idle")
     elif cmd == "mute":
         MUTED.touch()
         print("muted")
