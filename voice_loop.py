@@ -429,6 +429,39 @@ def update_session(data, status, prompt=None):
         os.replace(tmp, SESSIONS)
 
 
+# ---------- cancelling a message that was already sent ----------
+
+CANCEL_DIR = STATE_DIR / "cancel"
+CANCEL_REASON = ("Пользователь отменил своё последнее сообщение (кнопка «Отменить» в voice-loop). "
+                 "Не продолжай эту задачу и не делай больше никаких действий. Одной фразой "
+                 "подтверди, что остановился, и перечисли, что уже успел изменить, если что-то менял.")
+
+
+def cancel_marker(sid):
+    return CANCEL_DIR / re.sub(r"[^\w-]", "", sid or "")
+
+
+def is_cancelled(sid, max_age=15 * 60):
+    try:
+        return bool(sid) and time.time() - cancel_marker(sid).stat().st_mtime < max_age
+    except OSError:
+        return False
+
+
+def pretool_hook():
+    """Claude Code PreToolUse: after «Отменить», deny every tool call so Claude stops."""
+    try:
+        data = json.load(sys.stdin)
+    except Exception:
+        return
+    if is_cancelled(data.get("session_id")):
+        print(json.dumps({"hookSpecificOutput": {
+            "hookEventName": "PreToolUse",
+            "permissionDecision": "deny",
+            "permissionDecisionReason": CANCEL_REASON,
+        }}, ensure_ascii=False))
+
+
 # ---------- sending to a chat that is not waiting (HUD: click a recent chat) ----------
 
 CODEX_BIN = ["/Applications/ChatGPT.app/Contents/Resources/codex", "/Applications/Codex.app/Contents/Resources/codex"]
@@ -466,7 +499,8 @@ def dictate_to(sid):
     if not lock:
         return
     title = entry.get("title") or entry.get("project")
-    session = {"project": title, "summary": ""}
+    session = {"project": title, "summary": "", "session_id": sid,
+               "cancellable": entry.get("agent") != "codex"}
 
     def ui(state=None, **kw):
         if state:
@@ -511,6 +545,7 @@ def prompt_hook():
         data = json.load(sys.stdin)
     except Exception:
         data = {}
+    _rm(cancel_marker(data.get("session_id")))  # a new instruction supersedes «Отменить»
     update_session(data, "working", data.get("prompt"))
     if FLAG.exists():
         print(VOICE_CONTEXT)
@@ -560,12 +595,13 @@ def spoken_name(title, max_words=6):
     return " ".join(words[:max_words]) + ("…" if len(words) > max_words else "")
 
 
-def converse(project, summary, c, title=None, announce=True):
+def converse(project, summary, c, title=None, announce=True, sid=None):
     """Speak the summary, then listen for the next instruction.
     Returns the instruction text, or None to let the agent stop."""
     deadline = time.time() + HOOK_TIMEOUT - 25  # leave time for the last transcription
     title = title or project
-    session = {"project": title, "summary": summary}
+    session = {"project": title, "summary": summary, "session_id": sid,
+               "cancellable": bool(sid)}
 
     def ui(state=None, **kw):
         if state:
@@ -731,6 +767,11 @@ def hook():
         data = json.load(sys.stdin)
     except Exception:
         data = {}
+    if is_cancelled(data.get("session_id")):
+        _rm(cancel_marker(data.get("session_id")))
+        update_session(data, "done")
+        log(f"stop after cancel: {data.get('session_id')}")
+        return
     if not FLAG.exists() or os.environ.get("VOICE_LOOP_OFF"):
         update_session(data, "done")
         return
@@ -758,7 +799,8 @@ def hook():
     try:
         title = session_title(data.get("transcript_path"), project)
         reply = converse(project, summarize(text, c["summary_chars"]), c, title,
-                         announce=switched_session(data.get("session_id")))
+                         announce=switched_session(data.get("session_id")),
+                         sid=None if agent_of(data) == "codex" else data.get("session_id"))
     except Exception:
         update_session(data, "done")
         raise
@@ -784,7 +826,8 @@ VOICE_CONTEXT = (
 )
 
 # event -> (subcommand, timeout)
-HOOKS = {"Stop": ("hook", HOOK_TIMEOUT), "UserPromptSubmit": ("prompt", 10)}
+HOOKS = {"Stop": ("hook", HOOK_TIMEOUT), "UserPromptSubmit": ("prompt", 10),
+         "PreToolUse": ("pretool", 5)}
 
 
 def hook_command(sub):
@@ -891,6 +934,14 @@ def main():
         print("voice-loop OFF")
     elif cmd == "status":
         print(("ON" if FLAG.exists() else "OFF") + (" (muted)" if MUTED.exists() else ""))
+    elif cmd == "pretool":
+        try:
+            pretool_hook()
+        except Exception as e:
+            log(f"pretool error: {e!r}")
+    elif cmd == "cancel" and len(sys.argv) > 2:
+        CANCEL_DIR.mkdir(parents=True, exist_ok=True)
+        cancel_marker(sys.argv[2]).touch()
     elif cmd == "dictate" and len(sys.argv) > 2:
         try:
             dictate_to(sys.argv[2])

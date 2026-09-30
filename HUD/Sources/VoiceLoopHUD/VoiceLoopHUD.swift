@@ -33,6 +33,8 @@ struct VoiceState: Decodable, Equatable {
     var level: Double?
     var left: Double?
     var delivery: String?  // queued | resumed | clipboard (message to a recent chat)
+    var session_id: String?
+    var cancellable: Bool?
     var t: Double
 }
 
@@ -101,7 +103,9 @@ final class Model {
         switch s.state {
         case "speaking", "listening", "transcribing", "confirming":
             return age < 200 ? s : nil  // hook dies at 180 s
-        case "sent": return age < (s.delivery == "clipboard" ? 12 : 4) ? s : nil
+        case "sent":
+            let linger: Double = s.delivery == "clipboard" ? 12 : (s.cancellable == true ? 10 : 4)
+            return age < linger ? s : nil
         case "released": return age < 1.5 ? s : nil
         default: return nil
         }
@@ -160,6 +164,13 @@ final class Model {
         p.executableURL = URL(fileURLWithPath: loc.python)
         p.arguments = [loc.script, "dictate", session.id]
         try? p.run()
+    }
+
+    /// «Отменить» after sending: Claude's PreToolUse hook then denies every action and it stops.
+    func cancelSent(_ sessionID: String) {
+        let dir = stateDir.appendingPathComponent("cancel")
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        FileManager.default.createFile(atPath: dir.appendingPathComponent(sessionID).path, contents: nil)
     }
 
     func reply(_ text: String) {
@@ -354,6 +365,8 @@ struct ConversationView: View {
     @Bindable var model: Model
     let s: VoiceState
     @State private var typed = ""
+    @State private var editMode = false
+    @State private var cancelled = false
     @FocusState private var editing: Bool
 
     var body: some View {
@@ -361,6 +374,8 @@ struct ConversationView: View {
             HStack(spacing: 8) {
                 icon.font(.system(size: 15, weight: .semibold)).frame(width: 20)
                 Text(title).font(.system(size: 13, weight: .semibold))
+                    .lineLimit(1)
+                    .fixedSize()
                 if let project = s.project {
                     Text(project).font(.system(size: 12)).foregroundStyle(.secondary).lineLimit(1)
                 }
@@ -369,6 +384,19 @@ struct ConversationView: View {
                     Text("\(Int(left.rounded(.up))) с")
                         .font(.system(size: 12).monospacedDigit())
                         .foregroundStyle(.secondary)
+                }
+                if s.state == "confirming" && !editMode {
+                    Button("Отмена") { model.send("cancel") }
+                        .controlSize(.small)
+                }
+                if s.state == "sent", s.cancellable == true, s.delivery != "clipboard",
+                   let sid = s.session_id, !cancelled {
+                    Button("Отменить") {
+                        model.cancelSent(sid)
+                        cancelled = true
+                    }
+                    .controlSize(.small)
+                    .help("Claude остановится: все его следующие действия будут запрещены")
                 }
             }
 
@@ -380,26 +408,40 @@ struct ConversationView: View {
                 Text(line)
                     .font(.system(size: 12))
                     .foregroundStyle(s.state == "speaking" ? .secondary : .primary)
-                    .lineLimit(5)
+                    .lineLimit(s.state == "confirming" || s.state == "sent" ? 12 : 5)
                     .fixedSize(horizontal: false, vertical: true)
+                    .textSelection(.enabled)
             }
 
             if s.state == "confirming" {
-                TextField("Исправьте и нажмите ↩", text: $typed, axis: .vertical)
-                    .textFieldStyle(.roundedBorder)
-                    .font(.system(size: 12))
-                    .lineLimit(1...5)
-                    .focused($editing)
-                    .onAppear { typed = s.text ?? "" }
-                    .onChange(of: editing) { _, now in if now { model.send("hold") } }
-                    .onSubmit { model.reply(typed); typed = "" }
-                HStack {
-                    Button("Отменить") { model.send("cancel") }
-                    Button("Сказать заново") { model.send("again") }
-                    Spacer()
-                    Button("Отправить") { editing ? model.reply(typed) : model.send("send") }
+                if editMode {
+                    TextField("Исправьте и нажмите ↩", text: $typed, axis: .vertical)
+                        .textFieldStyle(.roundedBorder)
+                        .font(.system(size: 12))
+                        .lineLimit(1...6)
+                        .focused($editing)
+                        .onSubmit { model.reply(typed) }
+                    HStack {
+                        Button("Отмена") { model.send("cancel") }
+                        Spacer()
+                        Button("Отправить") { model.reply(typed) }
+                    }
+                    .controlSize(.small)
+                } else {
+                    HStack(spacing: 12) {
+                        Button("Изменить") {
+                            typed = s.text ?? ""
+                            editMode = true
+                            editing = true
+                            model.send("hold")  // stop the countdown while editing
+                        }
+                        Button("Сказать заново") { model.send("again") }
+                        Spacer()
+                        Button("Отправить сейчас") { model.send("send") }
+                    }
+                    .buttonStyle(.link)
+                    .font(.system(size: 11))
                 }
-                .controlSize(.small)
             }
 
             if s.state == "speaking" || s.state == "listening" {
@@ -433,7 +475,7 @@ struct ConversationView: View {
         case _ where s.state == "sent" && s.delivery == "clipboard":
             "Скопировано. Вставьте в чат «\(s.project ?? "")» в Claude: ⌘V и ↩\n\n\(s.text ?? "")"
         case "listening", "transcribing", "sent": s.text
-        case "confirming": nil  // shown in the editable field
+        case "confirming": editMode ? nil : s.text
         default: nil
         }
     }
@@ -443,7 +485,9 @@ struct ConversationView: View {
         case "speaking": "Говорю"
         case "listening": "Слушаю"
         case "transcribing": "Распознаю…"
-        case "confirming": s.left.map { "Отправлю через \(Int($0.rounded(.up))) с" } ?? "Отправлю, когда нажмёте ↩"
+        case "confirming": editMode ? "Исправьте текст"
+            : s.left.map { "Отправлю через \(Int($0.rounded(.up))) с" } ?? "Отправлю, когда нажмёте ↩"
+        case "sent" where cancelled: "Отменено, Claude остановится"
         case "sent": s.delivery == "clipboard" ? "В буфере обмена" : s.delivery == "queued" ? "Добавлено в Codex" : "Отправлено"
         case "released": "Сессия отпущена"
         default: ""

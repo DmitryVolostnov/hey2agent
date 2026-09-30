@@ -175,3 +175,45 @@ class Deliver(unittest.TestCase):
         how, calls = self.run_with({"agent": "claude-desktop"})
         self.assertEqual(how, "clipboard")
         self.assertEqual(calls, [["pbcopy"], ["open", "-a", "Claude"]])
+
+
+class CancelAfterSend(unittest.TestCase):
+    def setUp(self):
+        import io
+        self.io = io
+        self.dir = tempfile.TemporaryDirectory()
+        d = Path(self.dir.name)
+        self.saved = (v.STATE_DIR, v.CANCEL_DIR, v.SESSIONS, v.FLAG)
+        v.STATE_DIR, v.CANCEL_DIR, v.SESSIONS, v.FLAG = d, d / "cancel", d / "sessions.json", d / "on"
+        v.CANCEL_DIR.mkdir()
+
+    def tearDown(self):
+        v.STATE_DIR, v.CANCEL_DIR, v.SESSIONS, v.FLAG = self.saved
+        sys.stdin = sys.__stdin__
+        self.dir.cleanup()
+
+    def call(self, fn, payload):
+        from contextlib import redirect_stdout
+        sys.stdin = self.io.StringIO(json.dumps(payload))
+        out = self.io.StringIO()
+        with redirect_stdout(out):
+            fn()
+        return out.getvalue()
+
+    def test_deny_only_after_cancel(self):
+        self.assertEqual(self.call(v.pretool_hook, {"session_id": "s1"}), "")
+        v.cancel_marker("s1").touch()
+        out = json.loads(self.call(v.pretool_hook, {"session_id": "s1"}))
+        self.assertEqual(out["hookSpecificOutput"]["permissionDecision"], "deny")
+        self.assertEqual(self.call(v.pretool_hook, {"session_id": "other"}), "")
+
+    def test_stop_after_cancel_is_silent_and_clears(self):
+        v.FLAG.touch()
+        v.cancel_marker("s1").touch()
+        self.assertEqual(self.call(v.hook, {"session_id": "s1", "cwd": "/tmp/p"}), "")
+        self.assertFalse(v.cancel_marker("s1").exists())
+
+    def test_new_prompt_clears_cancel(self):
+        v.cancel_marker("s1").touch()
+        self.call(v.prompt_hook, {"session_id": "s1", "cwd": "/tmp/p", "prompt": "новое"})
+        self.assertFalse(v.is_cancelled("s1"))
