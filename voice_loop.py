@@ -31,6 +31,7 @@ STATE_DIR = HOME / ".voice-loop"
 FLAG = STATE_DIR / "enabled"
 LOCK = STATE_DIR / "lock"
 LOG = STATE_DIR / "log.txt"
+LAST = STATE_DIR / "last.json"  # dedupe: the Stop hook can fire twice for one turn
 CONFIG = STATE_DIR / "config.json"
 CLAUDE_SETTINGS = HOME / ".claude" / "settings.json"
 SCRIPT = Path(__file__).resolve()
@@ -43,7 +44,7 @@ DEFAULTS = {
     "speech_margin_db": 12,      # speech = this much louder than the room noise floor
     "min_floor_db": -60,         # floor never assumed quieter than this
     "silence_sec": 2.0,         # pause that ends the utterance
-    "wait_sec": 8.0,             # give up if no speech starts within this
+    "wait_sec": 15.0,            # give up if no speech starts within this
     "max_sec": 90.0,             # hard cap on one utterance
     "language": "ru",            # whisper language: ru | en | auto (auto is slower, misfires on short phrases)
     "whisper": "/opt/homebrew/bin/whisper-cli",
@@ -244,7 +245,7 @@ def hook():
         return
     c = cfg()
     project = Path(data.get("cwd") or os.getcwd()).name
-    log(f"stop: project={project} entry={os.environ.get('CLAUDE_CODE_ENTRYPOINT')} "
+    log(f"stop: project={project} session={data.get('session_id')} entry={os.environ.get('CLAUDE_CODE_ENTRYPOINT')} "
         f"active={data.get('stop_hook_active')}")
 
     STATE_DIR.mkdir(exist_ok=True)
@@ -260,7 +261,17 @@ def hook():
                 return
             time.sleep(0.5)
 
-    summary = summarize(last_assistant_text(data), c["summary_chars"])
+    text = last_assistant_text(data)
+    key = f"{data.get('session_id')}:{hash(text)}"
+    try:
+        last = json.loads(LAST.read_text())
+    except Exception:
+        last = {}
+    if last.get("key") == key and time.time() - last.get("at", 0) < 300:
+        log("duplicate stop for the same turn, skipping")
+        return
+    LAST.write_text(json.dumps({"key": key, "at": time.time()}))
+    summary = summarize(text, c["summary_chars"])
     say(f"{project}: готово. {summary}", c)
     wav = record(c)
     if not wav:
