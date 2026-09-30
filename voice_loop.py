@@ -32,6 +32,8 @@ STATE_DIR = HOME / ".voice-loop"
 FLAG = STATE_DIR / "enabled"
 LOCK = STATE_DIR / "lock"
 LOG = STATE_DIR / "log.txt"
+STATE = STATE_DIR / "state.json"      # read by the HUD
+CONTROL = STATE_DIR / "control"       # written by the HUD: send | cancel
 LAST = STATE_DIR / "last.json"  # dedupe: the Stop hook can fire twice for one turn
 CONFIG = STATE_DIR / "config.json"
 CLAUDE_SETTINGS = HOME / ".claude" / "settings.json"
@@ -44,8 +46,9 @@ DEFAULTS = {
     "mic": "default",            # avfoundation audio device name or index
     "speech_margin_db": 12,      # speech = this much louder than the room noise floor
     "min_floor_db": -60,         # floor never assumed quieter than this
-    "silence_sec": 2.0,         # pause that ends the utterance
-    "wait_sec": 15.0,            # give up if no speech starts within this
+    "silence_sec": 1.2,          # pause that ends a phrase
+    "wait_sec": 5.0,             # give up if no speech starts within this after the cue
+    "hold_sec": 30.0,            # after «подожди»: how long to wait for the continuation
     "max_sec": 90.0,             # hard cap on one utterance
     "language": "ru",            # whisper language: ru | en | auto (auto is slower, misfires on short phrases)
     "whisper": "/opt/homebrew/bin/whisper-cli",
@@ -60,6 +63,12 @@ DEFAULTS = {
 
 STOP_WORDS = {"стоп", "хватит", "всё", "все", "ничего", "пока", "не надо", "отбой",
               "stop", "nothing", "that's it", "no"}
+
+# Said at the end of a phrase.
+SEND_WORDS = ["отправляй", "отправить", "отправь", "отправка", "send it", "send"]
+HOLD_WORDS = ["надо подумать", "дай подумать", "подожди", "подождите", "секунду", "секундочку",
+              "wait"]
+CANCEL_WORDS = ["отмена", "отменить", "отмени", "cancel"]
 
 # Classic whisper hallucinations on silence / noise.
 HALLUCINATIONS = ["субтитры", "продолжение следует", "спасибо за просмотр", "dimatorzok",
@@ -150,69 +159,145 @@ def beep(name="Tink"):
     subprocess.run(["afplay", f"/System/Library/Sounds/{name}.aiff"], check=False)
 
 
-def record(c, cue="Tink"):
-    """Start the mic, calibrate, play the cue, record until a pause after speech.
-    Returns wav path, or None if nobody spoke.
+def write_state(state, **kw):
+    kw.update(state=state, t=time.time())
+    tmp = STATE.with_suffix(".tmp")
+    tmp.write_text(json.dumps(kw, ensure_ascii=False))
+    os.replace(tmp, STATE)
+
+
+def take_control():
+    try:
+        cmd = CONTROL.read_text().strip()
+        CONTROL.unlink()
+        return cmd
+    except OSError:
+        return None
+
+
+class Listener:
+    """Keeps the mic open across phrases (ffmpeg takes ~1 s to open the device).
 
     Energy VAD on 100 ms frames: the first 0.5 s calibrate the room noise floor;
     speech = 3+ consecutive frames louder than floor + speech_margin_db."""
-    rate, frame = 16000, 1600  # 100 ms
-    cmd = ["ffmpeg", "-hide_banner", "-nostdin", "-loglevel", "error",
-           "-f", "avfoundation", "-i", f":{c['mic']}",
-           "-ac", "1", "-ar", str(rate), "-f", "s16le", "-"]
-    # ffmpeg takes ~1 s to open the device, so the cue plays only once audio flows.
-    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-    pcm = bytearray()
-    floor, calib = None, []
-    loud_run = quiet = 0
-    speech_at = None
-    frames = skip_until = 0
-    try:
+
+    RATE, FRAME = 16000, 1600  # 100 ms
+
+    def __init__(self, c, ui):
+        self.c, self.ui = c, ui
+        cmd = ["ffmpeg", "-hide_banner", "-nostdin", "-loglevel", "error",
+               "-f", "avfoundation", "-i", f":{c['mic']}",
+               "-ac", "1", "-ar", str(self.RATE), "-f", "s16le", "-"]
+        self.p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+        calib = [self._frame()[1] for _ in range(5)]
+        self.floor = max(sorted(calib)[2], c["min_floor_db"])
+
+    def _frame(self):
+        chunk = self.p.stdout.read(self.FRAME * 2)
+        if len(chunk) < self.FRAME * 2:
+            raise EOFError
+        samples = array.array("h", chunk)
+        rms = math.sqrt(sum(s * s for s in samples) / len(samples)) or 1
+        return chunk, 20 * math.log10(rms / 32768)
+
+    def phrase(self, wait_sec, cue=None):
+        """Record one phrase. Returns (pcm, how): how = pause | send | cancel | timeout."""
+        if cue:
+            subprocess.Popen(["afplay", f"/System/Library/Sounds/{cue}.aiff"])
+        pcm, frames, loud_run, quiet, speaking = bytearray(), 0, 0, 0, False
+        skip = 4 if cue else 0  # don't hear our own cue
         while True:
-            chunk = p.stdout.read(frame * 2)
-            if len(chunk) < frame * 2:
-                break
-            pcm += chunk
+            chunk, db = self._frame()
             frames += 1
             t = frames / 10
-            samples = array.array("h", chunk)
-            rms = math.sqrt(sum(s * s for s in samples) / len(samples)) or 1
-            db = 20 * math.log10(rms / 32768)
-            if floor is None:
-                calib.append(db)
-                if len(calib) == 5:
-                    floor = max(sorted(calib)[2], c["min_floor_db"])
-                    if cue:
-                        subprocess.Popen(["afplay", f"/System/Library/Sounds/{cue}.aiff"])
-                    skip_until = frames + 4  # don't hear our own cue
+            cmd = take_control()
+            if cmd == "cancel":
+                return None, "cancel"
+            if cmd == "send":
+                return (pcm if speaking else None), "send"
+            if frames <= skip:
                 continue
-            if frames < skip_until:
-                continue
-            loud = db > floor + c["speech_margin_db"]
-            if speech_at is None:
+            loud = db > self.floor + self.c["speech_margin_db"]
+            if frames % 2 == 0:
+                self.ui(level=max(0.0, min(1.0, (db - self.floor) / 30)),
+                        left=None if speaking else max(0.0, wait_sec - t))
+            if not speaking:
+                pcm += chunk
+                del pcm[:-self.FRAME * 2 * 5]  # keep 0.5 s pre-roll
                 loud_run = loud_run + 1 if loud else 0
                 if loud_run >= 3:
-                    speech_at = t
-                elif t > c["wait_sec"]:
-                    return None
+                    speaking = True
+                elif t > wait_sec:
+                    return None, "timeout"
             else:
+                pcm += chunk
                 quiet = 0 if loud else quiet + 1
-                if quiet >= c["silence_sec"] * 10:
-                    break
-            if t > c["max_sec"]:
-                break
-    finally:
-        p.terminate()
-        p.wait()
-    if speech_at is None:
-        return None
+                if quiet >= self.c["silence_sec"] * 10:
+                    return pcm, "pause"
+                if len(pcm) > self.c["max_sec"] * self.RATE * 2:
+                    return pcm, "pause"
+
+    def close(self):
+        self.p.terminate()
+        self.p.wait()
+
+
+def to_wav(pcm):
     wav = tempfile.mktemp(suffix=".wav", prefix="voice-loop-")
     with wave.open(wav, "wb") as w:
         w.setnchannels(1)
         w.setsampwidth(2)
-        w.setframerate(rate)
+        w.setframerate(Listener.RATE)
         w.writeframes(bytes(pcm))
     return wav
+
+
+def strip_tail(text, words):
+    """If text ends with one of words, return text without it; else None."""
+    t = text.rstrip(" .,!?…")
+    low = t.lower()
+    for w in words:
+        if low == w or re.search(rf"[\s,.!?—-]{re.escape(w)}$", low):
+            return t[: len(t) - len(w)].rstrip(" .,!?—-")
+    return None
+
+
+def dictate(c, ui):
+    """Listen for one instruction. Returns text, or None to release the session."""
+    lis = Listener(c, ui)
+    parts, wait, cue = [], c["wait_sec"], "Tink"
+    try:
+        while True:
+            ui("listening", text=" ".join(parts))
+            pcm, how = lis.phrase(wait, cue)
+            if how == "cancel":
+                return None
+            if pcm is None:  # timeout, or «send» with nothing new
+                return " ".join(parts) or None
+            ui("transcribing", text=" ".join(parts))
+            wav = to_wav(pcm)
+            text = transcribe(wav, c)
+            _rm(wav)
+            log(f"phrase: {text!r} ({how})")
+            if strip_tail(text, CANCEL_WORDS) is not None:
+                return None
+            if how == "send":
+                parts.append(text)
+                break
+            sent = strip_tail(text, SEND_WORDS)
+            if sent is not None:
+                parts.append(sent)
+                break
+            held = strip_tail(text, HOLD_WORDS)
+            if held is not None:
+                parts.append(held)
+                wait, cue = c["hold_sec"], "Morse"
+                continue
+            parts.append(text)
+            break
+    finally:
+        lis.close()
+    return " ".join(p for p in parts if p).strip() or None
 
 
 def transcribe(wav, c):
@@ -279,18 +364,30 @@ def hook():
         return
     LAST.write_text(json.dumps({"key": key, "at": time.time()}))
     summary = summarize(text, c["summary_chars"])
+    session = {"project": project, "summary": summary}
+
+    def ui(state=None, **kw):
+        if state:
+            session["state"] = state
+            session.pop("level", None)
+            session.pop("left", None)
+        session.update(kw)
+        write_state(session["state"], **{k: v for k, v in session.items() if k != "state"})
+
+    take_control()  # drop stale clicks
+    ui("speaking")
     say(f"{project}: готово. {summary}", c)
-    wav = record(c)
-    if not wav:
-        log("no speech")
-        beep("Bottle")
-        return
-    text = transcribe(wav, c)
-    _rm(wav)
+    try:
+        text = dictate(c, ui)
+    except Exception:
+        ui("idle")
+        raise
     log(f"heard: {text!r}")
-    if is_stop(text):
+    if not text or is_stop(text):
+        ui("released")
         beep("Bottle")
         return
+    ui("sent", text=text)
     beep("Pop")
     print(json.dumps({
         "decision": "block",
@@ -379,14 +476,7 @@ def main():
     elif cmd == "say":
         say(" ".join(sys.argv[2:]) or "Проверка голоса", cfg())
     elif cmd == "listen":
-        c = cfg()
-        wav = record(c)
-        if not wav:
-            print("(no speech)")
-            return
-        t0 = time.time()
-        print(repr(transcribe(wav, c)), f"[{time.time() - t0:.1f}s]")
-        _rm(wav)
+        print(repr(dictate(cfg(), lambda *a, **k: None)))
     else:
         print(__doc__)
 
