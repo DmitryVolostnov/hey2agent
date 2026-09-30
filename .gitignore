@@ -3,3 +3,6 @@ __pycache__/
 .build/
 HUD/VoiceLoopHUD.app/
 .venv/
+iOS/build/
+iOS/VoiceLoopRemote.xcodeproj/
+Link/.build/

@@ -18,6 +18,8 @@ cat > $APP/Contents/Info.plist <<PLIST
   <key>CFBundleShortVersionString</key><string>0.1</string>
   <key>LSMinimumSystemVersion</key><string>15.0</string>
   <key>LSUIElement</key><true/>
+  <key>NSLocalNetworkUsageDescription</key><string>voice-loop показывает плашку на вашем iPhone в домашней сети. Данные шифруются и не уходят в интернет.</string>
+  <key>NSBonjourServices</key><array><string>_voiceloop._tcp</string></array>
   <key>NSMicrophoneUsageDescription</key><string>voice-loop слушает ваш ответ агенту, когда вы нажимаете на чат в плашке. Звук распознаётся локально и никуда не отправляется.</string>
 </dict></plist>
 PLIST

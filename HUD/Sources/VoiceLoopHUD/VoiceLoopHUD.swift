@@ -76,6 +76,9 @@ final class Model {
     var config: [String: Any] = [:]
     var voices: [Voice] = []
     var knownProjects: [String] = []
+    var pairingCode = ""
+    var phones = 0
+    var onNewPairingCode: (() -> Void)?
 
     var launchAtLogin: Bool = SMAppService.mainApp.status == .enabled {
         didSet {
@@ -655,6 +658,12 @@ struct SettingsMenu: View {
                 }
             }
             Divider()
+            Section("iPhone") {
+                Text("Код привязки: \(model.pairingCode.prefix(3)) \(model.pairingCode.suffix(3))")
+                Text(model.phones > 0 ? "Подключено: \(model.phones)" : "Телефон не подключён")
+                Button("Новый код (отключит телефон)") { model.onNewPairingCode?() }
+            }
+            Divider()
             Toggle("Запускать при входе в систему", isOn: $model.launchAtLogin)
             Toggle("Показывать плашку", isOn: $model.showHUD)
             Button("Открыть лог") { NSWorkspace.shared.open(logURL) }
@@ -733,11 +742,15 @@ final class HUDPanel: NSPanel {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let model = Model()
     private var panel: HUDPanel?
+    private var link: LinkServer?
     private var placed = false
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
         panel = HUDPanel(model: model)
+        let server = LinkServer(model: model)
+        link = server
+        model.onNewPairingCode = { [weak server] in server?.newCode() }
         Task { @MainActor in
             while true {
                 tick()
@@ -748,6 +761,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func tick() {
         model.poll()
+        link?.tick()
         guard let panel else { return }
         if model.visible {
             panel.fitKeepingTop()

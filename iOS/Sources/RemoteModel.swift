@@ -1,0 +1,108 @@
+import Foundation
+import Network
+import Observation
+import VoiceLoopLink
+
+/// Finds the Mac over Bonjour, connects with the pairing code, mirrors its HUD.
+@MainActor @Observable
+final class RemoteModel {
+    enum Status: Equatable { case searching, connecting, connected, badCode, lost }
+
+    var macs: [NWBrowser.Result] = []
+    var status: Status = .searching
+    var snapshot: LinkSnapshot?
+    var code = UserDefaults.standard.string(forKey: "code") ?? ""
+    var macName = UserDefaults.standard.string(forKey: "mac")
+
+    private var browser: NWBrowser?
+    private var link: LinkConnection?
+    private var retry: Task<Void, Never>?
+
+    var paired: Bool { macName != nil && code.count == 6 }
+
+    func start() {
+        let b = NWBrowser(for: .bonjour(type: VoiceLoopLink.serviceType, domain: nil), using: .tcp)
+        b.browseResultsChangedHandler = { [weak self] results, _ in
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                self.macs = Array(results)
+                self.autoConnect()
+            }
+        }
+        b.start(queue: .main)
+        browser = b
+    }
+
+    static func name(_ r: NWBrowser.Result) -> String {
+        if case let .service(name, _, _, _) = r.endpoint { return name }
+        return "\(r.endpoint)"
+    }
+
+    private func autoConnect() {
+        guard paired, link == nil, status != .badCode,
+              let r = macs.first(where: { Self.name($0) == macName }) else { return }
+        connect(r)
+    }
+
+    func pair(_ r: NWBrowser.Result, code: String) {
+        self.code = code
+        macName = Self.name(r)
+        status = .searching
+        connect(r)
+    }
+
+    func unpair() {
+        link?.cancel()
+        link = nil
+        macName = nil
+        snapshot = nil
+        status = .searching
+        UserDefaults.standard.removeObject(forKey: "mac")
+    }
+
+    private func connect(_ r: NWBrowser.Result) {
+        link?.cancel()
+        status = .connecting
+        let c = LinkConnection(NWConnection(to: r.endpoint, using: VoiceLoopLink.parameters(code: code)))
+        c.onState = { [weak self, weak c] state in
+            guard let self, let c, c === self.link else { return }
+            switch state {
+            case .ready:
+                self.status = .connected
+                UserDefaults.standard.set(self.code, forKey: "code")
+                UserDefaults.standard.set(self.macName, forKey: "mac")
+            case .failed(let err), .waiting(let err):
+                if case .tls = err, self.snapshot == nil {
+                    self.status = .badCode  // PSK mismatch: wrong pairing code
+                } else {
+                    self.status = .lost
+                }
+                self.link?.cancel()
+                self.link = nil
+                self.scheduleRetry()
+            case .cancelled:
+                break
+            default:
+                break
+            }
+        }
+        c.onEnvelope = { [weak self] env in
+            if let s = env.snapshot { self?.snapshot = s }
+        }
+        link = c
+        c.start()
+    }
+
+    private func scheduleRetry() {
+        guard status != .badCode else { return }
+        retry?.cancel()
+        retry = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(2))
+            self?.autoConnect()
+        }
+    }
+
+    func send(_ cmd: LinkCommand) {
+        link?.send(LinkEnvelope(command: cmd))
+    }
+}
