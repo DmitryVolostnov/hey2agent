@@ -17,6 +17,8 @@ final class RemoteModel {
     private var browser: NWBrowser?
     private var link: LinkConnection?
     private var retry: Task<Void, Never>?
+    private var lastMessage = Date()
+    private var watchdog: Task<Void, Never>?
 
     var paired: Bool { macName != nil && code.count == 6 }
 
@@ -31,6 +33,19 @@ final class RemoteModel {
         }
         b.start(queue: .main)
         browser = b
+        // The Mac sends at least every 5 s; silence for 15 s means the connection is dead
+        // (e.g. the Mac slept or the HUD restarted) even if TCP hasn't noticed yet.
+        watchdog = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(5))
+                guard let self, self.link != nil, self.status == .connected,
+                      Date().timeIntervalSince(self.lastMessage) > 15 else { continue }
+                self.link?.cancel()
+                self.link = nil
+                self.status = .lost
+                self.autoConnect()
+            }
+        }
     }
 
     static func name(_ r: NWBrowser.Result) -> String {
@@ -69,6 +84,7 @@ final class RemoteModel {
             switch state {
             case .ready:
                 self.status = .connected
+                self.lastMessage = Date()
                 UserDefaults.standard.set(self.code, forKey: "code")
                 UserDefaults.standard.set(self.macName, forKey: "mac")
             case .failed(let err), .waiting(let err):
@@ -87,7 +103,8 @@ final class RemoteModel {
             }
         }
         c.onEnvelope = { [weak self] env in
-            if let s = env.snapshot { self?.snapshot = s }
+            self?.lastMessage = Date()
+            if let s = env.snapshot, s != self?.snapshot { self?.snapshot = s }
         }
         link = c
         c.start()

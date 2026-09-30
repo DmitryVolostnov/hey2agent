@@ -43,7 +43,10 @@ struct PairingView: View {
                     TextField("6 цифр", text: $code)
                         .keyboardType(.numberPad)
                         .font(.title2.monospacedDigit())
-                        .onChange(of: code) { _, new in code = String(new.filter(\.isNumber).prefix(6)) }
+                        .onChange(of: code) { _, new in
+                            let clean = String(new.filter(\.isNumber).prefix(6))
+                            if clean != new { code = clean }
+                        }
                 } header: {
                     Text("Код привязки")
                 } footer: {

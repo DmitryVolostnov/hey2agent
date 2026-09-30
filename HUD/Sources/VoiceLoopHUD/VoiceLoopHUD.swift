@@ -117,20 +117,39 @@ final class Model {
 
     var visible: Bool { showHUD && (enabled || active != nil) }
 
+    private var stateStamp: Date?
+    private var sessionsStamp: Date?
+    private var sessionsCheckedAt = Date.distantPast
+
+    private static func mtime(_ url: URL) -> Date? {
+        (try? FileManager.default.attributesOfItem(atPath: url.path))?[.modificationDate] as? Date
+    }
+
+    /// Cheap when nothing changed: files are re-read only if their mtime moved
+    /// (sessions also every 5 s, because liveness depends on transcript age).
     func poll() {
         enabled = FileManager.default.fileExists(atPath: flagURL.path)
         muted = FileManager.default.fileExists(atPath: mutedURL.path)
-        if let data = try? Data(contentsOf: stateURL),
-           let s = try? JSONDecoder().decode(VoiceState.self, from: data), s != current {
-            current = s
+        let st = Self.mtime(stateURL)
+        if st != stateStamp {
+            stateStamp = st
+            if let data = try? Data(contentsOf: stateURL),
+               let s = try? JSONDecoder().decode(VoiceState.self, from: data), s != current {
+                current = s
+            }
         }
-        let all = Self.loadSessions()
-        let live = all.filter { $0.status != "idle" }.sorted { $0.since < $1.since }
-        let idle = Array(all.filter { $0.status == "idle" }
-            .sorted { ($0.ended ?? $0.updated) > ($1.ended ?? $1.updated) }.prefix(8))
-        if live != sessions { sessions = live }
-        if idle != recent { recent = idle }
-        for p in all.map(\.project) where !knownProjects.contains(p) { knownProjects.append(p) }
+        let ss = Self.mtime(sessionsURL)
+        if ss != sessionsStamp || Date().timeIntervalSince(sessionsCheckedAt) > 5 {
+            sessionsStamp = ss
+            sessionsCheckedAt = Date()
+            let all = Self.loadSessions()
+            let live = all.filter { $0.status != "idle" }.sorted { $0.since < $1.since }
+            let idle = Array(all.filter { $0.status == "idle" }
+                .sorted { ($0.ended ?? $0.updated) > ($1.ended ?? $1.updated) }.prefix(8))
+            if live != sessions { sessions = live }
+            if idle != recent { recent = idle }
+            for p in all.map(\.project) where !knownProjects.contains(p) { knownProjects.append(p) }
+        }
     }
 
     /// All known sessions. One "in progress" whose transcript hasn't changed for 20 min was most
@@ -754,7 +773,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         Task { @MainActor in
             while true {
                 tick()
-                try? await Task.sleep(for: .milliseconds(100))
+                // Fast while talking (mic level, countdown), relaxed when idle.
+                try? await Task.sleep(for: .milliseconds(model.active != nil ? 100 : 350))
             }
         }
     }

@@ -52,6 +52,16 @@ The process that runs your agent (Terminal, iTerm, Claude app) needs microphone 
 Optional neural voice: `python3 -m venv .venv && .venv/bin/pip install piper-tts`, then pick a Piper
 voice in the HUD settings (it sounds nicer in Russian but mispronounces English words).
 
+## iPhone remote (optional)
+Keep your phone next to the laptop as an always-on screen: the same HUD, sessions in progress,
+recent chats, send / cancel / mute, typed replies. The phone talks to the Mac **directly over your
+Wi-Fi** (Bonjour + TLS with a key derived from a 6-digit pairing code shown in the HUD settings) —
+no server, nothing leaves your network.
+
+```bash
+cd iOS && xcodegen generate && open VoiceLoopRemote.xcodeproj   # pick your iPhone, Run
+```
+
 ## How it works
 `voice_loop.py hook` runs on the agent's Stop event: summary → TTS → energy VAD over `ffmpeg` mic
 input → `whisper-cli` → `{"decision":"block","reason":"<your reply>"}`. A `UserPromptSubmit` hook keeps

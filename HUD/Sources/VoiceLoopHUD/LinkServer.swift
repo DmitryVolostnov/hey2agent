@@ -8,7 +8,9 @@ final class LinkServer {
     private let model: Model
     private var listener: NWListener?
     private var clients: [ObjectIdentifier: LinkConnection] = [:]
+    private var pending: [ObjectIdentifier: LinkConnection] = [:]
     private var last: LinkSnapshot?
+    private var lastSent = Date.distantPast
     private(set) var code: String
 
     init(model: Model) {
@@ -48,14 +50,17 @@ final class LinkServer {
     private func accept(_ nw: NWConnection) {
         let c = LinkConnection(nw)
         let key = ObjectIdentifier(c)
+        pending[key] = c  // keep it alive during the TLS handshake
         c.onState = { [weak self, weak c] state in
             guard let self, let c else { return }
             switch state {
             case .ready:
+                self.pending[key] = nil
                 self.clients[key] = c
                 self.model.phones = self.clients.count
                 c.send(LinkEnvelope(snapshot: self.model.snapshot()))
             case .failed, .cancelled:
+                self.pending[key] = nil
                 self.clients[key] = nil
                 self.model.phones = self.clients.count
             default:
@@ -68,12 +73,14 @@ final class LinkServer {
         c.start()
     }
 
-    /// Called from the HUD tick: push a snapshot whenever something changed.
+    /// Called from the HUD tick: push a snapshot whenever something changed, and at least
+    /// every 5 s as a heartbeat so the phone notices a dead connection.
     func tick() {
         guard !clients.isEmpty else { return }
         let snap = model.snapshot()
-        guard snap != last else { return }
+        guard snap != last || Date().timeIntervalSince(lastSent) > 5 else { return }
         last = snap
+        lastSent = Date()
         clients.values.forEach { $0.send(LinkEnvelope(snapshot: snap)) }
     }
 
