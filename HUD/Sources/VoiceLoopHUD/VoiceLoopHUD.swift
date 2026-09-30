@@ -27,17 +27,20 @@ final class Model {
     var enabled = FileManager.default.fileExists(atPath: flagURL.path)
     var showHUD = true
 
-    /// States worth showing, and how long a finished state lingers.
-    var visible: Bool {
-        guard showHUD, let s = current else { return false }
+    /// Active conversation state, or nil when idle (finished states linger briefly).
+    var active: VoiceState? {
+        guard let s = current else { return nil }
         let age = Date().timeIntervalSince1970 - s.t
         switch s.state {
-        case "speaking", "listening", "transcribing": return age < 200  // hook is killed at 180 s
-        case "sent": return age < 4
-        case "released": return age < 1.5
-        default: return false
+        case "speaking", "listening", "transcribing": return age < 200 ? s : nil  // hook dies at 180 s
+        case "sent": return age < 4 ? s : nil
+        case "released": return age < 1.5 ? s : nil
+        default: return nil
         }
     }
+
+    /// Always visible while voice mode is on: a small pill when idle, full panel when active.
+    var visible: Bool { showHUD && (enabled || active != nil) }
 
     func poll() {
         enabled = FileManager.default.fileExists(atPath: flagURL.path)
@@ -65,7 +68,27 @@ struct HUDView: View {
     let model: Model
 
     var body: some View {
-        let s = model.current
+        if let s = model.active {
+            panel(s)
+        } else {
+            idlePill
+        }
+    }
+
+    private var idlePill: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "waveform").foregroundStyle(.secondary)
+            Text("Голос включён").font(.system(size: 11, weight: .medium))
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
+        .background(.regularMaterial, in: Capsule())
+        .overlay(Capsule().strokeBorder(.white.opacity(0.08)))
+        .padding(8)
+        .frame(width: 396)  // same width as the panel so it stays centred where the user put it
+    }
+
+    private func panel(_ s: VoiceState?) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 8) {
                 icon(s?.state)
