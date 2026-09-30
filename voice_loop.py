@@ -679,13 +679,13 @@ def spoken_name(title, max_words=6):
     return " ".join(words[:max_words]) + ("…" if len(words) > max_words else "")
 
 
-def converse(project, summary, c, title=None, announce=True, sid=None):
+def converse(project, summary, c, title=None, announce=True, sid=None, cancellable=True):
     """Speak the summary, then listen for the next instruction.
     Returns the instruction text, or None to let the agent stop."""
     deadline = time.time() + HOOK_TIMEOUT - 25  # leave time for the last transcription
     title = title or project
     session = {"project": title, "summary": summary, "session_id": sid,
-               "cancellable": bool(sid)}
+               "cancellable": bool(sid) and cancellable}
 
     def ui(state=None, **kw):
         if state:
@@ -884,7 +884,7 @@ def hook():
         title = session_title(data.get("transcript_path"), project)
         reply = converse(project, summarize(text, c["summary_chars"]), c, title,
                          announce=switched_session(data.get("session_id")),
-                         sid=None if agent_of(data) == "codex" else data.get("session_id"))
+                         sid=data.get("session_id"), cancellable=agent_of(data) != "codex")
     except Exception:
         update_session(data, "done")
         raise

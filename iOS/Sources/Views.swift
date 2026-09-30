@@ -185,6 +185,12 @@ struct ConversationCard: View {
                 if state.state == "listening", let left = state.left {
                     Text("\(Int(left.rounded(.up))) с").font(.title3.monospacedDigit()).foregroundStyle(.secondary)
                 }
+                if let sid = state.session_id, ["speaking", "listening", "phone"].contains(state.state) {
+                    Button { send(.open(session: sid)) } label: {
+                        Image(systemName: "arrow.up.forward.app").font(.title2)
+                    }
+                    .accessibilityLabel("Открыть чат на Mac")
+                }
             }
 
             if state.state == "listening" {

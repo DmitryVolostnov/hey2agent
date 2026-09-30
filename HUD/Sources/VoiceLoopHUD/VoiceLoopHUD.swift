@@ -212,6 +212,22 @@ final class Model {
         try? p.run()
     }
 
+    /// «Открыть чат» during a conversation: release the hook silently and jump to the chat.
+    func openActive() {
+        guard let sid = active?.session_id else { return }
+        send("cancel")
+        let entry = (sessions + recent).first { $0.id == sid }
+        if let entry { open(entry) } else { openByID(sid) }
+    }
+
+    private func openByID(_ id: String) {
+        guard let loc = scriptLocation else { return }
+        let p = Process()
+        p.executableURL = URL(fileURLWithPath: loc.python)
+        p.arguments = [loc.script, "open", id]
+        try? p.run()
+    }
+
     func dictate(to session: AgentSession, recording: String? = nil) {
         guard active == nil, dictation?.isRunning != true, let loc = scriptLocation else { return }
         let p = Process()
@@ -451,12 +467,21 @@ struct ConversationView: View {
                     .fixedSize()
                 if let project = s.project {
                     Text(project).font(.system(size: 12)).foregroundStyle(.secondary).lineLimit(1)
+                        .onTapGesture { if s.session_id != nil { model.openActive() } }
+                        .help(s.session_id != nil ? "Открыть этот чат" : "")
                 }
                 Spacer(minLength: 12)
                 if s.state == "listening", let left = s.left {
                     Text("\(Int(left.rounded(.up))) с")
                         .font(.system(size: 12).monospacedDigit())
                         .foregroundStyle(.secondary)
+                }
+                if s.session_id != nil && ["speaking", "listening", "phone"].contains(s.state) {
+                    Button { model.openActive() } label: {
+                        Image(systemName: "arrow.up.forward.app")
+                    }
+                    .buttonStyle(.borderless)
+                    .help("Открыть этот чат и ответить там")
                 }
                 if s.state == "confirming" && !editMode {
                     Button("Отмена") { model.send("cancel") }

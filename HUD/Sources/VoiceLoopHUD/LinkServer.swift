@@ -105,7 +105,11 @@ final class LinkServer {
             }
         case .cancelSent(let id): model.cancelSent(id)
         case .open(let id):
-            if let s = (model.sessions + model.recent).first(where: { $0.id == id }) { model.open(s) }
+            if model.active?.session_id == id {
+                model.openActive()  // jump from a running conversation: release it first
+            } else if let s = (model.sessions + model.recent).first(where: { $0.id == id }) {
+                model.open(s)
+            }
         case .ping:
             break
         case .phoneRecording:
