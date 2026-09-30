@@ -6,6 +6,7 @@ Stdlib only. External tools: ffmpeg (mic), whisper-cli (local STT), say/afplay (
 Nothing leaves the machine.
 
   voice_loop.py on | off | status     toggle via flag file
+  voice_loop.py mute | unmute         meetings: stay silent, HUD still shows finished sessions
   voice_loop.py install | uninstall   add/remove the Stop hook in ~/.claude/settings.json
   voice_loop.py say "text"            test TTS
   voice_loop.py listen                test mic + transcription
@@ -32,6 +33,7 @@ from pathlib import Path
 HOME = Path.home()
 STATE_DIR = HOME / ".voice-loop"
 FLAG = STATE_DIR / "enabled"
+MUTED = STATE_DIR / "muted"           # meetings: no speech, no mic; HUD still lists sessions
 LOCK = STATE_DIR / "lock"
 LOG = STATE_DIR / "log.txt"
 STATE = STATE_DIR / "state.json"      # read by the HUD
@@ -53,6 +55,7 @@ DEFAULTS = {
     "min_floor_db": -60,         # floor never assumed quieter than this
     "silence_sec": 2.0,          # pause that ends a phrase
     "wait_sec": 5.0,             # give up if no speech starts within this after the cue
+    "undo_sec": 3.0,             # recognized text waits this long before sending (0 = off)
     "hold_sec": 30.0,            # after «подожди»: how long to wait for the continuation
     "max_sec": 90.0,             # hard cap on one utterance
     "language": "ru",            # whisper language: ru | en | auto (auto is slower, misfires on short phrases)
@@ -380,7 +383,7 @@ def session_title(transcript_path, fallback):
 
 
 def update_session(data, status, prompt=None):
-    """status: working | waiting | done (removed)."""
+    """status: working | waiting | finished (done while muted) | done (removed)."""
     sid = data.get("session_id")
     if not sid:
         return
@@ -465,7 +468,7 @@ def spoken_name(title, max_words=6):
     return " ".join(words[:max_words]) + ("…" if len(words) > max_words else "")
 
 
-def converse(project, summary, c, title=None):
+def converse(project, summary, c, title=None, announce=True):
     """Speak the summary, then listen for the next instruction.
     Returns the instruction text, or None to let the agent stop."""
     deadline = time.time() + HOOK_TIMEOUT - 25  # leave time for the last transcription
@@ -491,63 +494,102 @@ def converse(project, summary, c, title=None):
 
     take_control()  # drop stale clicks
     ui("speaking")
-    r = speak(f"{spoken_name(title)}. Готово. {summary}", c)
+    # The chat name only when another session spoke last; no «готово» every time.
+    r = speak(f"{spoken_name(title)}. {summary}" if announce else summary, c)
     if r == "cancel":
         return finish(None)
     if r == "text":
         return finish(speak.payload)
 
     lis = Listener(c, ui)
-    parts, wait, cue = [], c["wait_sec"], "Tink"
     try:
         while True:
-            ui("listening", text=" ".join(parts))
-            pcm, how, payload = lis.phrase(wait, cue, deadline)
-            if how == "cancel":
-                return finish(None)
-            if how == "text":
-                return finish(" ".join(parts + [payload]))
-            if how == "repeat":
-                ui("speaking")
-                speak(summary, c)
-                lis.drop_backlog()  # don't transcribe our own voice
-                wait, cue = c["wait_sec"], "Tink"
-                continue
-            if pcm is None:  # timeout, or «send» with nothing new
-                return finish(" ".join(parts))
-            ui("transcribing", text=" ".join(parts))
-            wav = to_wav(pcm)
-            text = transcribe(wav, c)
-            _rm(wav)
-            log(f"phrase: {text!r} ({how})")
-            if strip_tail(text, CANCEL_WORDS) is not None:
-                return finish(None)
-            if not parts and is_repeat(text):
-                ui("speaking")
-                speak(summary, c)
+            text, typed = listen(lis, c, ui, summary, deadline)
+            if typed or not text or is_stop(text):
+                return finish(text)
+            verdict, edited = confirm(text, c, ui, deadline)
+            if verdict == "again":
                 lis.drop_backlog()
-                wait, cue = c["wait_sec"], "Tink"
                 continue
-            if how == "send":
-                parts.append(text)
-                break
-            sent = strip_tail(text, SEND_WORDS)
-            if sent is not None:
-                parts.append(sent)
-                break
-            held = strip_tail(text, HOLD_WORDS)
-            if held is not None:
-                parts.append(held)
-                wait, cue = c["hold_sec"], "Morse"
-                continue
-            parts.append(text)
-            break
+            return finish(None if verdict == "cancel" else edited)
     except Exception:
         ui("idle")
         raise
     finally:
         lis.close()
-    return finish(" ".join(p for p in parts if p).strip())
+
+
+def listen(lis, c, ui, summary, deadline):
+    """One dictated instruction. Returns (text | None, typed)."""
+    parts, wait, cue = [], c["wait_sec"], "Tink"
+    while True:
+        ui("listening", text=" ".join(parts))
+        pcm, how, payload = lis.phrase(wait, cue, deadline)
+        if how == "cancel":
+            return None, False
+        if how == "text":
+            return " ".join(parts + [payload]), True
+        if how == "repeat":
+            ui("speaking")
+            speak(summary, c)
+            lis.drop_backlog()  # don't transcribe our own voice
+            wait, cue = c["wait_sec"], "Tink"
+            continue
+        if pcm is None:  # timeout, or «send» with nothing new
+            return " ".join(parts) or None, False
+        ui("transcribing", text=" ".join(parts))
+        wav = to_wav(pcm)
+        text = transcribe(wav, c)
+        _rm(wav)
+        log(f"phrase: {text!r} ({how})")
+        if strip_tail(text, CANCEL_WORDS) is not None:
+            return None, False
+        if not parts and is_repeat(text):
+            ui("speaking")
+            speak(summary, c)
+            lis.drop_backlog()
+            wait, cue = c["wait_sec"], "Tink"
+            continue
+        if how == "send":
+            parts.append(text)
+            break
+        sent = strip_tail(text, SEND_WORDS)
+        if sent is not None:
+            parts.append(sent)
+            break
+        held = strip_tail(text, HOLD_WORDS)
+        if held is not None:
+            parts.append(held)
+            wait, cue = c["hold_sec"], "Morse"
+            continue
+        parts.append(text)
+        break
+    return " ".join(p for p in parts if p).strip() or None, False
+
+
+def confirm(text, c, ui, deadline):
+    """Grace period before sending: the HUD can cancel, re-dictate, edit or send now.
+    Returns (verdict, text): send | cancel | again."""
+    left = c["undo_sec"]
+    if left <= 0:
+        return "send", text
+    held = False
+    while held or left > 0:
+        ui("confirming", text=text, left=None if held else left)
+        cmd, payload = take_control()
+        if cmd in ("cancel", "again"):
+            return cmd, text
+        if cmd == "send":
+            return "send", text
+        if cmd == "text":
+            return "send", payload or text
+        if cmd == "hold":  # user is editing the text in the HUD
+            held = True
+        if time.time() > deadline:
+            return "send", text
+        time.sleep(0.1)
+        left = round(left - 0.1, 1)
+    return "send", text
 
 
 def acquire_lock(c):
@@ -566,6 +608,17 @@ def acquire_lock(c):
 
 def project_allowed(project, c):
     return not c["projects"] or project in c["projects"]
+
+
+def switched_session(session_id):
+    """True if a different session spoke last (or it was long ago): then say the chat name."""
+    path = STATE_DIR / "last_spoken.json"
+    try:
+        last = json.loads(path.read_text())
+    except Exception:
+        last = {}
+    path.write_text(json.dumps({"session": session_id, "at": time.time()}))
+    return last.get("session") != session_id or time.time() - last.get("at", 0) > 15 * 60
 
 
 def is_duplicate(session_id, text):
@@ -594,6 +647,9 @@ def hook():
     if not project_allowed(project, c):
         update_session(data, "done")
         return
+    if MUTED.exists():
+        update_session(data, "finished")
+        return
     log(f"stop: project={project} session={data.get('session_id')} "
         f"entry={os.environ.get('CLAUDE_CODE_ENTRYPOINT')} active={data.get('stop_hook_active')}")
     update_session(data, "waiting")
@@ -609,7 +665,8 @@ def hook():
     update_session(data, "waiting")
     try:
         title = session_title(data.get("transcript_path"), project)
-        reply = converse(project, summarize(text, c["summary_chars"]), c, title)
+        reply = converse(project, summarize(text, c["summary_chars"]), c, title,
+                         announce=switched_session(data.get("session_id")))
     except Exception:
         update_session(data, "done")
         raise
@@ -741,7 +798,13 @@ def main():
         FLAG.unlink(missing_ok=True)
         print("voice-loop OFF")
     elif cmd == "status":
-        print("ON" if FLAG.exists() else "OFF")
+        print(("ON" if FLAG.exists() else "OFF") + (" (muted)" if MUTED.exists() else ""))
+    elif cmd == "mute":
+        MUTED.touch()
+        print("muted")
+    elif cmd == "unmute":
+        MUTED.unlink(missing_ok=True)
+        print("unmuted")
     elif cmd == "install":
         install()
     elif cmd == "uninstall":

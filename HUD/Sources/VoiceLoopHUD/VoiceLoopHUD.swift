@@ -13,6 +13,7 @@ private let stateURL = stateDir.appendingPathComponent("state.json")
 private let sessionsURL = stateDir.appendingPathComponent("sessions.json")
 private let controlURL = stateDir.appendingPathComponent("control")
 private let flagURL = stateDir.appendingPathComponent("enabled")
+private let mutedURL = stateDir.appendingPathComponent("muted")
 private let configURL = stateDir.appendingPathComponent("config.json")
 private let logURL = stateDir.appendingPathComponent("log.txt")
 private let voicesDir = stateDir.appendingPathComponent("voices")
@@ -38,7 +39,7 @@ struct AgentSession: Decodable, Equatable, Identifiable {
     var id: String = ""
     var project: String
     var title: String
-    var status: String  // working | waiting
+    var status: String  // working | waiting | finished
     var since: Double
     var updated: Double
     var transcript: String?
@@ -63,6 +64,7 @@ final class Model {
     var current: VoiceState?
     var sessions: [AgentSession] = []
     var enabled = FileManager.default.fileExists(atPath: flagURL.path)
+    var muted = FileManager.default.fileExists(atPath: mutedURL.path)
     var showHUD = true
     var expanded = false
     var config: [String: Any] = [:]
@@ -93,7 +95,8 @@ final class Model {
         guard let s = current else { return nil }
         let age = Date().timeIntervalSince1970 - s.t
         switch s.state {
-        case "speaking", "listening", "transcribing": return age < 200 ? s : nil  // hook dies at 180 s
+        case "speaking", "listening", "transcribing", "confirming":
+            return age < 200 ? s : nil  // hook dies at 180 s
         case "sent": return age < 4 ? s : nil
         case "released": return age < 1.5 ? s : nil
         default: return nil
@@ -104,6 +107,7 @@ final class Model {
 
     func poll() {
         enabled = FileManager.default.fileExists(atPath: flagURL.path)
+        muted = FileManager.default.fileExists(atPath: mutedURL.path)
         if let data = try? Data(contentsOf: stateURL),
            let s = try? JSONDecoder().decode(VoiceState.self, from: data), s != current {
             current = s
@@ -141,6 +145,16 @@ final class Model {
     func reply(_ text: String) {
         let t = text.trimmingCharacters(in: .whitespacesAndNewlines)
         if !t.isEmpty { send("text\n\(t)") }
+    }
+
+    func setMuted(_ on: Bool) {
+        if on {
+            FileManager.default.createFile(atPath: mutedURL.path, contents: nil)
+            if active != nil { send("cancel") }  // stop talking right now
+        } else {
+            try? FileManager.default.removeItem(at: mutedURL)
+        }
+        muted = on
     }
 
     func setEnabled(_ on: Bool) {
@@ -236,7 +250,10 @@ struct HUDRoot: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             if let s = model.active {
+                // New identity per conversation step: the reply field never carries text over
+                // into another state or another session.
                 ConversationView(model: model, s: s)
+                    .id("\(s.project ?? "")|\(s.state)")
             } else {
                 IdleHeader(model: model)
             }
@@ -268,10 +285,15 @@ struct IdleHeader: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            Image(systemName: "waveform").foregroundStyle(.secondary)
-            Text(model.sessions.isEmpty ? "Голос включён" : "В работе: \(model.sessions.count)")
-                .font(.system(size: 12, weight: .medium))
+            Image(systemName: model.muted ? "speaker.slash" : "waveform").foregroundStyle(.secondary)
+            Text(headline).font(.system(size: 12, weight: .medium))
             Spacer(minLength: 8)
+            Button { model.setMuted(!model.muted) } label: {
+                Image(systemName: model.muted ? "speaker.slash.fill" : "speaker.wave.2")
+                    .foregroundStyle(model.muted ? .orange : .secondary)
+            }
+            .buttonStyle(.borderless)
+            .help(model.muted ? "Включить звук" : "Без звука (встреча): не говорить и не слушать")
             if model.expanded {
                 SettingsMenu(model: model)
             }
@@ -281,10 +303,27 @@ struct IdleHeader: View {
     }
 }
 
+extension IdleHeader {
+    var headline: String {
+        let working = model.sessions.filter { $0.status != "finished" }.count
+        let done = model.sessions.count - working
+        var parts: [String] = []
+        if working > 0 { parts.append("в работе \(working)") }
+        if done > 0 { parts.append("готово \(done)") }
+        let base = parts.isEmpty ? "Голос включён" : parts.joined(separator: " · ").capitalizedFirst
+        return model.muted ? (parts.isEmpty ? "Без звука" : "\(base) · без звука") : base
+    }
+}
+
+extension String {
+    var capitalizedFirst: String { prefix(1).uppercased() + dropFirst() }
+}
+
 struct ConversationView: View {
     @Bindable var model: Model
     let s: VoiceState
     @State private var typed = ""
+    @FocusState private var editing: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -312,6 +351,24 @@ struct ConversationView: View {
                     .foregroundStyle(s.state == "speaking" ? .secondary : .primary)
                     .lineLimit(5)
                     .fixedSize(horizontal: false, vertical: true)
+            }
+
+            if s.state == "confirming" {
+                TextField("Исправьте и нажмите ↩", text: $typed, axis: .vertical)
+                    .textFieldStyle(.roundedBorder)
+                    .font(.system(size: 12))
+                    .lineLimit(1...5)
+                    .focused($editing)
+                    .onAppear { typed = s.text ?? "" }
+                    .onChange(of: editing) { _, now in if now { model.send("hold") } }
+                    .onSubmit { model.reply(typed); typed = "" }
+                HStack {
+                    Button("Отменить") { model.send("cancel") }
+                    Button("Сказать заново") { model.send("again") }
+                    Spacer()
+                    Button("Отправить") { editing ? model.reply(typed) : model.send("send") }
+                }
+                .controlSize(.small)
             }
 
             if s.state == "speaking" || s.state == "listening" {
@@ -343,6 +400,7 @@ struct ConversationView: View {
         switch s.state {
         case "speaking": s.summary
         case "listening", "transcribing", "sent": s.text
+        case "confirming": nil  // shown in the editable field
         default: nil
         }
     }
@@ -352,6 +410,7 @@ struct ConversationView: View {
         case "speaking": "Говорю"
         case "listening": "Слушаю"
         case "transcribing": "Распознаю…"
+        case "confirming": s.left.map { "Отправлю через \(Int($0.rounded(.up))) с" } ?? "Отправлю, когда нажмёте ↩"
         case "sent": "Отправлено"
         case "released": "Сессия отпущена"
         default: ""
@@ -363,6 +422,7 @@ struct ConversationView: View {
         case "speaking": Image(systemName: "speaker.wave.2.fill").foregroundStyle(.blue)
         case "listening": Image(systemName: "mic.fill").foregroundStyle(.red)
         case "transcribing": ProgressView().controlSize(.small)
+        case "confirming": Image(systemName: "paperplane").foregroundStyle(.blue)
         case "sent": Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
         default: Image(systemName: "moon.zzz").foregroundStyle(.secondary)
         }
@@ -378,17 +438,17 @@ struct SessionList: View {
             VStack(alignment: .leading, spacing: 6) {
                 ForEach(sessions) { s in
                     HStack(spacing: 8) {
-                        Image(systemName: "circle.fill")
-                            .font(.system(size: 7))
-                            .foregroundStyle(s.status == "waiting" ? .blue : .orange)
-                            .symbolEffect(.pulse, options: .repeating)
+                        Image(systemName: s.status == "finished" ? "checkmark.circle.fill" : "circle.fill")
+                            .font(.system(size: s.status == "finished" ? 9 : 7))
+                            .foregroundStyle(color(s.status))
+                            .symbolEffect(.pulse, options: .repeating, isActive: s.status != "finished")
                         Text(s.title)
                             .font(.system(size: 12))
                             .lineLimit(1)
                             .truncationMode(.tail)
                         Spacer(minLength: 6)
                         if detailed {
-                            Text(s.status == "waiting" ? "ждёт ответа" : s.project)
+                            Text(label(s))
                                 .font(.system(size: 11))
                                 .foregroundStyle(.secondary)
                                 .lineLimit(1)
@@ -397,11 +457,27 @@ struct SessionList: View {
                                 .foregroundStyle(.tertiary)
                         }
                     }
-                    .help("\(s.project) · \(s.status == "waiting" ? "ждёт ответа" : "в работе")")
+                    .help("\(s.project) · \(label(s))")
                 }
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 9)
+        }
+    }
+
+    private func color(_ status: String) -> Color {
+        switch status {
+        case "waiting": .blue
+        case "finished": .green
+        default: .orange
+        }
+    }
+
+    private func label(_ s: AgentSession) -> String {
+        switch s.status {
+        case "waiting": "ждёт ответа"
+        case "finished": "готово"
+        default: s.project
         }
     }
 
@@ -417,6 +493,7 @@ struct SettingsMenu: View {
     var body: some View {
         Menu {
             Toggle("Голосовой режим", isOn: Binding(get: { model.enabled }, set: { model.setEnabled($0) }))
+            Toggle("Без звука (встреча)", isOn: Binding(get: { model.muted }, set: { model.setMuted($0) }))
             Divider()
             Picker("Голос", selection: Binding(get: { model.voice }, set: { model.setVoice($0) })) {
                 ForEach(model.voices) { Text($0.label).tag($0) }
@@ -425,6 +502,11 @@ struct SettingsMenu: View {
             Picker("Пауза, после которой отправляю", selection: Binding(
                 get: { model.double("silence_sec", 2.0) }, set: { model.set("silence_sec", $0) })) {
                 ForEach([1.5, 2.0, 2.5, 3.0], id: \.self) { Text(String(format: "%.1f с", $0)).tag($0) }
+            }
+            Picker("Можно отменить в течение", selection: Binding(
+                get: { model.double("undo_sec", 3.0) }, set: { model.set("undo_sec", $0) })) {
+                Text("не ждать").tag(0.0)
+                ForEach([2.0, 3.0, 5.0], id: \.self) { Text("\(Int($0)) с").tag($0) }
             }
             Picker("Время, чтобы начать говорить", selection: Binding(
                 get: { model.double("wait_sec", 5.0) }, set: { model.set("wait_sec", $0) })) {
@@ -552,7 +634,8 @@ struct VoiceLoopHUDApp: App {
         MenuBarExtra {
             MenuContent(model: delegate.model)
         } label: {
-            Image(systemName: delegate.model.enabled ? "waveform" : "waveform.slash")
+            Image(systemName: !delegate.model.enabled ? "waveform.slash"
+                  : delegate.model.muted ? "speaker.slash" : "waveform")
         }
     }
 }
@@ -562,6 +645,7 @@ struct MenuContent: View {
 
     var body: some View {
         Toggle("Голосовой режим", isOn: Binding(get: { model.enabled }, set: { model.setEnabled($0) }))
+        Toggle("Без звука (встреча)", isOn: Binding(get: { model.muted }, set: { model.setMuted($0) }))
         Toggle("Показывать плашку", isOn: $model.showHUD)
         Toggle("Запускать при входе в систему", isOn: $model.launchAtLogin)
         Divider()

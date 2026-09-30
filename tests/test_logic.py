@@ -89,3 +89,57 @@ class Gates(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class Confirm(unittest.TestCase):
+    def setUp(self):
+        self.dir = tempfile.TemporaryDirectory()
+        v.CONTROL = Path(self.dir.name) / "control"
+        self.c = {"undo_sec": 0.3}
+        self.ui = lambda *a, **k: None
+        self.far = __import__("time").time() + 60
+
+    def tearDown(self):
+        self.dir.cleanup()
+
+    def test_sends_after_grace(self):
+        self.assertEqual(v.confirm("текст", self.c, self.ui, self.far), ("send", "текст"))
+
+    def test_disabled(self):
+        self.assertEqual(v.confirm("текст", {"undo_sec": 0}, self.ui, self.far), ("send", "текст"))
+
+    def test_cancel_and_again(self):
+        for cmd in ("cancel", "again"):
+            v.CONTROL.write_text(cmd)
+            self.assertEqual(v.confirm("текст", self.c, self.ui, self.far)[0], cmd)
+
+    def test_edit_holds_then_sends_edited(self):
+        import threading
+        import time
+        v.CONTROL.write_text("hold")
+
+        def later():
+            time.sleep(0.6)  # longer than undo_sec: must not have auto-sent
+            v.CONTROL.write_text("text\nисправленный текст")
+
+        threading.Thread(target=later).start()
+        self.assertEqual(v.confirm("текст", self.c, self.ui, self.far), ("send", "исправленный текст"))
+
+
+class Mute(unittest.TestCase):
+    def test_muted_hook_marks_finished_without_speaking(self):
+        import io
+        with tempfile.TemporaryDirectory() as d:
+            d = Path(d)
+            saved = (v.STATE_DIR, v.FLAG, v.MUTED, v.SESSIONS)
+            v.STATE_DIR, v.FLAG, v.MUTED, v.SESSIONS = d, d / "enabled", d / "muted", d / "sessions.json"
+            try:
+                v.FLAG.touch()
+                v.MUTED.touch()
+                sys.stdin = io.StringIO(json.dumps({"session_id": "s1", "cwd": "/tmp/proj"}))
+                v.hook()
+                reg = json.loads(v.SESSIONS.read_text())
+                self.assertEqual(reg["s1"]["status"], "finished")
+            finally:
+                v.STATE_DIR, v.FLAG, v.MUTED, v.SESSIONS = saved
+                sys.stdin = sys.__stdin__
