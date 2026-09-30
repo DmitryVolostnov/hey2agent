@@ -223,6 +223,10 @@ def take_control():
     return cmd.strip(), payload.strip()
 
 
+class MicError(Exception):
+    """ffmpeg could not open the mic — usually no microphone permission for the calling app."""
+
+
 class Listener:
     """Keeps the mic open across phrases (ffmpeg takes ~1 s to open the device).
 
@@ -241,7 +245,11 @@ class Listener:
         # ffmpeg blocks and then hangs on shutdown.
         self.q = queue.Queue()
         threading.Thread(target=self._pump, daemon=True).start()
-        calib = [self._frame()[1] for _ in range(5)]
+        try:
+            calib = [self._frame()[1] for _ in range(5)]
+        except (EOFError, queue.Empty):
+            self.close()
+            raise MicError("нет доступа к микрофону")
         self.floor = max(sorted(calib)[2], c["min_floor_db"])
 
     def _pump(self):
@@ -945,9 +953,13 @@ def main():
     elif cmd == "dictate" and len(sys.argv) > 2:
         try:
             dictate_to(sys.argv[2])
+        except MicError:
+            log("dictate: no mic access for the HUD")
+            write_state("error", text="Нет доступа к микрофону. Разрешите его для VoiceLoopHUD: "
+                                      "Системные настройки → Конфиденциальность → Микрофон.")
         except Exception as e:
             log(f"dictate error: {e!r}")
-            write_state("idle")
+            write_state("error", text=f"Не получилось: {e}")
     elif cmd == "mute":
         MUTED.touch()
         print("muted")

@@ -107,6 +107,7 @@ final class Model {
             let linger: Double = s.delivery == "clipboard" ? 12 : (s.cancellable == true ? 10 : 4)
             return age < linger ? s : nil
         case "released": return age < 1.5 ? s : nil
+        case "error": return age < 8 ? s : nil
         default: return nil
         }
     }
@@ -143,7 +144,12 @@ final class Model {
                let m = try? FileManager.default.attributesOfItem(atPath: path)[.modificationDate] as? Date {
                 lastSeen = max(lastSeen, m.timeIntervalSince1970)
             }
-            if s.status == "working" || s.status == "waiting", now - lastSeen > 20 * 60 {
+            if s.status == "working",
+               FileManager.default.fileExists(atPath: stateDir.appendingPathComponent("cancel/\(id)").path) {
+                s.status = "stopping"  // «Отменить» pressed; Claude is winding down
+            }
+            if s.status == "working" || s.status == "waiting" || s.status == "stopping",
+               now - lastSeen > 20 * 60 {
                 s.status = "idle"
                 s.ended = s.ended ?? lastSeen
             }
@@ -158,12 +164,15 @@ final class Model {
     }
 
     /// Dictate a message for a chat that isn't waiting for an answer.
+    private var dictation: Process?
+
     func dictate(to session: AgentSession) {
-        guard active == nil, let loc = scriptLocation else { return }
+        guard active == nil, dictation?.isRunning != true, let loc = scriptLocation else { return }
         let p = Process()
         p.executableURL = URL(fileURLWithPath: loc.python)
         p.arguments = [loc.script, "dictate", session.id]
         try? p.run()
+        dictation = p
     }
 
     /// «Отменить» after sending: Claude's PreToolUse hook then denies every action and it stops.
@@ -347,8 +356,8 @@ struct IdleHeader: View {
 
 extension IdleHeader {
     var headline: String {
-        let working = model.sessions.filter { $0.status != "finished" }.count
-        let done = model.sessions.count - working
+        let working = model.sessions.filter { $0.status == "working" || $0.status == "waiting" }.count
+        let done = model.sessions.filter { $0.status == "finished" }.count
         var parts: [String] = []
         if working > 0 { parts.append("в работе \(working)") }
         if done > 0 { parts.append("готово \(done)") }
@@ -476,6 +485,7 @@ struct ConversationView: View {
             "Скопировано. Вставьте в чат «\(s.project ?? "")» в Claude: ⌘V и ↩\n\n\(s.text ?? "")"
         case "listening", "transcribing", "sent": s.text
         case "confirming": editMode ? nil : s.text
+        case "error": s.text
         default: nil
         }
     }
@@ -490,6 +500,7 @@ struct ConversationView: View {
         case "sent" where cancelled: "Отменено, Claude остановится"
         case "sent": s.delivery == "clipboard" ? "В буфере обмена" : s.delivery == "queued" ? "Добавлено в Codex" : "Отправлено"
         case "released": "Сессия отпущена"
+        case "error": "Не получилось"
         default: ""
         }
     }
@@ -500,6 +511,7 @@ struct ConversationView: View {
         case "listening": Image(systemName: "mic.fill").foregroundStyle(.red)
         case "transcribing": ProgressView().controlSize(.small)
         case "confirming": Image(systemName: "paperplane").foregroundStyle(.blue)
+        case "error": Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
         case "sent": Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
         default: Image(systemName: "moon.zzz").foregroundStyle(.secondary)
         }
@@ -566,6 +578,7 @@ struct SessionList: View {
         switch status {
         case "waiting": .blue
         case "finished", "idle": .green
+        case "stopping": .gray
         default: .orange
         }
     }
@@ -575,6 +588,7 @@ struct SessionList: View {
         case "waiting": "ждёт ответа"
         case "finished": "готово"
         case "idle": s.project
+        case "stopping": "останавливается…"
         default: s.project
         }
     }
