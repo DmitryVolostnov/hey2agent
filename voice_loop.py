@@ -113,7 +113,13 @@ def last_assistant_text(hook):
     return ""
 
 
+SUMMARY_LINE = re.compile(r"^\W*(?:кратко|summary|tl;?dr)\W*[:—-]\W*(.+)$", re.I | re.M)
+
+
 def summarize(md, limit):
+    m = SUMMARY_LINE.search(md)
+    if m:
+        md = m.group(1)
     t = re.sub(r"```.*?```", " ", md, flags=re.S)          # code blocks
     t = re.sub(r"^\s*\|.*\|\s*$", " ", t, flags=re.M)       # table rows
     t = re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", t)          # links -> text
@@ -289,14 +295,29 @@ def hook():
     print(json.dumps({
         "decision": "block",
         "reason": f"Пользователь продиктовал голосом следующую инструкцию "
-                  f"(распознано локально, возможны ошибки распознавания): {text}",
+                  f"(распознано локально, возможны ошибки распознавания): {text}\n\n{VOICE_CONTEXT}",
     }, ensure_ascii=False))
 
 
 # ---------- install ----------
 
-def hook_command():
-    return f"{shutil.which('python3') or sys.executable} '{SCRIPT}' hook"
+VOICE_CONTEXT = (
+    "Голосовой режим voice-loop включён: итог твоего ответа будет озвучен вслух. "
+    "Начинай каждый финальный ответ отдельной строкой «**Кратко:** …» — 1–2 короткие "
+    "разговорные фразы: что сделано и нужно ли что-то от пользователя. Без путей, кода, "
+    "ссылок и markdown внутри этой строки. Подробности — ниже, как обычно."
+)
+
+# event -> (subcommand, timeout)
+HOOKS = {"Stop": ("hook", HOOK_TIMEOUT), "UserPromptSubmit": ("prompt", 10)}
+
+
+def hook_command(sub):
+    return f"{shutil.which('python3') or sys.executable} '{SCRIPT}' {sub}"
+
+
+def _ours(group):
+    return any("voice_loop.py" in h.get("command", "") for h in group.get("hooks", []))
 
 
 def install():
@@ -304,15 +325,15 @@ def install():
     backup = CLAUDE_SETTINGS.with_suffix(".json.voice-loop-backup")
     if CLAUDE_SETTINGS.exists() and not backup.exists():
         shutil.copy(CLAUDE_SETTINGS, backup)
-    stop = settings.setdefault("hooks", {}).setdefault("Stop", [])
-    if any("voice_loop.py" in h.get("command", "") for g in stop for h in g.get("hooks", [])):
-        print("already installed")
-        return
-    stop.append({"hooks": [{"type": "command", "command": hook_command(),
-                            "timeout": HOOK_TIMEOUT}]})
+    hooks = settings.setdefault("hooks", {})
+    for event, (sub, timeout) in HOOKS.items():
+        groups = [g for g in hooks.get(event, []) if not _ours(g)]
+        groups.append({"hooks": [{"type": "command", "command": hook_command(sub),
+                                  "timeout": timeout}]})
+        hooks[event] = groups
     CLAUDE_SETTINGS.write_text(json.dumps(settings, indent=2, ensure_ascii=False) + "\n")
-    print(f"installed Stop hook into {CLAUDE_SETTINGS} (backup: {backup.name})")
-    print("voice is still OFF — run: voice_loop.py on")
+    print(f"installed {', '.join(HOOKS)} hooks into {CLAUDE_SETTINGS} (backup: {backup.name})")
+    print("ON" if FLAG.exists() else "voice is OFF — run: voice_loop.py on")
 
 
 def uninstall():
@@ -320,12 +341,12 @@ def uninstall():
         return
     settings = json.loads(CLAUDE_SETTINGS.read_text())
     hooks = settings.get("hooks", {})
-    stop = [g for g in hooks.get("Stop", [])
-            if not any("voice_loop.py" in h.get("command", "") for h in g.get("hooks", []))]
-    if stop:
-        hooks["Stop"] = stop
-    else:
-        hooks.pop("Stop", None)
+    for event in HOOKS:
+        groups = [g for g in hooks.get(event, []) if not _ours(g)]
+        if groups:
+            hooks[event] = groups
+        else:
+            hooks.pop(event, None)
     if not hooks:
         settings.pop("hooks", None)
     CLAUDE_SETTINGS.write_text(json.dumps(settings, indent=2, ensure_ascii=False) + "\n")
@@ -340,6 +361,9 @@ def main():
             hook()
         except Exception as e:  # never break the Claude session
             log(f"error: {e!r}")
+    elif cmd == "prompt":  # UserPromptSubmit: remind Claude to lead with a spoken summary
+        if FLAG.exists():
+            print(VOICE_CONTEXT)
     elif cmd == "on":
         FLAG.touch()
         print("voice-loop ON")
