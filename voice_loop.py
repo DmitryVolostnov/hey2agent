@@ -14,6 +14,7 @@ Nothing leaves the machine.
 
 import array
 import fcntl
+import hashlib
 import json
 import math
 import os
@@ -262,7 +263,7 @@ def hook():
             time.sleep(0.5)
 
     text = last_assistant_text(data)
-    key = f"{data.get('session_id')}:{hash(text)}"
+    key = f"{data.get('session_id')}:{hashlib.sha1(text.encode()).hexdigest()}"
     try:
         last = json.loads(LAST.read_text())
     except Exception:
