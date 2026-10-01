@@ -81,6 +81,8 @@ final class Model {
     var expanded = false
     /// The visible card inside the (larger, transparent) panel, in SwiftUI window coordinates.
     var cardFrame: CGRect = .zero
+    /// «Ещё» in «Недавние»: 5 → 10 rows (reset when the panel folds).
+    var showMoreRecent = false
     var config: [String: Any] = [:]
     var voices: [Voice] = []
     var knownProjects: [String] = []
@@ -155,7 +157,7 @@ final class Model {
             let all = Self.loadSessions()
             let live = all.filter { $0.status != "idle" }.sorted { $0.since < $1.since }
             let idle = Array(all.filter { $0.status == "idle" }
-                .sorted { ($0.ended ?? $0.updated) > ($1.ended ?? $1.updated) }.prefix(8))
+                .sorted { ($0.ended ?? $0.updated) > ($1.ended ?? $1.updated) }.prefix(10))
             if live != sessions { sessions = live }
             if idle != recent { recent = idle }
             for p in all.map(\.project) where !knownProjects.contains(p) { knownProjects.append(p) }
@@ -391,8 +393,26 @@ struct HUDRoot: View {
                     .foregroundStyle(.tertiary)
                     .padding(.horizontal, 12)
                     .padding(.top, 8)
-                SessionList(sessions: model.recent, detailed: true, wide: false, open: { model.open($0) }) { s in
+                SessionList(sessions: Array(model.recent.prefix(model.showMoreRecent ? 10 : 5)),
+                            detailed: true, wide: false, open: { model.open($0) }) { s in
                     model.active == nil ? { model.dictate(to: s) } : nil
+                }
+                if model.recent.count > 5 && !model.showMoreRecent {
+                    Button {
+                        model.showMoreRecent = true
+                    } label: {
+                        HStack(spacing: 8) {
+                            Image(systemName: "ellipsis").frame(width: 10)
+                            Text("Ещё \(model.recent.count - 5)")
+                        }
+                        .font(.system(size: 12))
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 12)
+                        .padding(.bottom, 8)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
                 }
                 }
                 .transition(.opacity.combined(with: .move(edge: .top)))
@@ -409,6 +429,7 @@ struct HUDRoot: View {
                 .onChange(of: g.frame(in: .global)) { _, f in model.cardFrame = f }
         })
         .animation(.spring(response: 0.32, dampingFraction: 0.88), value: model.expanded)
+        .animation(.spring(response: 0.32, dampingFraction: 0.88), value: model.showMoreRecent)
         .animation(.spring(response: 0.32, dampingFraction: 0.88), value: model.active?.state)
         .padding(.top, 4)
         // The window never resizes (that caused the jitter): the card sits at the top of a fixed,
@@ -860,7 +881,11 @@ final class HUDPanel: NSPanel {
         } else if model.expanded {
             // Short grace period so moving the cursor along the edge doesn't flicker.
             if let since = hoverSince {
-                if Date().timeIntervalSince(since) > 0.4 { model.expanded = false; hoverSince = nil }
+                if Date().timeIntervalSince(since) > 0.4 {
+                    model.expanded = false
+                    model.showMoreRecent = false
+                    hoverSince = nil
+                }
             } else {
                 hoverSince = Date()
             }

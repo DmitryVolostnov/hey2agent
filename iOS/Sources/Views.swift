@@ -78,6 +78,7 @@ struct PairingView: View {
 
 struct RemoteView: View {
     @Bindable var model: RemoteModel
+    @State private var showMore = false
 
     var body: some View {
         let snap = model.snapshot
@@ -99,8 +100,12 @@ struct RemoteView: View {
                 }
                 if let s = snap, !s.recent.isEmpty {
                     SessionSection(title: "Недавние: нажмите и говорите. Долгое нажатие: открыть на Mac",
-                                   sessions: s.recent, model: model) { session in
+                                   sessions: Array(s.recent.prefix(showMore ? 10 : 5)), model: model) { session in
                         s.active == nil ? { model.recordOnPhone(for: session) } : nil
+                    }
+                    if s.recent.count > 5 && !showMore {
+                        Button("Ещё \(s.recent.count - 5)") { withAnimation { showMore = true } }
+                            .foregroundStyle(.secondary)
                     }
                 }
             }
