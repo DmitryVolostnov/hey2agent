@@ -79,6 +79,8 @@ final class Model {
         didSet { UserDefaults.standard.set(hideWhenPhone, forKey: "hideWhenPhone") }
     }
     var expanded = false
+    /// The visible card inside the (larger, transparent) panel, in SwiftUI window coordinates.
+    var cardFrame: CGRect = .zero
     var config: [String: Any] = [:]
     var voices: [Voice] = []
     var knownProjects: [String] = []
@@ -362,7 +364,6 @@ final class Model {
 
 struct HUDRoot: View {
     @Bindable var model: Model
-    @State private var hovering = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -383,6 +384,7 @@ struct HUDRoot: View {
                 }
             }
             if model.expanded && model.active == nil && !model.recent.isEmpty {
+                VStack(alignment: .leading, spacing: 0) {
                 Divider().opacity(0.4)
                 Text("Недавние")
                     .font(.system(size: 10))
@@ -392,25 +394,26 @@ struct HUDRoot: View {
                 SessionList(sessions: model.recent, detailed: true, wide: false, open: { model.open($0) }) { s in
                     model.active == nil ? { model.dictate(to: s) } : nil
                 }
+                }
+                .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
-        // Collapsed: half width; hover or a conversation opens it to full width.
         // Narrow pill; hover only unfolds it downward. Full width only while talking/dictating.
         .frame(width: model.active != nil ? 380 : 190, alignment: .leading)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(.white.opacity(0.08)))
-        .padding(8)
-        .onHover { inside in
-            hovering = inside
-            if inside {
-                model.expanded = true
-            } else {
-                Task {
-                    try? await Task.sleep(for: .milliseconds(900))
-                    if !hovering { model.expanded = false }
-                }
-            }
-        }
+        .background(GeometryReader { g in
+            Color.clear
+                .onAppear { model.cardFrame = g.frame(in: .global) }
+                .onChange(of: g.frame(in: .global)) { _, f in model.cardFrame = f }
+        })
+        .animation(.spring(response: 0.32, dampingFraction: 0.88), value: model.expanded)
+        .animation(.spring(response: 0.32, dampingFraction: 0.88), value: model.active?.state)
+        .padding(.top, 4)
+        // The window never resizes (that caused the jitter): the card sits at the top of a fixed,
+        // transparent canvas and grows downward inside it.
+        .frame(width: HUDPanel.canvas.width, height: HUDPanel.canvas.height, alignment: .top)
     }
 }
 
@@ -813,11 +816,15 @@ final class FirstMouseHostingView<Content: View>: NSHostingView<Content> {
 
 /// Non-activating floating panel: clickable without stealing focus from the editor.
 final class HUDPanel: NSPanel {
+    static let canvas = CGSize(width: 400, height: 760)
     private let host: FirstMouseHostingView<HUDRoot>
+    private let model: Model
+    private var hoverSince: Date?
 
     init(model: Model) {
+        self.model = model
         host = FirstMouseHostingView(rootView: HUDRoot(model: model))
-        host.sizingOptions = [.intrinsicContentSize]
+        host.sizingOptions = []
         super.init(contentRect: .zero, styleMask: [.nonactivatingPanel, .borderless],
                    backing: .buffered, defer: false)
         level = .floating
@@ -834,18 +841,30 @@ final class HUDPanel: NSPanel {
 
     func placeTopCenter() {
         guard let screen = NSScreen.main else { return }
-        let size = host.intrinsicContentSize
         let f = screen.visibleFrame
-        setFrame(NSRect(x: f.midX - size.width / 2, y: f.maxY - size.height - 4,
-                        width: size.width, height: size.height), display: true)
+        setFrame(NSRect(x: f.midX - Self.canvas.width / 2, y: f.maxY - Self.canvas.height,
+                        width: Self.canvas.width, height: Self.canvas.height), display: true)
     }
 
-    /// Resize to fit content, keeping the top edge and the centre where the user left it.
-    func fitKeepingTop() {
-        let size = host.intrinsicContentSize
-        guard size != frame.size else { return }
-        setFrame(NSRect(x: frame.midX - size.width / 2, y: frame.maxY - size.height,
-                        width: size.width, height: size.height), display: true)
+    /// Called ~20×/s: the panel takes the mouse only over the card (the rest of the canvas is
+    /// see-through and click-through), and hover is decided by geometry, not enter/exit events.
+    func trackMouse() {
+        let card = model.cardFrame
+        let screenCard = NSRect(x: frame.minX + card.minX, y: frame.maxY - card.maxY,
+                                width: card.width, height: card.height)
+        let inside = screenCard.insetBy(dx: -2, dy: -2).contains(NSEvent.mouseLocation)
+        if ignoresMouseEvents == inside { ignoresMouseEvents = !inside }
+        if inside {
+            hoverSince = nil
+            if !model.expanded { model.expanded = true }
+        } else if model.expanded {
+            // Short grace period so moving the cursor along the edge doesn't flicker.
+            if let since = hoverSince {
+                if Date().timeIntervalSince(since) > 0.4 { model.expanded = false; hoverSince = nil }
+            } else {
+                hoverSince = Date()
+            }
+        }
     }
 }
 
@@ -868,6 +887,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let server = LinkServer(model: model)
         link = server
         model.onNewPairingCode = { [weak server] in server?.newCode() }
+        Task { @MainActor [weak self] in
+            while true {
+                if let p = self?.panel, p.isVisible { p.trackMouse() }
+                try? await Task.sleep(for: .milliseconds(50))
+            }
+        }
         Task { @MainActor in
             while true {
                 tick()
@@ -882,7 +907,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         link?.tick()
         guard let panel else { return }
         if model.visible {
-            panel.fitKeepingTop()
             if !panel.isVisible {
                 if !placed { panel.placeTopCenter(); placed = true }
                 panel.orderFrontRegardless()
