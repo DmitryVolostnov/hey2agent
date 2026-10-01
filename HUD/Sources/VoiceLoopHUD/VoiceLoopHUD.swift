@@ -393,7 +393,9 @@ struct HUDRoot: View {
                 }
             }
         }
-        .frame(width: 380, alignment: .leading)
+        // Collapsed: half width; hover or a conversation opens it to full width.
+        .frame(width: model.expanded || model.active != nil ? 380 : 190, alignment: .leading)
+        .animation(.easeOut(duration: 0.15), value: model.expanded)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(.white.opacity(0.08)))
         .padding(8)
@@ -417,7 +419,7 @@ struct IdleHeader: View {
     var body: some View {
         HStack(spacing: 8) {
             Image(systemName: model.muted ? "speaker.slash" : "waveform").foregroundStyle(.secondary)
-            Text(headline).font(.system(size: 12, weight: .medium))
+            Text(headline).font(.system(size: 12, weight: .medium)).lineLimit(1)
             Spacer(minLength: 8)
             Button { model.setMuted(!model.muted) } label: {
                 Image(systemName: model.muted ? "speaker.slash.fill" : "speaker.wave.2")
@@ -442,7 +444,9 @@ extension IdleHeader {
         if working > 0 { parts.append("в работе \(working)") }
         if done > 0 { parts.append("готово \(done)") }
         let base = parts.isEmpty ? "Голос включён" : parts.joined(separator: " · ").capitalizedFirst
-        return model.muted ? (parts.isEmpty ? "Без звука" : "\(base) · без звука") : base
+        // Collapsed: the crossed-out speaker already says «без звука».
+        guard model.muted, model.expanded else { return base }
+        return parts.isEmpty ? "Без звука" : "\(base) · без звука"
     }
 }
 
@@ -825,11 +829,11 @@ final class HUDPanel: NSPanel {
                         width: size.width, height: size.height), display: true)
     }
 
-    /// Resize to fit content, keeping the top edge where the user left it.
+    /// Resize to fit content, keeping the top edge and the centre where the user left it.
     func fitKeepingTop() {
         let size = host.intrinsicContentSize
         guard size != frame.size else { return }
-        setFrame(NSRect(x: frame.minX, y: frame.maxY - size.height,
+        setFrame(NSRect(x: frame.midX - size.width / 2, y: frame.maxY - size.height,
                         width: size.width, height: size.height), display: true)
     }
 }
