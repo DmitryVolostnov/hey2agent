@@ -1,0 +1,2 @@
+NSMicrophoneUsageDescription = "Para ditar uma resposta ao agente. O áudio vai apenas para o seu Mac por uma conexão criptografada e é transcrito lá.";
+NSLocalNetworkUsageDescription = "Para mostrar o painel do voice-loop do seu Mac pela sua rede doméstica. Os dados são criptografados e nunca vão para a internet.";

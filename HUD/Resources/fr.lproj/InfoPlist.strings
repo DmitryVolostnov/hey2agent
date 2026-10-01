@@ -1,0 +1,2 @@
+NSMicrophoneUsageDescription = "voice-loop écoute votre réponse à l’agent quand vous cliquez sur un chat dans le panneau. L’audio est transcrit localement et ne quitte jamais votre Mac.";
+NSLocalNetworkUsageDescription = "voice-loop affiche son panneau sur votre iPhone via votre réseau domestique. Les données sont chiffrées et ne vont jamais sur Internet.";

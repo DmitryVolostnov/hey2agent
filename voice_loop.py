@@ -148,7 +148,9 @@ def last_assistant_text(hook):
     return ""
 
 
-SUMMARY_LINE = re.compile(r"^\W*(?:кратко|summary|tl;?dr)\W*[:—-]\W*(.+)$", re.I | re.M)
+SUMMARY_LINE = re.compile(
+    r"^\W*(?:кратко|коротко|summary|tl;?dr|resumen|résumé|resume|zusammenfassung|kurz|riepilogo|"
+    r"in breve|resumo|要約|概要|摘要|总结|總結)\W*[:：—-]\W*(.+)$", re.I | re.M)
 
 
 def trailing_question(md):
@@ -460,9 +462,9 @@ def update_session(data, status, prompt=None):
 # ---------- cancelling a message that was already sent ----------
 
 CANCEL_DIR = STATE_DIR / "cancel"
-CANCEL_REASON = ("Пользователь отменил своё последнее сообщение (кнопка «Отменить» в voice-loop). "
-                 "Не продолжай эту задачу и не делай больше никаких действий. Одной фразой "
-                 "подтверди, что остановился, и перечисли, что уже успел изменить, если что-то менял.")
+CANCEL_REASON = ("The user cancelled their last message (the «Undo» button in voice-loop). Do not "
+                 "continue this task and take no further actions. In one sentence, in the language "
+                 "of the conversation, confirm you stopped and list what you already changed, if anything.")
 
 
 def cancel_marker(sid):
@@ -898,20 +900,21 @@ def hook():
     if reply:
         print(json.dumps({
             "decision": "block",
-            "reason": f"Пользователь ответил голосом или с плашки voice-loop (голос распознан "
-                      f"локально, возможны ошибки распознавания): {reply}\n\n{VOICE_CONTEXT}",
+            "reason": f"The user replied by voice or from the voice-loop panel (speech is "
+                      f"recognized locally and may contain recognition errors): {reply}\n\n{VOICE_CONTEXT}",
         }, ensure_ascii=False))
 
 
 # ---------- install ----------
 
 VOICE_CONTEXT = (
-    "Голосовой режим voice-loop включён: итог твоего ответа будет озвучен вслух. "
-    "Начинай каждый финальный ответ отдельной строкой «**Кратко:** …» — 1–2 короткие "
-    "разговорные фразы: что сделано и нужно ли что-то от пользователя. Без путей, кода, "
-    "ссылок и markdown внутри этой строки; английские термины пиши кириллицей, как их "
-    "произносят (кодекс, хук, пул-реквест). Если ждёшь ответа — задай вопрос в этой же "
-    "строке. Подробности — ниже, как обычно."
+    "voice-loop voice mode is on: the summary of your answer will be read aloud. Start every final "
+    "answer with a separate line «**Summary:** …» in the language of the conversation, using that "
+    "language's word for “Summary” (e.g. «**Кратко:** …» in Russian): 1–2 short conversational "
+    "sentences — what was done and whether anything is needed from the user. No paths, code, links "
+    "or markdown in that line; write foreign technical terms the way they are pronounced in the "
+    "conversation's language. If you are waiting for an answer, ask the question in that same line. "
+    "Details below as usual."
 )
 
 # event -> (subcommand, timeout)
@@ -1038,11 +1041,10 @@ def main():
             dictate_to(sys.argv[2], sys.argv[3] if len(sys.argv) > 3 else None)
         except MicError:
             log("dictate: no mic access for the HUD")
-            write_state("error", text="Нет доступа к микрофону. Разрешите его для VoiceLoopHUD: "
-                                      "Системные настройки → Конфиденциальность → Микрофон.")
+            write_state("error", code="no_mic", text="No microphone access for VoiceLoopHUD")
         except Exception as e:
             log(f"dictate error: {e!r}")
-            write_state("error", text=f"Не получилось: {e}")
+            write_state("error", code="failed", text=str(e))
     elif cmd == "mute":
         MUTED.touch()
         print("muted")

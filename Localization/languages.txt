@@ -1,0 +1,10 @@
+en
+de
+es
+fr
+it
+ja
+pt-BR
+ru
+uk
+zh-Hans

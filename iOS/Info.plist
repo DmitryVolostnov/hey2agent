@@ -25,9 +25,9 @@
 		<string>_voiceloop._tcp</string>
 	</array>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>Чтобы показывать плашку voice-loop с вашего Mac в домашней сети. Данные шифруются и не уходят в интернет.</string>
+	<string>To show the voice-loop panel from your Mac over your home network. Data is encrypted and never goes to the internet.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Чтобы надиктовать ответ агенту. Звук уходит только на ваш Mac по зашифрованному соединению, распознаётся там локально.</string>
+	<string>To dictate a reply to the agent. Audio goes only to your Mac over an encrypted connection and is transcribed there.</string>
 	<key>UILaunchScreen</key>
 	<dict/>
 	<key>UIRequiresFullScreen</key>

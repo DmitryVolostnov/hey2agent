@@ -9,15 +9,16 @@ public struct LinkVoiceState: Codable, Equatable, Sendable {
     public var level: Double?
     public var left: Double?
     public var delivery: String?
+    public var code: String?
     public var session_id: String?
     public var cancellable: Bool?
     public var t: Double
 
     public init(state: String, project: String? = nil, summary: String? = nil, text: String? = nil,
-                level: Double? = nil, left: Double? = nil, delivery: String? = nil,
+                level: Double? = nil, left: Double? = nil, delivery: String? = nil, code: String? = nil,
                 session_id: String? = nil, cancellable: Bool? = nil, t: Double) {
         self.state = state; self.project = project; self.summary = summary; self.text = text
-        self.level = level; self.left = left; self.delivery = delivery
+        self.level = level; self.left = left; self.delivery = delivery; self.code = code
         self.session_id = session_id; self.cancellable = cancellable; self.t = t
     }
 }

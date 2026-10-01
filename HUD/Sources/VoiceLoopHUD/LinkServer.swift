@@ -138,7 +138,7 @@ extension Model {
         }
         let a = active.map {
             LinkVoiceState(state: $0.state, project: $0.project, summary: $0.summary, text: $0.text,
-                           level: $0.level, left: $0.left, delivery: $0.delivery,
+                           level: $0.level, left: $0.left, delivery: $0.delivery, code: $0.code,
                            session_id: $0.session_id, cancellable: $0.cancellable, t: $0.t)
         }
         return LinkSnapshot(mac: Host.current().localizedName ?? "Mac", enabled: enabled, muted: muted,

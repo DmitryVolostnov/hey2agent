@@ -1,0 +1,2 @@
+NSMicrophoneUsageDescription = "当你在面板中点按聊天时，voice-loop 会收听你给智能体的回复。音频在本地转写，绝不会离开你的 Mac。";
+NSLocalNetworkUsageDescription = "voice-loop 通过你的家庭网络在 iPhone 上显示其面板。数据经过加密，绝不会发送到互联网。";

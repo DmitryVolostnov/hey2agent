@@ -1,0 +1,2 @@
+NSMicrophoneUsageDescription = "voice-loop слушает ваш ответ агенту, когда вы нажимаете на чат в плашке. Звук распознаётся локально и не покидает ваш Mac.";
+NSLocalNetworkUsageDescription = "voice-loop показывает плашку на вашем iPhone через домашнюю сеть. Данные зашифрованы и не уходят в интернет.";

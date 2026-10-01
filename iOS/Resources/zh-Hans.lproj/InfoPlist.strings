@@ -1,0 +1,2 @@
+NSMicrophoneUsageDescription = "用于听写给智能体的回复。音频仅通过加密连接发送到你的 Mac，并在那里转写。";
+NSLocalNetworkUsageDescription = "用于通过家庭网络显示你 Mac 上的 voice-loop 面板。数据经过加密，绝不会发送到互联网。";

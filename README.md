@@ -80,6 +80,12 @@ VOICE_LOOP_SLOW=1 python3 -m unittest tests.test_speech  # say → whisper round
 and many speak-only Stop-hook scripts. voice-loop focuses on replying into the same session via hooks,
 a multi-session HUD across Claude Code and Codex, and local Russian/English.
 
+## Languages
+The Mac panel and the iPhone app follow the system language: English (base), Russian, Ukrainian,
+German, Spanish, French, Portuguese (Brazil), Italian, Japanese, Chinese (Simplified).
+Edit `Localization/translations.json`, then run `python3 Localization/generate.py`.
+Speech recognition and the voice are configured separately (`language`, `voice` in the config).
+
 ## Status
 Personal tool, early. Known limits: the hook blocks the session while listening (≤180 s);
 Codex sessions show the folder name instead of the chat title.

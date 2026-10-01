@@ -1,6 +1,7 @@
 name: VoiceLoopRemote
 options:
   bundleIdPrefix: me.volostnov
+  developmentLanguage: en
 packages:
   VoiceLoopLink:
     path: ../Link
@@ -9,7 +10,7 @@ targets:
     type: application
     platform: iOS
     deploymentTarget: "17.0"
-    sources: [Sources, Assets.xcassets]
+    sources: [Sources, Assets.xcassets, Resources]
     dependencies:
       - package: VoiceLoopLink
     info:
@@ -20,9 +21,9 @@ targets:
         UIRequiresFullScreen: false
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
         UISupportedInterfaceOrientations~ipad: [UIInterfaceOrientationPortrait, UIInterfaceOrientationPortraitUpsideDown, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
-        NSLocalNetworkUsageDescription: "Чтобы показывать плашку voice-loop с вашего Mac в домашней сети. Данные шифруются и не уходят в интернет."
+        NSLocalNetworkUsageDescription: "To show the voice-loop panel from your Mac over your home network. Data is encrypted and never goes to the internet."
         NSBonjourServices: [_voiceloop._tcp]
-        NSMicrophoneUsageDescription: "Чтобы надиктовать ответ агенту. Звук уходит только на ваш Mac по зашифрованному соединению, распознаётся там локально."
+        NSMicrophoneUsageDescription: "To dictate a reply to the agent. Audio goes only to your Mac over an encrypted connection and is transcribed there."
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: me.volostnov.voiceloop.remote

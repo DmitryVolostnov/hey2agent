@@ -1,0 +1,2 @@
+NSMicrophoneUsageDescription = "パネルでチャットをクリックすると、voice-loopがエージェントへのあなたの返信を聞き取ります。音声はローカルで文字起こしされ、Macの外に出ることはありません。";
+NSLocalNetworkUsageDescription = "voice-loopはホームネットワーク経由でiPhoneにパネルを表示します。データは暗号化され、インターネットに送信されることはありません。";

@@ -33,6 +33,7 @@ struct VoiceState: Decodable, Equatable {
     var level: Double?
     var left: Double?
     var delivery: String?  // queued | resumed | clipboard (message to a recent chat)
+    var code: String?      // error code from the script: no_mic | failed
     var session_id: String?
     var cancellable: Bool?
     var t: Double
@@ -390,7 +391,7 @@ struct HUDRoot: View {
             if model.expanded && model.active == nil && !model.recent.isEmpty {
                 VStack(alignment: .leading, spacing: 0) {
                 Divider().opacity(0.4)
-                Text("Недавние")
+                Text(String(localized: "Recent"))
                     .font(.system(size: 10))
                     .foregroundStyle(.tertiary)
                     .padding(.horizontal, 12)
@@ -405,7 +406,7 @@ struct HUDRoot: View {
                     } label: {
                         HStack(spacing: 8) {
                             Image(systemName: "ellipsis").frame(width: 10)
-                            Text("Ещё \(model.recent.count - 5)")
+                            Text(String(localized: "More \(model.recent.count - 5)"))
                         }
                         .font(.system(size: 12))
                         .foregroundStyle(.secondary)
@@ -453,7 +454,7 @@ struct IdleHeader: View {
                     .foregroundStyle(model.muted ? .orange : .secondary)
             }
             .buttonStyle(.borderless)
-            .help(model.muted ? "Включить звук" : "Без звука (встреча): не говорить и не слушать")
+            .help(model.muted ? String(localized: "Unmute") : String(localized: "Mute (meeting): don’t speak or listen"))
             if model.expanded {
                 SettingsMenu(model: model)
             }
@@ -468,12 +469,12 @@ extension IdleHeader {
         let working = model.sessions.filter { $0.status == "working" || $0.status == "waiting" }.count
         let done = model.sessions.filter { $0.status == "finished" }.count
         var parts: [String] = []
-        if working > 0 { parts.append("в работе \(working)") }
-        if done > 0 { parts.append("готово \(done)") }
-        let base = parts.isEmpty ? "Голос включён" : parts.joined(separator: " · ").capitalizedFirst
+        if working > 0 { parts.append(String(localized: "in progress \(working)")) }
+        if done > 0 { parts.append(String(localized: "done \(done)")) }
+        let base = parts.isEmpty ? String(localized: "Voice on") : parts.joined(separator: " · ").capitalizedFirst
         // Collapsed: the crossed-out speaker already says «без звука».
         // The crossed-out speaker already says «без звука».
-        return model.muted && parts.isEmpty ? "Без звука" : base
+        return model.muted && parts.isEmpty ? String(localized: "Muted") : base
     }
 }
 
@@ -499,11 +500,11 @@ struct ConversationView: View {
                 if let project = s.project {
                     Text(project).font(.system(size: 12)).foregroundStyle(.secondary).lineLimit(1)
                         .onTapGesture { if s.session_id != nil { model.openActive() } }
-                        .help(s.session_id != nil ? "Открыть этот чат" : "")
+                        .help(s.session_id != nil ? String(localized: "Open this chat") : "")
                 }
                 Spacer(minLength: 12)
                 if s.state == "listening", let left = s.left {
-                    Text("\(Int(left.rounded(.up))) с")
+                    Text(String(localized: "\(Int(left.rounded(.up))) s"))
                         .font(.system(size: 12).monospacedDigit())
                         .foregroundStyle(.secondary)
                 }
@@ -512,25 +513,25 @@ struct ConversationView: View {
                         Image(systemName: "arrow.up.forward.app")
                     }
                     .buttonStyle(.borderless)
-                    .help("Открыть этот чат и ответить там")
+                    .help(String(localized: "Open this chat and reply there"))
                 }
                 if s.state == "confirming" && !editMode {
-                    Button("Отмена") { model.send("cancel") }
+                    Button(String(localized: "Cancel")) { model.send("cancel") }
                         .controlSize(.small)
                 }
                 if ["sent", "released", "error"].contains(s.state) {
                     Button { model.dismissedAt = s.t } label: { Image(systemName: "xmark") }
                         .buttonStyle(.borderless)
-                        .help("Закрыть")
+                        .help(String(localized: "Close"))
                 }
                 if s.state == "sent", s.cancellable == true, s.delivery != "clipboard",
                    let sid = s.session_id, !cancelled {
-                    Button("Отменить") {
+                    Button(String(localized: "Undo")) {
                         model.cancelSent(sid)
                         cancelled = true
                     }
                     .controlSize(.small)
-                    .help("Claude остановится: все его следующие действия будут запрещены")
+                    .help(String(localized: "Claude will stop: all its next actions will be blocked"))
                 }
             }
 
@@ -549,31 +550,31 @@ struct ConversationView: View {
 
             if s.state == "confirming" {
                 if editMode {
-                    TextField("Исправьте и нажмите ↩", text: $typed, axis: .vertical)
+                    TextField(String(localized: "Edit and press ↩"), text: $typed, axis: .vertical)
                         .textFieldStyle(.roundedBorder)
                         .font(.system(size: 12))
                         .lineLimit(1...6)
                         .focused($editing)
                         .onSubmit { model.reply(typed) }
                     HStack {
-                        Button("Отмена") { model.send("cancel") }
+                        Button(String(localized: "Cancel")) { model.send("cancel") }
                         Spacer()
-                        Button("Отправить") { model.reply(typed) }
+                        Button(String(localized: "Send")) { model.reply(typed) }
                     }
                     .controlSize(.small)
                 } else {
                     HStack(spacing: 12) {
-                        Button("Изменить") {
+                        Button(String(localized: "Edit")) {
                             typed = s.text ?? ""
                             editMode = true
                             editing = true
                             model.send("hold")  // stop the countdown while editing
                         }
-                        Button("Дополнить") { model.send("append") }
-                            .help("Оставить текст и договорить ещё")
-                        Button("Сказать заново") { model.send("again") }
+                        Button(String(localized: "Add more")) { model.send("append") }
+                            .help(String(localized: "Keep the text and dictate more"))
+                        Button(String(localized: "Say again")) { model.send("again") }
                         Spacer()
-                        Button("Отправить сейчас") { model.send("send") }
+                        Button(String(localized: "Send now")) { model.send("send") }
                     }
                     .buttonStyle(.link)
                     .font(.system(size: 11))
@@ -581,7 +582,7 @@ struct ConversationView: View {
             }
 
             if s.state == "speaking" || s.state == "listening" {
-                TextField("Ответить текстом и нажать ↩", text: $typed)
+                TextField(String(localized: "Type a reply and press ↩"), text: $typed)
                     .textFieldStyle(.roundedBorder)
                     .font(.system(size: 12))
                     .onSubmit {
@@ -589,14 +590,14 @@ struct ConversationView: View {
                         typed = ""
                     }
                 HStack {
-                    Button("Повторить") { model.send("repeat") }
+                    Button(String(localized: "Repeat")) { model.send("repeat") }
                         .disabled(s.state != "listening")
                     Spacer()
-                    Button("Отмена") { model.send("cancel") }
+                    Button(String(localized: "Cancel")) { model.send("cancel") }
                     if s.state == "speaking" {
-                        Button("Пропустить") { model.send("skip") }
+                        Button(String(localized: "Skip")) { model.send("skip") }
                     } else {
-                        Button("Отправить") { model.send("send") }
+                        Button(String(localized: "Send")) { model.send("send") }
                     }
                 }
                 .controlSize(.small)
@@ -609,26 +610,26 @@ struct ConversationView: View {
         switch s.state {
         case "speaking": s.summary
         case _ where s.state == "sent" && s.delivery == "clipboard":
-            "Скопировано. Вставьте в чат «\(s.project ?? "")» в Claude: ⌘V и ↩\n\n\(s.text ?? "")"
+            String(localized: "Copied. Paste into “\(s.project ?? "")” in Claude: ⌘V and ↩\n\n\(s.text ?? "")")
         case "listening", "transcribing", "sent": s.text
         case "confirming": editMode ? nil : s.text
-        case "error": s.text
+        case "error": errorText(code: s.code, detail: s.text)
         default: nil
         }
     }
 
     private var title: String {
         switch s.state {
-        case "speaking": "Говорю"
-        case "listening": "Слушаю"
-        case "transcribing": "Распознаю…"
-        case "phone": "Говорите в iPhone…"
-        case "confirming": editMode ? "Исправьте текст"
-            : s.left.map { "Отправлю через \(Int($0.rounded(.up))) с" } ?? "Отправлю, когда нажмёте ↩"
-        case "sent" where cancelled: "Отменено, Claude остановится"
-        case "sent": s.delivery == "clipboard" ? "В буфере обмена" : s.delivery == "queued" ? "Добавлено в Codex" : "Отправлено"
-        case "released": "Сессия отпущена"
-        case "error": "Не получилось"
+        case "speaking": String(localized: "Speaking")
+        case "listening": String(localized: "Listening")
+        case "transcribing": String(localized: "Transcribing…")
+        case "phone": String(localized: "Speak into the iPhone…")
+        case "confirming": editMode ? String(localized: "Edit the text")
+            : s.left.map { String(localized: "Sending in \(Int($0.rounded(.up))) s") } ?? String(localized: "Sending when you press ↩")
+        case "sent" where cancelled: String(localized: "Cancelled, Claude will stop")
+        case "sent": s.delivery == "clipboard" ? String(localized: "In the clipboard") : s.delivery == "queued" ? String(localized: "Added to Codex") : String(localized: "Sent")
+        case "released": String(localized: "Session released")
+        case "error": String(localized: "Didn’t work")
         default: ""
         }
     }
@@ -703,16 +704,16 @@ struct SessionList: View {
 
     private func short(_ t: Double, now: Date) -> String {
         let m = max(0, Int(now.timeIntervalSince1970 - t)) / 60
-        if m < 60 { return "\(max(m, 1)) мин" }
-        return m < 24 * 60 ? "\(m / 60) ч" : "\(m / 1440) д"
+        if m < 60 { return String(localized: "\(max(m, 1)) min") }
+        return m < 24 * 60 ? String(localized: "\(m / 60) h") : String(localized: "\(m / 1440) d")
     }
 
     private func ago(_ t: Double, now: Date) -> String {
         let m = max(0, Int(now.timeIntervalSince1970 - t)) / 60
-        if m < 1 { return "только что" }
-        if m < 60 { return "\(m) мин назад" }
-        if m < 24 * 60 { return "\(m / 60) ч назад" }
-        return "\(m / 1440) д назад"
+        if m < 1 { return String(localized: "just now") }
+        if m < 60 { return String(localized: "\(m) min ago") }
+        if m < 24 * 60 { return String(localized: "\(m / 60) h ago") }
+        return String(localized: "\(m / 1440) d ago")
     }
 
     private func color(_ status: String) -> Color {
@@ -726,17 +727,17 @@ struct SessionList: View {
 
     private func label(_ s: AgentSession) -> String {
         switch s.status {
-        case "waiting": "ждёт ответа"
-        case "finished": "готово"
+        case "waiting": String(localized: "waiting for you")
+        case "finished": String(localized: "done")
         case "idle": s.project
-        case "stopping": "останавливается…"
+        case "stopping": String(localized: "stopping…")
         default: s.project
         }
     }
 
     private func elapsed(since: Double, now: Date) -> String {
         let sec = max(0, Int(now.timeIntervalSince1970 - since))
-        return sec < 60 ? "\(sec) с" : "\(sec / 60) мин"
+        return sec < 60 ? String(localized: "\(sec) s") : String(localized: "\(sec / 60) min")
     }
 }
 
@@ -755,7 +756,7 @@ struct SessionRow<Content: View>: View {
                     Image(systemName: "mic.fill").font(.system(size: 11))
                 }
                 .buttonStyle(.borderless)
-                .help("Надиктовать сообщение в этот чат")
+                .help(String(localized: "Dictate a message to this chat"))
             }
         }
         .padding(.horizontal, 6)
@@ -764,7 +765,7 @@ struct SessionRow<Content: View>: View {
         .contentShape(Rectangle())
         .onHover { hover = $0 }
         .onTapGesture(perform: open)
-        .help("Открыть чат")
+        .help(String(localized: "Open chat"))
     }
 }
 
@@ -773,28 +774,28 @@ struct SettingsMenu: View {
 
     var body: some View {
         Menu {
-            Toggle("Голосовой режим", isOn: Binding(get: { model.enabled }, set: { model.setEnabled($0) }))
-            Toggle("Без звука (встреча)", isOn: Binding(get: { model.muted }, set: { model.setMuted($0) }))
+            Toggle(String(localized: "Voice mode"), isOn: Binding(get: { model.enabled }, set: { model.setEnabled($0) }))
+            Toggle(String(localized: "Mute (meeting)"), isOn: Binding(get: { model.muted }, set: { model.setMuted($0) }))
             Divider()
-            Picker("Голос", selection: Binding(get: { model.voice }, set: { model.setVoice($0) })) {
+            Picker(String(localized: "Voice"), selection: Binding(get: { model.voice }, set: { model.setVoice($0) })) {
                 ForEach(model.voices) { Text($0.label).tag($0) }
             }
-            Button("Прослушать голос") { model.previewVoice() }
-            Picker("Пауза, после которой отправляю", selection: Binding(
+            Button(String(localized: "Preview voice")) { model.previewVoice() }
+            Picker(String(localized: "Pause before sending"), selection: Binding(
                 get: { model.double("silence_sec", 2.0) }, set: { model.set("silence_sec", $0) })) {
-                ForEach([1.5, 2.0, 2.5, 3.0], id: \.self) { Text(String(format: "%.1f с", $0)).tag($0) }
+                ForEach([1.5, 2.0, 2.5, 3.0], id: \.self) { Text(String(format: String(localized: "%.1f s"), $0)).tag($0) }
             }
-            Picker("Можно отменить в течение", selection: Binding(
+            Picker(String(localized: "Time to undo"), selection: Binding(
                 get: { model.double("undo_sec", 3.0) }, set: { model.set("undo_sec", $0) })) {
-                Text("не ждать").tag(0.0)
-                ForEach([2.0, 3.0, 5.0], id: \.self) { Text("\(Int($0)) с").tag($0) }
+                Text(String(localized: "don’t wait")).tag(0.0)
+                ForEach([2.0, 3.0, 5.0], id: \.self) { Text(String(localized: "\(Int($0)) s")).tag($0) }
             }
-            Picker("Время, чтобы начать говорить", selection: Binding(
+            Picker(String(localized: "Time to start speaking"), selection: Binding(
                 get: { model.double("wait_sec", 5.0) }, set: { model.set("wait_sec", $0) })) {
-                ForEach([5.0, 8.0, 10.0, 15.0], id: \.self) { Text("\(Int($0)) с").tag($0) }
+                ForEach([5.0, 8.0, 10.0, 15.0], id: \.self) { Text(String(localized: "\(Int($0)) s")).tag($0) }
             }
-            Menu("Проекты") {
-                Button(model.projects.isEmpty ? "✓ Все проекты" : "Все проекты") { model.set("projects", [String]()) }
+            Menu(String(localized: "Projects")) {
+                Button(model.projects.isEmpty ? String(localized: "✓ All projects") : String(localized: "All projects")) { model.set("projects", [String]()) }
                 Divider()
                 ForEach(model.knownProjects, id: \.self) { p in
                     Button(model.projects.contains(p) ? "✓ \(p)" : p) { model.toggleProject(p) }
@@ -802,22 +803,32 @@ struct SettingsMenu: View {
             }
             Divider()
             Section("iPhone") {
-                Text("Код привязки: \(model.pairingCode.prefix(3)) \(model.pairingCode.suffix(3))")
-                Text(model.phones > 0 ? "Подключено: \(model.phones)" : "Телефон не подключён")
-                Button("Новый код (отключит телефон)") { model.onNewPairingCode?() }
+                Text(String(localized: "Pairing code: \(String(model.pairingCode.prefix(3))) \(String(model.pairingCode.suffix(3)))"))
+                Text(model.phones > 0 ? String(localized: "Connected: \(model.phones)") : String(localized: "No phone connected"))
+                Button(String(localized: "New code (disconnects the phone)")) { model.onNewPairingCode?() }
             }
             Divider()
-            Toggle("Запускать при входе в систему", isOn: $model.launchAtLogin)
-            Toggle("Показывать плашку", isOn: $model.showHUD)
-            Toggle("Прятать, когда подключён iPhone", isOn: $model.hideWhenPhone)
-            Button("Открыть лог") { NSWorkspace.shared.open(logURL) }
-            Button("Выйти") { NSApp.terminate(nil) }
+            Toggle(String(localized: "Open at login"), isOn: $model.launchAtLogin)
+            Toggle(String(localized: "Show panel"), isOn: $model.showHUD)
+            Toggle(String(localized: "Hide when an iPhone is connected"), isOn: $model.hideWhenPhone)
+            Button(String(localized: "Open log")) { NSWorkspace.shared.open(logURL) }
+            Button(String(localized: "Quit")) { NSApp.terminate(nil) }
         } label: {
             Image(systemName: "gearshape")
         }
         .menuStyle(.borderlessButton)
         .menuIndicator(.hidden)
         .fixedSize()
+    }
+}
+
+/// Script errors arrive as codes so they can be shown in the user's language.
+func errorText(code: String?, detail: String?) -> String {
+    switch code {
+    case "no_mic":
+        String(localized: "No microphone access. Allow it for voice-loop: System Settings → Privacy & Security → Microphone.")
+    default:
+        String(localized: "Something went wrong: \(detail ?? "")")
     }
 }
 
@@ -869,11 +880,26 @@ final class HUDPanel: NSPanel {
 
     override var canBecomeKey: Bool { true }  // for the reply text field
 
+    /// Default: top centre, below browser tab bars; afterwards wherever the user dragged it.
     func placeTopCenter() {
         guard let screen = NSScreen.main else { return }
         let f = screen.visibleFrame
-        setFrame(NSRect(x: f.midX - Self.canvas.width / 2, y: f.maxY - Self.canvas.height,
-                        width: Self.canvas.width, height: Self.canvas.height), display: true)
+        var origin = NSPoint(x: f.midX - Self.canvas.width / 2, y: f.maxY - Self.canvas.height - 96)
+        if let saved = UserDefaults.standard.string(forKey: "panelOrigin") {
+            let p = NSPointFromString(saved)
+            if NSScreen.screens.contains(where: { $0.frame.contains(NSPoint(x: p.x + Self.canvas.width / 2,
+                                                                         y: p.y + Self.canvas.height - 20)) }) {
+                origin = p
+            }
+        }
+        setFrame(NSRect(origin: origin, size: Self.canvas), display: true)
+        NotificationCenter.default.addObserver(forName: NSWindow.didMoveNotification, object: self,
+                                               queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                UserDefaults.standard.set(NSStringFromPoint(self.frame.origin), forKey: "panelOrigin")
+            }
+        }
     }
 
     /// Called ~20×/s: the panel takes the mouse only over the card (the rest of the canvas is
@@ -969,11 +995,11 @@ struct MenuContent: View {
     @Bindable var model: Model
 
     var body: some View {
-        Toggle("Голосовой режим", isOn: Binding(get: { model.enabled }, set: { model.setEnabled($0) }))
-        Toggle("Без звука (встреча)", isOn: Binding(get: { model.muted }, set: { model.setMuted($0) }))
-        Toggle("Показывать плашку", isOn: $model.showHUD)
-        Toggle("Запускать при входе в систему", isOn: $model.launchAtLogin)
+        Toggle(String(localized: "Voice mode"), isOn: Binding(get: { model.enabled }, set: { model.setEnabled($0) }))
+        Toggle(String(localized: "Mute (meeting)"), isOn: Binding(get: { model.muted }, set: { model.setMuted($0) }))
+        Toggle(String(localized: "Show panel"), isOn: $model.showHUD)
+        Toggle(String(localized: "Open at login"), isOn: $model.launchAtLogin)
         Divider()
-        Button("Выйти") { NSApp.terminate(nil) }.keyboardShortcut("q")
+        Button(String(localized: "Quit")) { NSApp.terminate(nil) }.keyboardShortcut("q")
     }
 }
