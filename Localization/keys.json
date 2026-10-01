@@ -1,4 +1,5 @@
 [
+ "Automatic (best available)",
  "Recent",
  "More %lld",
  "Muted",
@@ -54,6 +55,7 @@
  "Mute (meeting)",
  "Voice",
  "Preview voice",
+ "Recognition model",
  "Pause before sending",
  "%.1f s",
  "Time to undo",

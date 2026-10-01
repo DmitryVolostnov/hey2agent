@@ -110,7 +110,9 @@
   "ios.NSMicrophoneUsageDescription": "Чтобы надиктовать ответ агенту. Звук передаётся только на ваш Mac по зашифрованному соединению и распознаётся там.",
   "ios.NSLocalNetworkUsageDescription": "Чтобы показывать плашку voice-loop с вашего Mac через домашнюю сеть. Данные зашифрованы и не уходят в интернет.",
   "Language": "Язык",
-  "System": "Как в системе"
+  "System": "Как в системе",
+  "Recognition model": "Модель распознавания",
+  "Automatic (best available)": "Автоматически (лучшая из скачанных)"
  },
  "uk": {
   "Recent": "Нещодавні",
@@ -223,7 +225,9 @@
   "ios.NSMicrophoneUsageDescription": "Щоб надиктувати відповідь агенту. Звук іде лише на ваш Mac зашифрованим з’єднанням і розпізнається там.",
   "ios.NSLocalNetworkUsageDescription": "Щоб показувати панель voice-loop з вашого Mac через домашню мережу. Дані зашифровано, вони не йдуть в інтернет.",
   "Language": "Мова",
-  "System": "Як у системі"
+  "System": "Як у системі",
+  "Recognition model": "Модель розпізнавання",
+  "Automatic (best available)": "Автоматично (найкраща із завантажених)"
  },
  "de": {
   "Recent": "Zuletzt",
@@ -336,7 +340,9 @@
   "ios.NSMicrophoneUsageDescription": "Zum Diktieren einer Antwort an den Agenten. Audio geht über eine verschlüsselte Verbindung nur an deinen Mac und wird dort transkribiert.",
   "ios.NSLocalNetworkUsageDescription": "Zum Anzeigen des voice-loop-Panels deines Mac über dein Heimnetzwerk. Die Daten sind verschlüsselt und gehen nie ins Internet.",
   "Language": "Sprache",
-  "System": "Wie System"
+  "System": "Wie System",
+  "Recognition model": "Erkennungsmodell",
+  "Automatic (best available)": "Automatisch (beste verfügbare)"
  },
  "es": {
   "Recent": "Recientes",
@@ -449,7 +455,9 @@
   "ios.NSMicrophoneUsageDescription": "Para dictar una respuesta al agente. El audio solo va a tu Mac por una conexión cifrada y se transcribe allí.",
   "ios.NSLocalNetworkUsageDescription": "Para mostrar el panel de voice-loop de tu Mac a través de tu red doméstica. Los datos están cifrados y nunca van a internet.",
   "Language": "Idioma",
-  "System": "Como el sistema"
+  "System": "Como el sistema",
+  "Recognition model": "Modelo de reconocimiento",
+  "Automatic (best available)": "Automático (el mejor disponible)"
  },
  "fr": {
   "Recent": "Récents",
@@ -562,7 +570,9 @@
   "ios.NSMicrophoneUsageDescription": "Pour dicter une réponse à l’agent. L’audio est envoyé uniquement à votre Mac via une connexion chiffrée et y est transcrit.",
   "ios.NSLocalNetworkUsageDescription": "Pour afficher le panneau voice-loop de votre Mac via votre réseau domestique. Les données sont chiffrées et ne vont jamais sur Internet.",
   "Language": "Langue",
-  "System": "Comme le système"
+  "System": "Comme le système",
+  "Recognition model": "Modèle de reconnaissance",
+  "Automatic (best available)": "Automatique (le meilleur disponible)"
  },
  "pt-BR": {
   "Recent": "Recentes",
@@ -675,7 +685,9 @@
   "ios.NSMicrophoneUsageDescription": "Para ditar uma resposta ao agente. O áudio vai apenas para o seu Mac por uma conexão criptografada e é transcrito lá.",
   "ios.NSLocalNetworkUsageDescription": "Para mostrar o painel do voice-loop do seu Mac pela sua rede doméstica. Os dados são criptografados e nunca vão para a internet.",
   "Language": "Idioma",
-  "System": "Como o sistema"
+  "System": "Como o sistema",
+  "Recognition model": "Modelo de reconhecimento",
+  "Automatic (best available)": "Automático (o melhor disponível)"
  },
  "it": {
   "Recent": "Recenti",
@@ -788,7 +800,9 @@
   "ios.NSMicrophoneUsageDescription": "Per dettare una risposta all’agente. L’audio va solo al tuo Mac tramite una connessione cifrata e viene trascritto lì.",
   "ios.NSLocalNetworkUsageDescription": "Per mostrare il pannello di voice-loop del tuo Mac tramite la rete di casa. I dati sono cifrati e non vanno mai su internet.",
   "Language": "Lingua",
-  "System": "Come il sistema"
+  "System": "Come il sistema",
+  "Recognition model": "Modello di riconoscimento",
+  "Automatic (best available)": "Automatico (il migliore disponibile)"
  },
  "ja": {
   "Recent": "最近",
@@ -901,7 +915,9 @@
   "ios.NSMicrophoneUsageDescription": "エージェントへの返信を音声入力するために使用します。音声は暗号化された接続でお使いのMacにのみ送られ、そこで文字起こしされます。",
   "ios.NSLocalNetworkUsageDescription": "ホームネットワーク経由でMacのvoice-loopパネルを表示するために使用します。データは暗号化され、インターネットに送信されることはありません。",
   "Language": "言語",
-  "System": "システムと同じ"
+  "System": "システムと同じ",
+  "Recognition model": "認識モデル",
+  "Automatic (best available)": "自動（利用可能な最良のモデル）"
  },
  "zh-Hans": {
   "Recent": "最近",
@@ -1014,6 +1030,8 @@
   "ios.NSMicrophoneUsageDescription": "用于听写给智能体的回复。音频仅通过加密连接发送到你的 Mac，并在那里转写。",
   "ios.NSLocalNetworkUsageDescription": "用于通过家庭网络显示你 Mac 上的 voice-loop 面板。数据经过加密，绝不会发送到互联网。",
   "Language": "语言",
-  "System": "跟随系统"
+  "System": "跟随系统",
+  "Recognition model": "识别模型",
+  "Automatic (best available)": "自动（最佳可用模型）"
  }
 }

@@ -374,6 +374,27 @@ final class Model {
         return out
     }
 
+    /// Downloaded whisper models; tag "" = automatic (large-v3-turbo when present).
+    static func whisperModels() -> [(path: String, label: String)] {
+        let home = FileManager.default.homeDirectoryForCurrentUser
+        var urls: [URL] = []
+        let own = home.appendingPathComponent(".voice-loop/models")
+        urls += ((try? FileManager.default.contentsOfDirectory(at: own, includingPropertiesForKeys: nil)) ?? [])
+        let hf = home.appendingPathComponent(".cache/huggingface/hub/models--ggerganov--whisper.cpp/snapshots")
+        for snap in (try? FileManager.default.contentsOfDirectory(at: hf, includingPropertiesForKeys: nil)) ?? [] {
+            urls += (try? FileManager.default.contentsOfDirectory(at: snap, includingPropertiesForKeys: nil)) ?? []
+        }
+        var out: [(String, String)] = [("", String(localized: "Automatic (best available)"))]
+        for u in urls where u.lastPathComponent.hasPrefix("ggml-") && u.pathExtension == "bin" {
+            let size = (try? u.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
+            guard size > 50_000_000 else { continue }  // still downloading
+            let name = u.deletingPathExtension().lastPathComponent
+                .replacingOccurrences(of: "ggml-", with: "")
+            out.append((u.path, "\(name) · \(size / 1_000_000) MB"))
+        }
+        return out
+    }
+
     private static func installedVoices() -> [Voice] {
         var result: [Voice] = []
         let p = Process()
@@ -840,6 +861,12 @@ struct SettingsMenu: View {
                 ForEach(model.voices) { Text($0.label).tag($0) }
             }
             Button(String(localized: "Preview voice")) { model.previewVoice() }
+            Picker(String(localized: "Recognition model"), selection: Binding(
+                get: { model.config["model"] as? String ?? "" }, set: { model.set("model", $0) })) {
+                ForEach(Model.whisperModels(), id: \.path) { m in
+                    Text(m.label).tag(m.path)
+                }
+            }
             Picker(String(localized: "Pause before sending"), selection: Binding(
                 get: { model.double("silence_sec", 2.0) }, set: { model.set("silence_sec", $0) })) {
                 ForEach([1.5, 2.0, 2.5, 3.0], id: \.self) { Text(String(format: String(localized: "%.1f s"), $0)).tag($0) }

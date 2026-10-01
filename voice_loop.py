@@ -90,12 +90,18 @@ MODEL_NAME = "ggml-large-v3-turbo-q8_0.bin"
 MODEL_URL = f"https://huggingface.co/ggerganov/whisper.cpp/resolve/main/{MODEL_NAME}"
 
 
+def list_models():
+    """Downloaded whisper models (≥ 50 MB, so a half-finished download is never picked)."""
+    found = sorted((STATE_DIR / "models").glob("ggml-*.bin"))
+    found += sorted((HOME / ".cache/huggingface/hub").glob("models--ggerganov--whisper.cpp/snapshots/*/ggml-*.bin"))
+    return [p for p in found if p.stat().st_size > 50_000_000]
+
+
 def find_model():
-    """~/.voice-loop/models first, then the Hugging Face cache (Screenpipe puts it there)."""
-    candidates = sorted((STATE_DIR / "models").glob("ggml-*.bin"))
-    candidates += sorted((HOME / ".cache/huggingface/hub").glob(
-        f"models--ggerganov--whisper.cpp/snapshots/*/{MODEL_NAME}"))
-    return str(candidates[0]) if candidates else ""
+    """Default: large-v3-turbo (best for mixed Russian/English), else any downloaded model."""
+    models = list_models()
+    best = [p for p in models if p.name == MODEL_NAME]
+    return str((best or models or [""])[0])
 
 
 def cfg():
@@ -365,7 +371,9 @@ def transcribe(wav, c):
     cmd = [c["whisper"], "-m", c["model"], "-f", wav, "-l", c["language"], "-nt", "-np"]
     if c.get("prompt"):
         cmd += ["--prompt", c["prompt"]]
+    t0 = time.time()
     r = subprocess.run(cmd, capture_output=True, text=True)
+    log(f"transcribed in {time.time() - t0:.1f}s with {Path(c['model']).name}")
     text = re.sub(r"\s+", " ", r.stdout).strip()
     text = re.sub(r"\[[^\]]*\]|\([^)]*\)", "", text).strip()  # [музыка], (шум)
     low = text.lower()
