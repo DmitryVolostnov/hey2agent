@@ -29,7 +29,11 @@ cat > $APP/Contents/Info.plist <<PLIST
   <key>NSMicrophoneUsageDescription</key><string>voice-loop listens to your reply to the agent when you click a chat in the panel. Audio is transcribed locally and never leaves your Mac.</string>
 </dict></plist>
 PLIST
-codesign --force --sign - $APP
+# Sign with the developer's Apple Development identity when available: a stable signature lets
+# macOS keep the microphone / local-network permissions across rebuilds (ad-hoc re-asks every time).
+IDENTITY=$(security find-identity -v -p codesigning | grep -m1 -oE '"(Developer ID Application|Apple Development): [^"]+"' | tr -d '"')
+codesign --force --sign "${IDENTITY:--}" $APP
+echo "signed with: ${IDENTITY:-ad-hoc}"
 # Install into ~/Applications so it can be found in Spotlight / Launchpad.
 mkdir -p ~/Applications
 rm -rf ~/Applications/$APP
