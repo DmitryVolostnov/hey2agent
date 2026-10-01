@@ -377,25 +377,26 @@ struct HUDRoot: View {
             if !model.sessions.isEmpty {
                 Divider().opacity(0.4)
                 SessionList(sessions: model.sessions, detailed: model.expanded || model.active != nil,
+                            wide: model.active != nil,
                             open: { model.open($0) }) {
                     s in s.status == "finished" && model.active == nil ? { model.dictate(to: s) } : nil
                 }
             }
             if model.expanded && model.active == nil && !model.recent.isEmpty {
                 Divider().opacity(0.4)
-                Text("Недавние: нажмите, чтобы открыть чат, 🎙 — надиктовать")
+                Text("Недавние")
                     .font(.system(size: 10))
                     .foregroundStyle(.tertiary)
                     .padding(.horizontal, 12)
                     .padding(.top, 8)
-                SessionList(sessions: model.recent, detailed: true, open: { model.open($0) }) { s in
+                SessionList(sessions: model.recent, detailed: true, wide: false, open: { model.open($0) }) { s in
                     model.active == nil ? { model.dictate(to: s) } : nil
                 }
             }
         }
         // Collapsed: half width; hover or a conversation opens it to full width.
-        .frame(width: model.expanded || model.active != nil ? 380 : 190, alignment: .leading)
-        .animation(.easeOut(duration: 0.15), value: model.expanded)
+        // Narrow pill; hover only unfolds it downward. Full width only while talking/dictating.
+        .frame(width: model.active != nil ? 380 : 190, alignment: .leading)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(.white.opacity(0.08)))
         .padding(8)
@@ -445,8 +446,8 @@ extension IdleHeader {
         if done > 0 { parts.append("готово \(done)") }
         let base = parts.isEmpty ? "Голос включён" : parts.joined(separator: " · ").capitalizedFirst
         // Collapsed: the crossed-out speaker already says «без звука».
-        guard model.muted, model.expanded else { return base }
-        return parts.isEmpty ? "Без звука" : "\(base) · без звука"
+        // The crossed-out speaker already says «без звука».
+        return model.muted && parts.isEmpty ? "Без звука" : base
     }
 }
 
@@ -616,6 +617,8 @@ struct ConversationView: View {
 struct SessionList: View {
     let sessions: [AgentSession]
     let detailed: Bool
+    /// Wide panel: project/status label too; narrow: time only.
+    var wide = true
     /// Click on a row: open the chat.
     var open: (AgentSession) -> Void = { _ in }
     /// Mic button on a row (dictate to this chat), or nil if dictation isn't possible now.
@@ -649,18 +652,26 @@ struct SessionList: View {
                             .truncationMode(.tail)
                         Spacer(minLength: 6)
                         if detailed {
-                            Text(label(s))
-                                .font(.system(size: 11))
-                                .foregroundStyle(.secondary)
-                                .lineLimit(1)
+                            if wide {
+                                Text(label(s))
+                                    .font(.system(size: 11))
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                            }
                             Text(s.status == "idle" || s.status == "finished"
-                                 ? ago(s.ended ?? s.updated, now: now)
+                                 ? (wide ? ago(s.ended ?? s.updated, now: now) : short(s.ended ?? s.updated, now: now))
                                  : elapsed(since: s.since, now: now))
                                 .font(.system(size: 11).monospacedDigit())
                                 .foregroundStyle(.tertiary)
                         }
                     }
                     .help("\(s.project) · \(label(s))")
+    }
+
+    private func short(_ t: Double, now: Date) -> String {
+        let m = max(0, Int(now.timeIntervalSince1970 - t)) / 60
+        if m < 60 { return "\(max(m, 1)) мин" }
+        return m < 24 * 60 ? "\(m / 60) ч" : "\(m / 1440) д"
     }
 
     private func ago(_ t: Double, now: Date) -> String {
