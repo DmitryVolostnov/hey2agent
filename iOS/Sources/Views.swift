@@ -79,15 +79,17 @@ struct PairingView: View {
 struct RemoteView: View {
     @Bindable var model: RemoteModel
     @State private var showMore = false
+    @State private var dismissed: Double?
 
     var body: some View {
         let snap = model.snapshot
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 header(snap)
-                if let a = snap?.active {
+                if let a = snap?.active, a.t != dismissed {
                     ConversationCard(state: a, send: model.send,
-                                     replyByPhone: { model.recordOnPhone(for: nil) })
+                                     replyByPhone: { model.recordOnPhone(for: nil) },
+                                     close: { dismissed = a.t })
                         .id("\(a.project ?? "")|\(a.state)")
                 } else {
                     IdleCard(snap: snap)
@@ -172,6 +174,7 @@ struct ConversationCard: View {
     let state: LinkVoiceState
     let send: (LinkCommand) -> Void
     var replyByPhone: () -> Void = {}
+    var close: () -> Void = {}
     @State private var typed = ""
     @State private var editing = false
     @State private var cancelled = false
@@ -189,6 +192,11 @@ struct ConversationCard: View {
                 Spacer()
                 if state.state == "listening", let left = state.left {
                     Text("\(Int(left.rounded(.up))) с").font(.title3.monospacedDigit()).foregroundStyle(.secondary)
+                }
+                if ["sent", "released", "error"].contains(state.state) {
+                    Button(action: close) { Image(systemName: "xmark.circle.fill").font(.title2) }
+                        .foregroundStyle(.secondary)
+                        .accessibilityLabel("Закрыть")
                 }
                 if let sid = state.session_id, ["speaking", "listening", "phone"].contains(state.state) {
                     Button { send(.open(session: sid)) } label: {
@@ -261,6 +269,7 @@ struct ConversationCard: View {
                     send(.control("hold"))
                 }
                 .buttonStyle(.bordered)
+                Button("Дополнить") { send(.control("append")) }.buttonStyle(.bordered)
                 Button("Заново") { send(.control("again")) }.buttonStyle(.bordered)
                 Spacer()
                 Button("Отмена") { send(.control("cancel")) }.buttonStyle(.borderedProminent).tint(.red)

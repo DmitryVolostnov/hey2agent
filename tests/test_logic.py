@@ -114,8 +114,8 @@ class Confirm(unittest.TestCase):
     def test_disabled(self):
         self.assertEqual(v.confirm("текст", {"undo_sec": 0}, self.ui, self.far), ("send", "текст"))
 
-    def test_cancel_and_again(self):
-        for cmd in ("cancel", "again"):
+    def test_cancel_again_append(self):
+        for cmd in ("cancel", "again", "append"):
             v.CONTROL.write_text(cmd)
             self.assertEqual(v.confirm("текст", self.c, self.ui, self.far)[0], cmd)
 

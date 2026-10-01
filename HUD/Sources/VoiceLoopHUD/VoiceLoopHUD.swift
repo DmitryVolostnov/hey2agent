@@ -81,6 +81,8 @@ final class Model {
     var expanded = false
     /// The visible card inside the (larger, transparent) panel, in SwiftUI window coordinates.
     var cardFrame: CGRect = .zero
+    /// «Закрыть» on a finished step: hidden until the next state change.
+    var dismissedAt: Double?
     /// «Ещё» in «Недавние»: 5 → 10 rows (reset when the panel folds).
     var showMoreRecent = false
     var config: [String: Any] = [:]
@@ -111,7 +113,7 @@ final class Model {
 
     /// Active conversation state, or nil when idle (finished states linger briefly).
     var active: VoiceState? {
-        guard let s = current else { return nil }
+        guard let s = current, s.t != dismissedAt else { return nil }
         let age = Date().timeIntervalSince1970 - s.t
         switch s.state {
         case "speaking", "listening", "transcribing", "confirming", "phone":
@@ -516,6 +518,11 @@ struct ConversationView: View {
                     Button("Отмена") { model.send("cancel") }
                         .controlSize(.small)
                 }
+                if ["sent", "released", "error"].contains(s.state) {
+                    Button { model.dismissedAt = s.t } label: { Image(systemName: "xmark") }
+                        .buttonStyle(.borderless)
+                        .help("Закрыть")
+                }
                 if s.state == "sent", s.cancellable == true, s.delivery != "clipboard",
                    let sid = s.session_id, !cancelled {
                     Button("Отменить") {
@@ -562,6 +569,8 @@ struct ConversationView: View {
                             editing = true
                             model.send("hold")  // stop the countdown while editing
                         }
+                        Button("Дополнить") { model.send("append") }
+                            .help("Оставить текст и договорить ещё")
                         Button("Сказать заново") { model.send("again") }
                         Spacer()
                         Button("Отправить сейчас") { model.send("send") }

@@ -588,14 +588,16 @@ def dictate_to(sid, wav=None):
         return _deliver_and_report(sid, entry, text, ui)
     lis = Listener(c, ui)
     try:
+        prefix = None
         while True:
-            text, typed = listen(lis, c, ui, "", deadline)
+            text, typed = listen(lis, c, ui, "", deadline, prefix)
             if not text or (not typed and is_stop(text)):
                 ui("released")
                 beep("Bottle")
                 return
             verdict, text = confirm(text, c, ui, deadline) if not typed else ("send", text)
-            if verdict == "again":
+            if verdict in ("again", "append"):
+                prefix = text if verdict == "append" else None
                 lis.drop_backlog()
                 continue
             if verdict == "cancel":
@@ -715,12 +717,14 @@ def converse(project, summary, c, title=None, announce=True, sid=None, cancellab
 
     lis = Listener(c, ui)
     try:
+        prefix = None
         while True:
-            text, typed = listen(lis, c, ui, summary, deadline)
+            text, typed = listen(lis, c, ui, summary, deadline, prefix)
             if typed or not text or is_stop(text):
                 return finish(text)
             verdict, edited = confirm(text, c, ui, deadline)
-            if verdict == "again":
+            if verdict in ("again", "append"):
+                prefix = edited if verdict == "append" else None
                 lis.drop_backlog()
                 continue
             return finish(None if verdict == "cancel" else edited)
@@ -731,9 +735,10 @@ def converse(project, summary, c, title=None, announce=True, sid=None, cancellab
         lis.close()
 
 
-def listen(lis, c, ui, summary, deadline):
-    """One dictated instruction. Returns (text | None, typed)."""
-    parts, wait, cue = [], c["wait_sec"], "Tink"
+def listen(lis, c, ui, summary, deadline, prefix=None):
+    """One dictated instruction. Returns (text | None, typed).
+    prefix: text already dictated («Дополнить») — new phrases are appended to it."""
+    parts, wait, cue = ([prefix] if prefix else []), c["wait_sec"], "Tink"
     while True:
         ui("listening", text=" ".join(parts))
         pcm, how, payload = lis.phrase(wait, cue, deadline)
@@ -756,7 +761,7 @@ def listen(lis, c, ui, summary, deadline):
         log(f"phrase: {text!r} ({how})")
         if strip_tail(text, CANCEL_WORDS) is not None:
             return None, False
-        if not parts and is_repeat(text):
+        if not prefix and not parts and is_repeat(text):
             ui("speaking")
             speak(summary, c)
             lis.drop_backlog()
@@ -781,7 +786,7 @@ def listen(lis, c, ui, summary, deadline):
 
 def confirm(text, c, ui, deadline):
     """Grace period before sending: the HUD can cancel, re-dictate, edit or send now.
-    Returns (verdict, text): send | cancel | again."""
+    Returns (verdict, text): send | cancel | again | append."""
     left = c["undo_sec"]
     if left <= 0:
         return "send", text
@@ -789,7 +794,7 @@ def confirm(text, c, ui, deadline):
     while held or left > 0:
         ui("confirming", text=text, left=None if held else left)
         cmd, payload = take_control()
-        if cmd in ("cancel", "again"):
+        if cmd in ("cancel", "again", "append"):
             return cmd, text
         if cmd == "send":
             return "send", text
