@@ -1,5 +1,6 @@
 import Network
 import SwiftUI
+import UIKit
 import VoiceLoopLink
 
 // MARK: - Pairing
@@ -138,6 +139,10 @@ struct RemoteView: View {
                 .accessibilityLabel(s.muted ? String(localized: "Unmute") : String(localized: "Mute"))
             }
             Menu {
+                // iOS has a per-app language switch in Settings; open it.
+                Button(String(localized: "Language")) {
+                    if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }
+                }
                 Button(String(localized: "Unpair Mac"), role: .destructive) { model.unpair() }
             } label: {
                 Image(systemName: "ellipsis.circle").font(.title3).foregroundStyle(.secondary)

@@ -128,6 +128,9 @@ final class Model {
         }
     }
 
+    /// Nothing in progress and not hovered: shrink to a square with just the app icon.
+    var isSquare: Bool { active == nil && sessions.isEmpty && !expanded }
+
     var visible: Bool {
         showHUD && !(hideWhenPhone && phones > 0) && (enabled || active != nil)
     }
@@ -209,6 +212,37 @@ final class Model {
 
     /// Dictate a message for a chat that isn't waiting for an answer.
     private var dictation: Process?
+
+    // MARK: interface language (empty = follow the system)
+
+    static let appLanguages: [String] = Bundle.main.localizations.filter { $0 != "Base" }
+        .sorted { languageName($0) < languageName($1) }
+
+    static func languageName(_ code: String) -> String {
+        let name = Locale(identifier: code).localizedString(forIdentifier: code) ?? code
+        return name.prefix(1).uppercased() + name.dropFirst()
+    }
+
+    var appLanguage: String {
+        (UserDefaults.standard.persistentDomain(forName: Bundle.main.bundleIdentifier ?? "")?["AppleLanguages"]
+            as? [String])?.first ?? ""
+    }
+
+    /// Stores the per-app language and relaunches (AppKit reads it only at startup).
+    func setAppLanguage(_ code: String) {
+        guard code != appLanguage else { return }
+        if code.isEmpty {
+            UserDefaults.standard.removeObject(forKey: "AppleLanguages")
+        } else {
+            UserDefaults.standard.set([code], forKey: "AppleLanguages")
+        }
+        UserDefaults.standard.synchronize()
+        let p = Process()
+        p.executableURL = URL(fileURLWithPath: "/bin/sh")
+        p.arguments = ["-c", "sleep 1; /usr/bin/open \"\(Bundle.main.bundlePath)\""]
+        try? p.run()
+        NSApp.terminate(nil)
+    }
 
     /// Bring this chat to the front (Claude app deep link / Codex app).
     func open(_ session: AgentSession) {
@@ -377,6 +411,8 @@ struct HUDRoot: View {
                 // into another state or another session.
                 ConversationView(model: model, s: s)
                     .id("\(s.project ?? "")|\(s.state)")
+            } else if model.isSquare {
+                IdleBadge(muted: model.muted)
             } else {
                 IdleHeader(model: model)
             }
@@ -422,7 +458,7 @@ struct HUDRoot: View {
             }
         }
         // Narrow pill; hover only unfolds it downward. Full width only while talking/dictating.
-        .frame(width: model.active != nil ? 380 : 190, alignment: .leading)
+        .frame(width: model.active != nil ? 380 : (model.isSquare ? IdleBadge.side : 190), alignment: .leading)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(.white.opacity(0.08)))
@@ -432,12 +468,35 @@ struct HUDRoot: View {
                 .onChange(of: g.frame(in: .global)) { _, f in model.cardFrame = f }
         })
         .animation(.spring(response: 0.32, dampingFraction: 0.88), value: model.expanded)
+        .animation(.spring(response: 0.32, dampingFraction: 0.88), value: model.isSquare)
         .animation(.spring(response: 0.32, dampingFraction: 0.88), value: model.showMoreRecent)
         .animation(.spring(response: 0.32, dampingFraction: 0.88), value: model.active?.state)
         .padding(.top, 4)
         // The window never resizes (that caused the jitter): the card sits at the top of a fixed,
         // transparent canvas and grows downward inside it.
         .frame(width: HUDPanel.canvas.width, height: HUDPanel.canvas.height, alignment: .top)
+    }
+}
+
+struct IdleBadge: View {
+    static let side: CGFloat = 40
+    let muted: Bool
+
+    var body: some View {
+        Group {
+            if muted {
+                Image(systemName: "speaker.slash.fill")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(.orange)
+            } else {
+                Image(nsImage: NSApp.applicationIconImage)
+                    .resizable()
+                    .interpolation(.high)
+                    .frame(width: 26, height: 26)
+            }
+        }
+        .frame(width: Self.side, height: Self.side)
+        .help(muted ? String(localized: "Muted") : "voice-loop")
     }
 }
 
@@ -808,6 +867,14 @@ struct SettingsMenu: View {
                 Button(String(localized: "New code (disconnects the phone)")) { model.onNewPairingCode?() }
             }
             Divider()
+            Picker(String(localized: "Language"), selection: Binding(
+                get: { model.appLanguage }, set: { model.setAppLanguage($0) })) {
+                Text(String(localized: "System")).tag("")
+                Divider()
+                ForEach(Model.appLanguages, id: \.self) { code in
+                    Text(Model.languageName(code)).tag(code)
+                }
+            }
             Toggle(String(localized: "Open at login"), isOn: $model.launchAtLogin)
             Toggle(String(localized: "Show panel"), isOn: $model.showHUD)
             Toggle(String(localized: "Hide when an iPhone is connected"), isOn: $model.hideWhenPhone)
