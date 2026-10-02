@@ -510,10 +510,7 @@ struct IdleBadge: View {
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(.orange)
             } else {
-                Image(nsImage: NSApp.applicationIconImage)
-                    .resizable()
-                    .interpolation(.high)
-                    .frame(width: 26, height: 26)
+                LogoView().frame(width: 30, height: 30)
             }
         }
         .frame(width: Self.side, height: Self.side)
