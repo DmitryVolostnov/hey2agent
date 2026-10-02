@@ -434,25 +434,30 @@ struct HUDRoot: View {
                     .id("\(s.project ?? "")|\(s.state)")
             } else if model.isSquare {
                 IdleBadge(muted: model.muted)
-            } else {
-                IdleHeader(model: model)
             }
             if !model.sessions.isEmpty {
-                Divider().opacity(0.4)
+                if model.active != nil { Divider().opacity(0.4) }
                 SessionList(sessions: model.sessions, detailed: model.expanded || model.active != nil,
                             wide: model.active != nil,
                             open: { model.open($0) }) {
                     s in s.status == "finished" && model.active == nil ? { model.dictate(to: s) } : nil
                 }
             }
-            if model.expanded && model.active == nil && !model.recent.isEmpty {
+            if model.expanded && model.active == nil {
                 VStack(alignment: .leading, spacing: 0) {
-                Divider().opacity(0.4)
-                Text(String(localized: "Recent"))
-                    .font(.system(size: 10))
-                    .foregroundStyle(.tertiary)
-                    .padding(.horizontal, 12)
-                    .padding(.top, 8)
+                if !model.sessions.isEmpty { Divider().opacity(0.4) }
+                // The only header: «Recent» with the two controls that matter (mute, settings).
+                HStack(spacing: 10) {
+                    Text(model.recent.isEmpty ? "" : String(localized: "Recent"))
+                        .font(.system(size: 10))
+                        .foregroundStyle(.tertiary)
+                    Spacer(minLength: 0)
+                    MuteButton(model: model)
+                    SettingsMenu(model: model)
+                }
+                .padding(.horizontal, 12)
+                .padding(.top, 7)
+                .padding(.bottom, model.recent.isEmpty ? 7 : 0)
                 SessionList(sessions: Array(model.recent.prefix(model.showMoreRecent ? 10 : 5)),
                             detailed: true, wide: false, open: { model.open($0) }) { s in
                     model.active == nil ? { model.dictate(to: s) } : nil
@@ -476,6 +481,15 @@ struct HUDRoot: View {
                 }
                 }
                 .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+        .overlay(alignment: .topTrailing) {
+            // No header any more: show «muted» as a small corner mark on the collapsed list.
+            if model.muted && !model.expanded && model.active == nil && !model.isSquare {
+                Image(systemName: "speaker.slash.fill")
+                    .font(.system(size: 9))
+                    .foregroundStyle(.orange)
+                    .padding(6)
             }
         }
         // Narrow pill; hover only unfolds it downward. Full width only while talking/dictating.
@@ -518,40 +532,16 @@ struct IdleBadge: View {
     }
 }
 
-struct IdleHeader: View {
+struct MuteButton: View {
     @Bindable var model: Model
 
     var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: model.muted ? "speaker.slash" : "waveform").foregroundStyle(.secondary)
-            Text(headline).font(.system(size: 12, weight: .medium)).lineLimit(1)
-            Spacer(minLength: 8)
-            Button { model.setMuted(!model.muted) } label: {
-                Image(systemName: model.muted ? "speaker.slash.fill" : "speaker.wave.2")
-                    .foregroundStyle(model.muted ? .orange : .secondary)
-            }
-            .buttonStyle(.borderless)
-            .help(model.muted ? String(localized: "Unmute") : String(localized: "Mute (meeting): don’t speak or listen"))
-            if model.expanded {
-                SettingsMenu(model: model)
-            }
+        Button { model.setMuted(!model.muted) } label: {
+            Image(systemName: model.muted ? "speaker.slash.fill" : "speaker.wave.2")
+                .foregroundStyle(model.muted ? .orange : .secondary)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-    }
-}
-
-extension IdleHeader {
-    var headline: String {
-        let working = model.sessions.filter { $0.status == "working" || $0.status == "waiting" }.count
-        let done = model.sessions.filter { $0.status == "finished" }.count
-        var parts: [String] = []
-        if working > 0 { parts.append(String(localized: "in progress \(working)")) }
-        if done > 0 { parts.append(String(localized: "done \(done)")) }
-        let base = parts.isEmpty ? String(localized: "Voice on") : parts.joined(separator: " · ").capitalizedFirst
-        // Collapsed: the crossed-out speaker already says «без звука».
-        // The crossed-out speaker already says «без звука».
-        return model.muted && parts.isEmpty ? String(localized: "Muted") : base
+        .buttonStyle(.borderless)
+        .help(model.muted ? String(localized: "Unmute") : String(localized: "Mute (meeting): don’t speak or listen"))
     }
 }
 
