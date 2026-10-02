@@ -569,10 +569,10 @@ struct ConversationView: View {
 
     // One fixed layout for every step of a conversation: same height, buttons never move
     // (switching from «speaking» to «listening» used to shrink the card → misclicks).
-    static let textHeight: CGFloat = 86
+    static let textHeight: CGFloat = 60
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 6) {
             header
 
             LevelBar(level: s.level ?? 0)
@@ -588,7 +588,7 @@ struct ConversationView: View {
                 } else {
                     Text(bodyText ?? "")
                         .foregroundStyle(s.state == "speaking" ? .secondary : .primary)
-                        .lineLimit(6)
+                        .lineLimit(4)
                         .textSelection(.enabled)
                 }
             }
@@ -607,7 +607,9 @@ struct ConversationView: View {
 
             buttonRow
         }
-        .padding(14)
+        .padding(.horizontal, 12)
+        .padding(.top, 10)
+        .padding(.bottom, 10)
     }
 
     private var replyField: Bool { s.state == "speaking" || s.state == "listening" }
@@ -643,10 +645,11 @@ struct ConversationView: View {
         .frame(height: 20)
     }
 
-    /// [secondary actions …]  Spacer  [Cancel slot][Primary slot] — both right slots have a fixed
-    /// width, so «Cancel» stays exactly where it was whatever the primary label is.
+    /// [Cancel] [secondary …]  Spacer  [Primary] — natural widths; «Cancel» is always first on the
+    /// left and the primary button always at the right edge, so neither moves between steps.
     @ViewBuilder private var buttonRow: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 8) {
+            cancelSlot
             switch s.state {
             case "speaking", "listening":
                 Button(String(localized: "Repeat")) { model.send("repeat") }
@@ -669,15 +672,10 @@ struct ConversationView: View {
                 EmptyView()
             }
             Spacer(minLength: 0)
-            slot { cancelSlot }
-            slot { primarySlot }
+            primarySlot
         }
         .controlSize(.small)
         .frame(height: 22)
-    }
-
-    private func slot<V: View>(@ViewBuilder _ content: () -> V) -> some View {
-        content().frame(width: 78, alignment: .trailing)
     }
 
     @ViewBuilder private var cancelSlot: some View {
@@ -693,7 +691,7 @@ struct ConversationView: View {
                 .help(String(localized: "Claude will stop: all its next actions will be blocked"))
             }
         default:
-            Color.clear.frame(height: 1)
+            EmptyView()
         }
     }
 
@@ -711,7 +709,7 @@ struct ConversationView: View {
         case "transcribing":
             Button(String(localized: "Send")) {}.disabled(true)
         default:
-            Color.clear.frame(height: 1)
+            EmptyView()
         }
     }
 
