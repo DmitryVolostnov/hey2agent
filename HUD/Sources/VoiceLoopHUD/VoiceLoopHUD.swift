@@ -567,120 +567,152 @@ struct ConversationView: View {
     @State private var cancelled = false
     @FocusState private var editing: Bool
 
+    // One fixed layout for every step of a conversation: same height, buttons never move
+    // (switching from «speaking» to «listening» used to shrink the card → misclicks).
+    static let textHeight: CGFloat = 86
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 8) {
-                icon.font(.system(size: 15, weight: .semibold)).frame(width: 20)
-                Text(title).font(.system(size: 13, weight: .semibold))
-                    .lineLimit(1)
-                    .fixedSize()
-                if let project = s.project {
-                    Text(project).font(.system(size: 12)).foregroundStyle(.secondary).lineLimit(1)
-                        .onTapGesture { if s.session_id != nil { model.openActive() } }
-                        .help(s.session_id != nil ? String(localized: "Open this chat") : "")
-                }
-                Spacer(minLength: 12)
-                if s.state == "listening", let left = s.left {
-                    Text(String(localized: "\(Int(left.rounded(.up))) s"))
-                        .font(.system(size: 12).monospacedDigit())
-                        .foregroundStyle(.secondary)
-                }
-                if s.session_id != nil && ["speaking", "listening", "phone"].contains(s.state) {
-                    Button { model.openActive() } label: {
-                        Image(systemName: "arrow.up.forward.app")
-                    }
-                    .buttonStyle(.borderless)
-                    .help(String(localized: "Open this chat and reply there"))
-                }
-                if s.state == "confirming" && !editMode {
-                    Button(String(localized: "Cancel")) { model.send("cancel") }
-                        .controlSize(.small)
-                }
-                if ["sent", "released", "error"].contains(s.state) {
-                    Button { model.dismissedAt = s.t } label: { Image(systemName: "xmark") }
-                        .buttonStyle(.borderless)
-                        .help(String(localized: "Close"))
-                }
-                if s.state == "sent", s.cancellable == true, s.delivery != "clipboard",
-                   let sid = s.session_id, !cancelled {
-                    Button(String(localized: "Undo")) {
-                        model.cancelSent(sid)
-                        cancelled = true
-                    }
-                    .controlSize(.small)
-                    .help(String(localized: "Claude will stop: all its next actions will be blocked"))
-                }
-            }
+            header
 
-            if s.state == "listening" {
-                LevelBar(level: s.level ?? 0)
-            }
+            LevelBar(level: s.level ?? 0)
+                .opacity(s.state == "listening" ? 1 : 0)
 
-            if let line = bodyText, !line.isEmpty {
-                Text(line)
-                    .font(.system(size: 12))
-                    .foregroundStyle(s.state == "speaking" ? .secondary : .primary)
-                    .lineLimit(s.state == "confirming" || s.state == "sent" ? 12 : 5)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .textSelection(.enabled)
-            }
-
-            if s.state == "confirming" {
-                if editMode {
+            Group {
+                if s.state == "confirming" && editMode {
                     TextField(String(localized: "Edit and press ↩"), text: $typed, axis: .vertical)
                         .textFieldStyle(.roundedBorder)
-                        .font(.system(size: 12))
-                        .lineLimit(1...6)
+                        .lineLimit(1...5)
                         .focused($editing)
                         .onSubmit { model.reply(typed) }
-                    HStack {
-                        Button(String(localized: "Cancel")) { model.send("cancel") }
-                        Spacer()
-                        Button(String(localized: "Send")) { model.reply(typed) }
-                    }
-                    .controlSize(.small)
                 } else {
-                    HStack(spacing: 12) {
-                        Button(String(localized: "Edit")) {
-                            typed = s.text ?? ""
-                            editMode = true
-                            editing = true
-                            model.send("hold")  // stop the countdown while editing
-                        }
-                        Button(String(localized: "Add more")) { model.send("append") }
-                            .help(String(localized: "Keep the text and dictate more"))
-                        Button(String(localized: "Say again")) { model.send("again") }
-                        Spacer()
-                        Button(String(localized: "Send now")) { model.send("send") }
-                    }
-                    .buttonStyle(.link)
-                    .font(.system(size: 11))
+                    Text(bodyText ?? "")
+                        .foregroundStyle(s.state == "speaking" ? .secondary : .primary)
+                        .lineLimit(6)
+                        .textSelection(.enabled)
                 }
             }
+            .font(.system(size: 12))
+            .frame(maxWidth: .infinity, minHeight: Self.textHeight, maxHeight: Self.textHeight, alignment: .topLeading)
 
-            if s.state == "speaking" || s.state == "listening" {
-                TextField(String(localized: "Type a reply and press ↩"), text: $typed)
-                    .textFieldStyle(.roundedBorder)
-                    .font(.system(size: 12))
-                    .onSubmit {
-                        model.reply(typed)
-                        typed = ""
-                    }
-                HStack {
-                    Button(String(localized: "Repeat")) { model.send("repeat") }
-                        .disabled(s.state != "listening")
-                    Spacer()
-                    Button(String(localized: "Cancel")) { model.send("cancel") }
-                    if s.state == "speaking" {
-                        Button(String(localized: "Skip")) { model.send("skip") }
-                    } else {
-                        Button(String(localized: "Send")) { model.send("send") }
-                    }
+            TextField(String(localized: "Type a reply and press ↩"), text: $typed)
+                .textFieldStyle(.roundedBorder)
+                .font(.system(size: 12))
+                .onSubmit {
+                    model.reply(typed)
+                    typed = ""
                 }
-                .controlSize(.small)
-            }
+                .opacity(replyField ? 1 : 0)
+                .disabled(!replyField)
+
+            buttonRow
         }
         .padding(14)
+    }
+
+    private var replyField: Bool { s.state == "speaking" || s.state == "listening" }
+
+    @ViewBuilder private var header: some View {
+        HStack(spacing: 8) {
+            icon.font(.system(size: 15, weight: .semibold)).frame(width: 20)
+            Text(title).font(.system(size: 13, weight: .semibold))
+                .lineLimit(1)
+                .fixedSize()
+            if let project = s.project {
+                Text(project).font(.system(size: 12)).foregroundStyle(.secondary).lineLimit(1)
+                    .onTapGesture { if s.session_id != nil { model.openActive() } }
+                    .help(s.session_id != nil ? String(localized: "Open this chat") : "")
+            }
+            Spacer(minLength: 12)
+            if s.state == "listening", let left = s.left {
+                Text(String(localized: "\(Int(left.rounded(.up))) s"))
+                    .font(.system(size: 12).monospacedDigit())
+                    .foregroundStyle(.secondary)
+            }
+            if s.session_id != nil && ["speaking", "listening", "phone"].contains(s.state) {
+                Button { model.openActive() } label: { Image(systemName: "arrow.up.forward.app") }
+                    .buttonStyle(.borderless)
+                    .help(String(localized: "Open this chat and reply there"))
+            }
+            if ["sent", "released", "error"].contains(s.state) {
+                Button { model.dismissedAt = s.t } label: { Image(systemName: "xmark") }
+                    .buttonStyle(.borderless)
+                    .help(String(localized: "Close"))
+            }
+        }
+        .frame(height: 20)
+    }
+
+    /// [secondary actions …]  Spacer  [Cancel slot][Primary slot] — both right slots have a fixed
+    /// width, so «Cancel» stays exactly where it was whatever the primary label is.
+    @ViewBuilder private var buttonRow: some View {
+        HStack(spacing: 10) {
+            switch s.state {
+            case "speaking", "listening":
+                Button(String(localized: "Repeat")) { model.send("repeat") }
+                    .disabled(s.state != "listening")
+            case "confirming" where !editMode:
+                HStack(spacing: 8) {
+                    Button(String(localized: "Edit")) {
+                        typed = s.text ?? ""
+                        editMode = true
+                        editing = true
+                        model.send("hold")  // stop the countdown while editing
+                    }
+                    Button(String(localized: "Add more")) { model.send("append") }
+                        .help(String(localized: "Keep the text and dictate more"))
+                    Button(String(localized: "Say again")) { model.send("again") }
+                }
+                .buttonStyle(.link)
+                .font(.system(size: 11))
+            default:
+                EmptyView()
+            }
+            Spacer(minLength: 0)
+            slot { cancelSlot }
+            slot { primarySlot }
+        }
+        .controlSize(.small)
+        .frame(height: 22)
+    }
+
+    private func slot<V: View>(@ViewBuilder _ content: () -> V) -> some View {
+        content().frame(width: 78, alignment: .trailing)
+    }
+
+    @ViewBuilder private var cancelSlot: some View {
+        switch s.state {
+        case "speaking", "listening", "phone", "confirming":
+            Button(String(localized: "Cancel")) { model.send("cancel") }
+        case "sent" where s.cancellable == true && s.delivery != "clipboard" && !cancelled:
+            if let sid = s.session_id {
+                Button(String(localized: "Undo")) {
+                    model.cancelSent(sid)
+                    cancelled = true
+                }
+                .help(String(localized: "Claude will stop: all its next actions will be blocked"))
+            }
+        default:
+            Color.clear.frame(height: 1)
+        }
+    }
+
+    @ViewBuilder private var primarySlot: some View {
+        switch s.state {
+        case "speaking":
+            Button(String(localized: "Skip")) { model.send("skip") }.keyboardShortcut(.defaultAction)
+        case "listening", "phone":
+            Button(String(localized: "Send")) { model.send("send") }.keyboardShortcut(.defaultAction)
+        case "confirming":
+            Button(editMode ? String(localized: "Send") : String(localized: "Send now")) {
+                editMode ? model.reply(typed) : model.send("send")
+            }
+            .keyboardShortcut(.defaultAction)
+        case "transcribing":
+            Button(String(localized: "Send")) {}.disabled(true)
+        default:
+            Color.clear.frame(height: 1)
+        }
     }
 
     private var bodyText: String? {

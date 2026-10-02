@@ -210,26 +210,27 @@ struct ConversationCard: View {
                 }
             }
 
-            if state.state == "listening" {
-                GeometryReader { geo in
-                    ZStack(alignment: .leading) {
-                        Capsule().fill(.quaternary)
-                        Capsule().fill(.red.gradient)
-                            .frame(width: max(6, geo.size.width * (state.level ?? 0)))
-                            .animation(.linear(duration: 0.15), value: state.level)
-                    }
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(.quaternary)
+                    Capsule().fill(.red.gradient)
+                        .frame(width: max(6, geo.size.width * (state.level ?? 0)))
+                        .animation(.linear(duration: 0.15), value: state.level)
                 }
-                .frame(height: 6)
             }
+            .frame(height: 6)
+            .opacity(state.state == "listening" ? 1 : 0)
 
-            if let text = bodyText, !text.isEmpty {
-                Text(text)
-                    .font(.title3)
-                    .foregroundStyle(state.state == "speaking" ? .secondary : .primary)
-                    .textSelection(.enabled)
-            }
+            // Fixed height for every step so the buttons below never move between states.
+            Text(bodyText ?? "")
+                .font(.title3)
+                .foregroundStyle(state.state == "speaking" ? .secondary : .primary)
+                .lineLimit(6)
+                .textSelection(.enabled)
+                .frame(maxWidth: .infinity, minHeight: 150, maxHeight: 150, alignment: .topLeading)
 
-            if editing || state.state == "speaking" || state.state == "listening" {
+            let field = editing || state.state == "speaking" || state.state == "listening"
+            do {
                 HStack {
                     TextField(editing ? String(localized: "Edit the text") : String(localized: "Type a reply"), text: $typed, axis: .vertical)
                         .textFieldStyle(.roundedBorder)
@@ -238,6 +239,8 @@ struct ConversationCard: View {
                     Button(action: submit) { Image(systemName: "arrow.up.circle.fill").font(.title) }
                         .disabled(typed.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
+                .opacity(field ? 1 : 0)
+                .disabled(!field)
             }
 
             buttons
