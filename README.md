@@ -53,6 +53,17 @@ While voice mode is on, the agent is asked to start every answer with a one-line
 ## Install
 Requirements: macOS 15+ on Apple silicon, Python 3, [Homebrew](https://brew.sh).
 
+**As a Claude Code plugin** (recommended) — run inside Claude Code:
+```
+/plugin marketplace add DmitryVolostnov/hey2agent
+/plugin install hey2agent@hey2agent
+/hey2agent:setup
+```
+`/hey2agent:setup` checks your Mac, asks before installing `whisper-cpp`/`ffmpeg`, lets you pick a speech
+model, builds the panel and turns voice mode on.
+
+**Manually:**
+
 ```bash
 brew install whisper-cpp ffmpeg
 git clone https://github.com/DmitryVolostnov/hey2agent && cd hey2agent

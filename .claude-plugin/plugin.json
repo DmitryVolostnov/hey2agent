@@ -1,0 +1,10 @@
+{
+  "name": "hey2agent",
+  "version": "0.1.0",
+  "description": "Talk to Claude Code by voice: hear a short summary when the agent finishes, reply by voice into the same session. Local whisper.cpp, Russian + English, macOS.",
+  "author": { "name": "Dmitry Volostnov", "url": "https://github.com/DmitryVolostnov" },
+  "homepage": "https://github.com/DmitryVolostnov/hey2agent",
+  "repository": "https://github.com/DmitryVolostnov/hey2agent",
+  "license": "MIT",
+  "keywords": ["voice", "speech", "whisper", "tts", "macos", "hooks", "hands-free"]
+}

@@ -1103,6 +1103,9 @@ def main():
         for mid, name, mb, note in MODELS:
             have = (STATE_DIR / "models" / name).exists() or any(p.name == name for p in list_models())
             print(f"{'✓' if have else ' '} {mid:9} {mb:4} MB  {note}")
+    elif cmd == "setup":  # plugin installs: hooks come from the plugin, only local setup here
+        (STATE_DIR / "script_path").write_text(f"{shutil.which('python3') or sys.executable}\n{SCRIPT}\n")
+        print(f"recorded {SCRIPT} for the panel; model: {find_model() or 'none — run download-model'}")
     elif cmd == "install-codex":
         install_codex()
     elif cmd == "uninstall-codex":

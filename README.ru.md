@@ -34,6 +34,16 @@
 
 ## Установка
 macOS 15+ на Apple Silicon, Python 3, [Homebrew](https://brew.sh).
+
+**Плагином Claude Code** (рекомендуется) — внутри Claude Code:
+```
+/plugin marketplace add DmitryVolostnov/hey2agent
+/plugin install hey2agent@hey2agent
+/hey2agent:setup
+```
+`/hey2agent:setup` проверит Mac, спросит перед установкой зависимостей, даст выбрать модель, соберёт плашку и включит голос.
+
+**Вручную:**
 ```bash
 brew install whisper-cpp ffmpeg
 git clone https://github.com/DmitryVolostnov/hey2agent && cd hey2agent

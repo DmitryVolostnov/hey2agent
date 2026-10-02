@@ -1,0 +1,19 @@
+{
+  "name": "hey2agent",
+  "owner": {
+    "name": "Dmitry Volostnov",
+    "url": "https://github.com/DmitryVolostnov"
+  },
+  "metadata": {
+    "description": "hey2agent — voice replies for Claude Code (local whisper.cpp, macOS)."
+  },
+  "plugins": [
+    {
+      "name": "hey2agent",
+      "source": "./",
+      "description": "Voice replies for Claude Code: spoken summary when a turn ends, dictate the next instruction into the same session. Local, macOS.",
+      "version": "0.1.0",
+      "category": "productivity"
+    }
+  ]
+}
