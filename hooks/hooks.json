@@ -1,7 +1,7 @@
 {
   "hooks": {
     "Stop": [
-      { "hooks": [ { "type": "command", "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/voice_loop.py\" hook", "timeout": 180 } ] }
+      { "hooks": [ { "type": "command", "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/voice_loop.py\" hook", "timeout": 600 } ] }
     ],
     "UserPromptSubmit": [
       { "hooks": [ { "type": "command", "command": "python3 \"${CLAUDE_PLUGIN_ROOT}/voice_loop.py\" prompt", "timeout": 10 } ] }

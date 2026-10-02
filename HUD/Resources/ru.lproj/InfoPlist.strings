@@ -1,1 +1,2 @@
 NSMicrophoneUsageDescription = "hey2agent слушает ваш ответ агенту, когда вы нажимаете на чат в плашке. Звук распознаётся локально и не покидает ваш Mac.";
+NSLocalNetworkUsageDescription = "hey2agent показывает плашку на вашем iPhone через домашнюю сеть. Данные зашифрованы и не уходят в интернет.";

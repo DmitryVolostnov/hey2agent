@@ -259,3 +259,50 @@ class Reading(unittest.TestCase):
     def test_reading_times_out_silently(self):
         import time
         self.assertEqual(v.wait_while_reading(self.ui, time.time() + 0.3), ("timeout", None))
+
+
+class Remote(unittest.TestCase):
+    def setUp(self):
+        self.dir = tempfile.TemporaryDirectory()
+        d = Path(self.dir.name)
+        self.saved = (v.CONTROL, v.REMOTE)
+        v.CONTROL, v.REMOTE = d / "control", d / "remote"
+        self.states = []
+        self.ui = lambda state=None, **k: self.states.append(state)
+
+    def tearDown(self):
+        v.CONTROL, v.REMOTE = self.saved
+        self.dir.cleanup()
+
+    def test_remote_flag_freshness(self):
+        import os, time
+        self.assertFalse(v.is_remote())
+        v.REMOTE.touch()
+        self.assertTrue(v.is_remote())
+        old = time.time() - 60
+        os.utime(v.REMOTE, (old, old))
+        self.assertFalse(v.is_remote())
+
+    def test_typed_reply_from_phone(self):
+        import time
+        v.CONTROL.write_text("text\nоткрой пул-реквест")
+        self.assertEqual(v.remote_reply({}, self.ui, time.time() + 5), "открой пул-реквест")
+        self.assertIn("reading", self.states)
+
+    def test_cancel_and_timeout_release(self):
+        import time
+        v.CONTROL.write_text("cancel")
+        self.assertIsNone(v.remote_reply({}, self.ui, time.time() + 5))
+        self.assertIsNone(v.remote_reply({}, self.ui, time.time() + 0.3))
+
+    def test_cancelled_recording_returns_to_reading(self):
+        import threading, time
+        v.CONTROL.write_text("phone")
+
+        def later():
+            time.sleep(0.3); v.CONTROL.write_text("reading")
+            time.sleep(0.3); v.CONTROL.write_text("text\nготово")
+
+        threading.Thread(target=later).start()
+        self.assertEqual(v.remote_reply({}, self.ui, time.time() + 5), "готово")
+        self.assertEqual([s for s in self.states if s][:3], ["reading", "phone", "reading"])

@@ -1,0 +1,2 @@
+NSMicrophoneUsageDescription = "エージェントへの返信を音声入力するために使用します。音声は暗号化された接続でお使いのMacにのみ送られ、そこで文字起こしされます。";
+NSLocalNetworkUsageDescription = "ホームネットワーク経由でMacのhey2agentパネルを表示するために使用します。データは暗号化され、インターネットに送信されることはありません。";

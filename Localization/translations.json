@@ -123,7 +123,10 @@
   "Stop voice": "Замолчать",
   "Stop reading aloud — read it yourself": "Перестать читать вслух — прочитаю сам",
   "Reply by voice": "Ответить голосом",
-  "Summary": "Кратко"
+  "Summary": "Кратко",
+  "Read aloud": "Прочитать вслух",
+  "More": "Подробнее",
+  "Read summaries aloud": "Читать саммари вслух"
  },
  "uk": {
   "Recent": "Нещодавні",
@@ -249,7 +252,10 @@
   "Stop voice": "Замовкнути",
   "Stop reading aloud — read it yourself": "Перестати читати вголос — прочитаю сам",
   "Reply by voice": "Відповісти голосом",
-  "Summary": "Коротко"
+  "Summary": "Коротко",
+  "Read aloud": "Прочитати вголос",
+  "More": "Детальніше",
+  "Read summaries aloud": "Читати підсумки вголос"
  },
  "de": {
   "Recent": "Zuletzt",
@@ -375,7 +381,10 @@
   "Stop voice": "Stumm",
   "Stop reading aloud — read it yourself": "Nicht mehr vorlesen – selbst lesen",
   "Reply by voice": "Per Sprache antworten",
-  "Summary": "Kurzfassung"
+  "Summary": "Kurzfassung",
+  "Read aloud": "Vorlesen",
+  "More": "Mehr",
+  "Read summaries aloud": "Zusammenfassungen vorlesen"
  },
  "es": {
   "Recent": "Recientes",
@@ -501,7 +510,10 @@
   "Stop voice": "Silenciar",
   "Stop reading aloud — read it yourself": "Dejar de leer en voz alta: lo leo yo",
   "Reply by voice": "Responder por voz",
-  "Summary": "Resumen"
+  "Summary": "Resumen",
+  "Read aloud": "Leer en voz alta",
+  "More": "Más",
+  "Read summaries aloud": "Leer resúmenes en voz alta"
  },
  "fr": {
   "Recent": "Récents",
@@ -627,7 +639,10 @@
   "Stop voice": "Se taire",
   "Stop reading aloud — read it yourself": "Arrêter la lecture à voix haute — je lis moi-même",
   "Reply by voice": "Répondre à la voix",
-  "Summary": "Résumé"
+  "Summary": "Résumé",
+  "Read aloud": "Lire à voix haute",
+  "More": "Plus",
+  "Read summaries aloud": "Lire les résumés à voix haute"
  },
  "pt-BR": {
   "Recent": "Recentes",
@@ -753,7 +768,10 @@
   "Stop voice": "Silenciar",
   "Stop reading aloud — read it yourself": "Parar de ler em voz alta — eu mesmo leio",
   "Reply by voice": "Responder por voz",
-  "Summary": "Resumo"
+  "Summary": "Resumo",
+  "Read aloud": "Ler em voz alta",
+  "More": "Mais",
+  "Read summaries aloud": "Ler resumos em voz alta"
  },
  "it": {
   "Recent": "Recenti",
@@ -879,7 +897,10 @@
   "Stop voice": "Silenzio",
   "Stop reading aloud — read it yourself": "Smetti di leggere ad alta voce — leggo io",
   "Reply by voice": "Rispondi a voce",
-  "Summary": "Riepilogo"
+  "Summary": "Riepilogo",
+  "Read aloud": "Leggi ad alta voce",
+  "More": "Altro",
+  "Read summaries aloud": "Leggi i riepiloghi ad alta voce"
  },
  "ja": {
   "Recent": "最近",
@@ -1005,7 +1026,10 @@
   "Stop voice": "読み上げ停止",
   "Stop reading aloud — read it yourself": "読み上げを止めて自分で読む",
   "Reply by voice": "音声で返信",
-  "Summary": "要約"
+  "Summary": "要約",
+  "Read aloud": "読み上げる",
+  "More": "詳細",
+  "Read summaries aloud": "要約を読み上げる"
  },
  "zh-Hans": {
   "Recent": "最近",
@@ -1131,6 +1155,9 @@
   "Stop voice": "停止朗读",
   "Stop reading aloud — read it yourself": "停止朗读，我自己看",
   "Reply by voice": "语音回复",
-  "Summary": "摘要"
+  "Summary": "摘要",
+  "Read aloud": "朗读",
+  "More": "详情",
+  "Read summaries aloud": "朗读摘要"
  }
 }

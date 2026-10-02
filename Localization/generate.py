@@ -10,6 +10,9 @@ tr = json.loads((HERE / "translations.json").read_text()) if (HERE / "translatio
 
 PLIST_EN = {
     "mac.NSMicrophoneUsageDescription": "hey2agent listens to your reply to the agent when you click a chat in the panel. Audio is transcribed locally and never leaves your Mac.",
+    "mac.NSLocalNetworkUsageDescription": "hey2agent shows its panel on your iPhone over your home network. Data is encrypted and never goes to the internet.",
+    "ios.NSMicrophoneUsageDescription": "To dictate a reply to the agent. Audio goes only to your Mac over an encrypted connection and is transcribed there.",
+    "ios.NSLocalNetworkUsageDescription": "To show the hey2agent panel from your Mac over your home network. Data is encrypted and never goes to the internet.",
 }
 LANGS = ["en"] + sorted(tr)
 
@@ -20,7 +23,7 @@ def q(s):
 def write(dest, lang):
     table = {k: k for k in keys} if lang == "en" else tr[lang]
     plist = PLIST_EN if lang == "en" else tr[lang]
-    for app, folder in (("mac", ROOT / "HUD/Resources"),):
+    for app, folder in (("mac", ROOT / "HUD/Resources"), ("ios", ROOT / "iOS/Resources")):
         d = folder / f"{lang}.lproj"
         d.mkdir(parents=True, exist_ok=True)
         (d / "Localizable.strings").write_text(

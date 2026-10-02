@@ -36,6 +36,7 @@ struct VoiceState: Decodable, Equatable {
     var code: String?      // error code from the script: no_mic | failed
     var session_id: String?
     var cancellable: Bool?
+    var details: String?   // the agent's full answer (cleaned) — «More» on the iPhone
     var t: Double
 }
 
@@ -75,6 +76,13 @@ final class Model {
     var showHUD = UserDefaults.standard.object(forKey: "showHUD") as? Bool ?? true {
         didSet { UserDefaults.standard.set(showHUD, forKey: "showHUD") }
     }
+    /// The phone becomes the display: hide the Mac panel while an iPhone is connected.
+    var hideWhenPhone = UserDefaults.standard.object(forKey: "hideWhenPhone") as? Bool ?? true {
+        didSet { UserDefaults.standard.set(hideWhenPhone, forKey: "hideWhenPhone") }
+    }
+    var pairingCode = ""
+    var phones = 0
+    var onNewPairingCode: (() -> Void)?
     var expanded = false
     /// The visible card inside the (larger, transparent) panel, in SwiftUI window coordinates.
     var cardFrame: CGRect = .zero
@@ -110,8 +118,8 @@ final class Model {
         guard let s = current, s.t != dismissedAt else { return nil }
         let age = Date().timeIntervalSince1970 - s.t
         switch s.state {
-        case "speaking", "listening", "transcribing", "confirming", "reading":
-            return age < 200 ? s : nil  // hook dies at 180 s
+        case "speaking", "listening", "transcribing", "confirming", "reading", "phone":
+            return age < 660 ? s : nil  // hook dies at 180 s
         case "sent":
             let linger: Double = s.delivery == "clipboard" ? 12 : (s.cancellable == true ? 10 : 4)
             return age < linger ? s : nil
@@ -125,7 +133,7 @@ final class Model {
     var isSquare: Bool { active == nil && sessions.isEmpty && !expanded }
 
     var visible: Bool {
-        showHUD && (enabled || active != nil)
+        showHUD && !(hideWhenPhone && phones > 0) && (enabled || active != nil)
     }
 
     private var stateStamp: Date?
@@ -263,11 +271,11 @@ final class Model {
         try? p.run()
     }
 
-    func dictate(to session: AgentSession) {
+    func dictate(to session: AgentSession, recording: String? = nil) {
         guard active == nil, dictation?.isRunning != true, let loc = scriptLocation else { return }
         let p = Process()
         p.executableURL = URL(fileURLWithPath: loc.python)
-        p.arguments = [loc.script, "dictate", session.id]
+        p.arguments = [loc.script, "dictate", session.id] + (recording.map { [$0] } ?? [])
         try? p.run()
         dictation = p
     }
@@ -767,6 +775,7 @@ struct ConversationView: View {
         switch s.state {
         case "speaking": String(localized: "Speaking")
         case "reading": String(localized: "Summary")
+        case "phone": String(localized: "Speak into the iPhone…")
         case "listening": String(localized: "Listening")
         case "transcribing": String(localized: "Transcribing…")
         case "confirming": editMode ? String(localized: "Edit the text")
@@ -783,6 +792,7 @@ struct ConversationView: View {
         switch s.state {
         case "speaking": Image(systemName: "speaker.wave.2.fill").foregroundStyle(.blue)
         case "reading": Image(systemName: "text.bubble").foregroundStyle(.blue)
+        case "phone": Image(systemName: "iphone.radiowaves.left.and.right").foregroundStyle(.red)
         case "listening": Image(systemName: "mic.fill").foregroundStyle(.red)
         case "transcribing": ProgressView().controlSize(.small)
         case "confirming": Image(systemName: "paperplane").foregroundStyle(.blue)
@@ -968,6 +978,13 @@ struct SettingsMenu: View {
                 }
             }
             Divider()
+            Section("iPhone") {
+                Text(String(localized: "Pairing code: \(String(model.pairingCode.prefix(3))) \(String(model.pairingCode.suffix(3)))"))
+                Text(model.phones > 0 ? String(localized: "Connected: \(model.phones)") : String(localized: "No phone connected"))
+                Button(String(localized: "New code (disconnects the phone)")) { model.onNewPairingCode?() }
+                Toggle(String(localized: "Hide when an iPhone is connected"), isOn: $model.hideWhenPhone)
+            }
+            Divider()
             Picker(String(localized: "Language"), selection: Binding(
                 get: { model.appLanguage }, set: { model.setAppLanguage($0) })) {
                 Text(String(localized: "System")).tag("")
@@ -1099,6 +1116,8 @@ final class HUDPanel: NSPanel {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let model = Model()
     private var panel: HUDPanel?
+    private var link: LinkServer?
+    private var remoteTouched = Date.distantPast
     private var placed = false
 
     /// Opening the app again (Spotlight, Finder, `open`) always brings the panel back.
@@ -1110,6 +1129,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
         panel = HUDPanel(model: model)
+        let server = LinkServer(model: model)
+        link = server
+        model.onNewPairingCode = { [weak server] in server?.newCode() }
         Task { @MainActor [weak self] in
             while true {
                 if let p = self?.panel, p.isVisible { p.trackMouse() }
@@ -1127,6 +1149,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func tick() {
         model.poll()
+        link?.tick()
+        // «I have the phone» mode for the script: Mac stays silent, the iPhone reads and replies.
+        let remote = stateDir.appendingPathComponent("remote")
+        if model.phones > 0 {
+            if Date().timeIntervalSince(remoteTouched) > 4 {
+                FileManager.default.createFile(atPath: remote.path, contents: nil)
+                remoteTouched = Date()
+            }
+        } else if remoteTouched != .distantPast {
+            try? FileManager.default.removeItem(at: remote)
+            remoteTouched = .distantPast
+        }
         guard let panel else { return }
         if model.visible {
             if !panel.isVisible {

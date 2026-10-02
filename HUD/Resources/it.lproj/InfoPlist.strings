@@ -1,1 +1,2 @@
 NSMicrophoneUsageDescription = "hey2agent ascolta la tua risposta all’agente quando fai clic su una chat nel pannello. L’audio viene trascritto in locale e non lascia mai il tuo Mac.";
+NSLocalNetworkUsageDescription = "hey2agent mostra il suo pannello sul tuo iPhone tramite la rete di casa. I dati sono cifrati e non vanno mai su internet.";

@@ -45,7 +45,8 @@ LAST = STATE_DIR / "last.json"  # dedupe: the Stop hook can fire twice for one t
 CONFIG = STATE_DIR / "config.json"
 CLAUDE_SETTINGS = HOME / ".claude" / "settings.json"
 SCRIPT = Path(__file__).resolve()
-HOOK_TIMEOUT = 180  # seconds; Claude Code kills the hook after this
+HOOK_TIMEOUT = 600  # seconds; Claude Code kills the hook after this (long enough to answer from the phone)
+REMOTE = STATE_DIR / "remote"  # touched by the panel while an iPhone is connected
 
 DEFAULTS = {
     "tts": "say",                # say (macOS voices) | piper (local neural, garbles English words)
@@ -333,8 +334,16 @@ class Listener:
             cmd, payload = take_control()
             if cmd in ("cancel", "repeat", "text"):
                 return None, cmd, payload
+            if cmd == "phone":  # the user is recording on the iPhone: ignore the Mac mic
+                self.phone = True
+                self.ui(state="phone")
+                continue
+            if cmd == "audio":  # recording from the iPhone
+                return read_wav(payload), "pause", None
             if cmd == "send" or (deadline and time.time() > deadline):
                 return (pcm if speaking else None), "send", None
+            if getattr(self, "phone", False):
+                continue
             if frames <= skip:
                 continue
             loud = db > self.floor + self.c["speech_margin_db"]
@@ -367,6 +376,18 @@ class Listener:
             self.p.wait(timeout=2)
         except subprocess.TimeoutExpired:
             pass
+
+
+def read_wav(path):
+    """16 kHz mono PCM of a wav (phone recordings are converted if needed)."""
+    out = tempfile.mktemp(suffix=".wav", prefix="voice-loop-phone-")
+    subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-i", path, "-ac", "1", "-ar", "16000",
+                    "-f", "s16le", out], check=False)
+    try:
+        return bytearray(Path(out).read_bytes())
+    finally:
+        _rm(out)
+        _rm(path)
 
 
 def to_wav(pcm):
@@ -579,8 +600,9 @@ def deliver(sid, entry, text):
     return "clipboard"
 
 
-def dictate_to(sid):
-    """HUD: dictate a message for a chat that is not currently waiting in a hook."""
+def dictate_to(sid, wav=None):
+    """HUD / iPhone: dictate a message for a chat that is not currently waiting in a hook.
+    wav: a recording made on the iPhone (then the Mac mic isn't used)."""
     c = cfg()
     entry = load_sessions().get(sid)
     if not entry:
@@ -602,6 +624,21 @@ def dictate_to(sid):
 
     take_control()
     deadline = time.time() + 170
+    if wav:
+        ui("transcribing")
+        pcm = read_wav(wav)
+        tmp = to_wav(pcm)
+        text = transcribe(tmp, c)
+        _rm(tmp)
+        log(f"phone phrase: {text!r}")
+        if not text or is_stop(text) or strip_tail(text, CANCEL_WORDS) is not None:
+            ui("released")
+            return
+        verdict, text = confirm(text, c, ui, deadline)
+        if verdict != "send":  # «again» from a phone recording = record again on the phone
+            ui("released")
+            return
+        return _deliver_and_report(sid, entry, text, ui)
     lis = Listener(c, ui)
     try:
         prefix = None
@@ -698,13 +735,13 @@ def spoken_name(title, max_words=6):
     return " ".join(words[:max_words]) + ("…" if len(words) > max_words else "")
 
 
-def converse(project, summary, c, title=None, announce=True, sid=None, cancellable=True):
+def converse(project, summary, c, title=None, announce=True, sid=None, cancellable=True, details=""):
     """Speak the summary, then listen for the next instruction.
     Returns the instruction text, or None to let the agent stop."""
     deadline = time.time() + HOOK_TIMEOUT - 25  # leave time for the last transcription
     title = title or project
     session = {"project": title, "summary": summary, "session_id": sid,
-               "cancellable": bool(sid) and cancellable}
+               "cancellable": bool(sid) and cancellable, "details": details}
 
     def ui(state=None, **kw):
         if state:
@@ -724,9 +761,17 @@ def converse(project, summary, c, title=None, announce=True, sid=None, cancellab
         return text
 
     take_control()  # drop stale clicks
-    ui("speaking")
+    if is_remote():
+        # The user carries the iPhone: no Mac voice or Mac mic; the phone reads it out and
+        # sends a typed or recorded reply.
+        reply = remote_reply(c, ui, deadline)
+        if reply != "LISTEN":
+            return finish(reply)
+    else:
+        ui("speaking")
+        r = None
     # The chat name only when another session spoke last; no «готово» every time.
-    r = speak(f"{spoken_name(title)}. {summary}" if announce else summary, c)
+    r = None if is_remote() else speak(f"{spoken_name(title)}. {summary}" if announce else summary, c)
     if r == "cancel":
         return finish(None)
     if r == "text":
@@ -759,18 +804,58 @@ def converse(project, summary, c, title=None, announce=True, sid=None, cancellab
         lis.close()
 
 
-def wait_while_reading(ui, deadline):
-    """Silent «reading» step after «Замолчать». Returns (verdict, payload):
-    listen (start the mic) | text (typed reply) | cancel | timeout."""
-    ui("reading")
+def is_remote():
+    """An iPhone is connected (the panel refreshes this flag every few seconds)."""
+    try:
+        return time.time() - REMOTE.stat().st_mtime < 15
+    except OSError:
+        return False
+
+
+def wait_while_reading(ui, deadline, prefix=None):
+    """Silent step: the user reads (on the Mac after «Stop voice», or on the iPhone).
+    Returns (verdict, payload): listen | text | audio (path) | cancel | timeout."""
+    ui("reading", text=prefix or "")
     while time.time() < deadline:
         cmd, payload = take_control()
         if cmd in ("listen", "skip", "send"):
             return "listen", None
-        if cmd in ("cancel", "text"):
+        if cmd == "text":
+            return "text", " ".join(x for x in (prefix, payload) if x)
+        if cmd in ("cancel", "audio"):
             return cmd, payload
+        if cmd == "phone":
+            ui("phone", text=prefix or "")
+        if cmd == "reading":  # the phone recording was cancelled
+            ui("reading", text=prefix or "")
         time.sleep(0.1)
     return "timeout", None
+
+
+def remote_reply(c, ui, deadline):
+    """Away from the Mac: wait for a typed or recorded reply from the iPhone.
+    Returns text | None (release) | 'LISTEN' (use the Mac mic after all)."""
+    prefix = None
+    while True:
+        verdict, payload = wait_while_reading(ui, deadline, prefix)
+        if verdict in ("cancel", "timeout"):
+            return None
+        if verdict in ("text", "listen"):
+            return payload if verdict == "text" else "LISTEN"
+        ui("transcribing", text=prefix or "")
+        wav = to_wav(read_wav(payload))
+        heard = transcribe(wav, c)
+        _rm(wav)
+        log(f"phone phrase: {heard!r}")
+        text = " ".join(x for x in (prefix, heard) if x)
+        if not heard:
+            continue
+        v, edited = confirm(text, c, ui, deadline)
+        if v == "send":
+            return edited
+        if v == "cancel":
+            return None
+        prefix = edited if v == "append" else prefix
 
 
 def listen(lis, c, ui, summary, deadline, prefix=None):
@@ -926,6 +1011,7 @@ def hook():
     try:
         title = session_title(data.get("transcript_path"), project)
         reply = converse(project, summarize(text, c["summary_chars"]), c, title,
+                         details=clean_md(text)[:3000],
                          announce=switched_session(data.get("session_id")),
                          sid=data.get("session_id"), cancellable=agent_of(data) != "codex")
     except Exception:
@@ -1080,7 +1166,7 @@ def main():
         open_chat(sys.argv[2], load_sessions().get(sys.argv[2]))
     elif cmd == "dictate" and len(sys.argv) > 2:
         try:
-            dictate_to(sys.argv[2])
+            dictate_to(sys.argv[2], sys.argv[3] if len(sys.argv) > 3 else None)
         except MicError:
             log("dictate: no mic access for the HUD")
             write_state("error", code="no_mic", text="No microphone access for VoiceLoopHUD")

@@ -1,0 +1,2 @@
+NSMicrophoneUsageDescription = "Para dictar una respuesta al agente. El audio solo va a tu Mac por una conexión cifrada y se transcribe allí.";
+NSLocalNetworkUsageDescription = "Para mostrar el panel de hey2agent de tu Mac a través de tu red doméstica. Los datos están cifrados y nunca van a internet.";
