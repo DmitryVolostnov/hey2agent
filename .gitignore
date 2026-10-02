@@ -6,3 +6,5 @@ HUD/VoiceLoopHUD.app/
 iOS/build/
 iOS/VoiceLoopRemote.xcodeproj/
 Link/.build/
+.swiftpm/
+xcuserdata/

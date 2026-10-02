@@ -75,10 +75,6 @@ final class Model {
     var showHUD = UserDefaults.standard.object(forKey: "showHUD") as? Bool ?? true {
         didSet { UserDefaults.standard.set(showHUD, forKey: "showHUD") }
     }
-    /// The phone becomes the display: hide the Mac panel while an iPhone is connected.
-    var hideWhenPhone = UserDefaults.standard.object(forKey: "hideWhenPhone") as? Bool ?? true {
-        didSet { UserDefaults.standard.set(hideWhenPhone, forKey: "hideWhenPhone") }
-    }
     var expanded = false
     /// The visible card inside the (larger, transparent) panel, in SwiftUI window coordinates.
     var cardFrame: CGRect = .zero
@@ -89,9 +85,6 @@ final class Model {
     var config: [String: Any] = [:]
     var voices: [Voice] = []
     var knownProjects: [String] = []
-    var pairingCode = ""
-    var phones = 0
-    var onNewPairingCode: (() -> Void)?
 
     var launchAtLogin: Bool = SMAppService.mainApp.status == .enabled {
         didSet {
@@ -117,7 +110,7 @@ final class Model {
         guard let s = current, s.t != dismissedAt else { return nil }
         let age = Date().timeIntervalSince1970 - s.t
         switch s.state {
-        case "speaking", "listening", "transcribing", "confirming", "phone", "reading":
+        case "speaking", "listening", "transcribing", "confirming", "reading":
             return age < 200 ? s : nil  // hook dies at 180 s
         case "sent":
             let linger: Double = s.delivery == "clipboard" ? 12 : (s.cancellable == true ? 10 : 4)
@@ -132,7 +125,7 @@ final class Model {
     var isSquare: Bool { active == nil && sessions.isEmpty && !expanded }
 
     var visible: Bool {
-        showHUD && !(hideWhenPhone && phones > 0) && (enabled || active != nil)
+        showHUD && (enabled || active != nil)
     }
 
     private var stateStamp: Date?
@@ -270,11 +263,11 @@ final class Model {
         try? p.run()
     }
 
-    func dictate(to session: AgentSession, recording: String? = nil) {
+    func dictate(to session: AgentSession) {
         guard active == nil, dictation?.isRunning != true, let loc = scriptLocation else { return }
         let p = Process()
         p.executableURL = URL(fileURLWithPath: loc.python)
-        p.arguments = [loc.script, "dictate", session.id] + (recording.map { [$0] } ?? [])
+        p.arguments = [loc.script, "dictate", session.id]
         try? p.run()
         dictation = p
     }
@@ -667,7 +660,7 @@ struct ConversationView: View {
                     .font(.system(size: 12).monospacedDigit())
                     .foregroundStyle(.secondary)
             }
-            if s.session_id != nil && ["speaking", "listening", "phone", "reading"].contains(s.state) {
+            if s.session_id != nil && ["speaking", "listening", "reading"].contains(s.state) {
                 Button { model.openActive() } label: { Image(systemName: "arrow.up.forward.app") }
                     .buttonStyle(.borderless)
                     .help(String(localized: "Open this chat and reply there"))
@@ -720,7 +713,7 @@ struct ConversationView: View {
 
     @ViewBuilder private var cancelSlot: some View {
         switch s.state {
-        case "speaking", "listening", "phone", "confirming", "reading":
+        case "speaking", "listening", "confirming", "reading":
             Button(String(localized: "Cancel")) { model.send("cancel") }
         case "sent" where s.cancellable == true && s.delivery != "clipboard" && !cancelled:
             if let sid = s.session_id {
@@ -744,7 +737,7 @@ struct ConversationView: View {
                 Label(String(localized: "Reply by voice"), systemImage: "mic.fill")
             }
             .keyboardShortcut(.defaultAction)
-        case "listening", "phone":
+        case "listening":
             Button(String(localized: "Send")) { model.send("send") }.keyboardShortcut(.defaultAction)
         case "confirming":
             Button(editMode ? String(localized: "Send") : String(localized: "Send now")) {
@@ -776,7 +769,6 @@ struct ConversationView: View {
         case "reading": String(localized: "Summary")
         case "listening": String(localized: "Listening")
         case "transcribing": String(localized: "Transcribing…")
-        case "phone": String(localized: "Speak into the iPhone…")
         case "confirming": editMode ? String(localized: "Edit the text")
             : s.left.map { String(localized: "Sending in \(Int($0.rounded(.up))) s") } ?? String(localized: "Sending when you press ↩")
         case "sent" where cancelled: String(localized: "Cancelled, Claude will stop")
@@ -793,7 +785,6 @@ struct ConversationView: View {
         case "reading": Image(systemName: "text.bubble").foregroundStyle(.blue)
         case "listening": Image(systemName: "mic.fill").foregroundStyle(.red)
         case "transcribing": ProgressView().controlSize(.small)
-        case "phone": Image(systemName: "iphone.radiowaves.left.and.right").foregroundStyle(.red)
         case "confirming": Image(systemName: "paperplane").foregroundStyle(.blue)
         case "error": Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
         case "sent": Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
@@ -977,12 +968,6 @@ struct SettingsMenu: View {
                 }
             }
             Divider()
-            Section("iPhone") {
-                Text(String(localized: "Pairing code: \(String(model.pairingCode.prefix(3))) \(String(model.pairingCode.suffix(3)))"))
-                Text(model.phones > 0 ? String(localized: "Connected: \(model.phones)") : String(localized: "No phone connected"))
-                Button(String(localized: "New code (disconnects the phone)")) { model.onNewPairingCode?() }
-            }
-            Divider()
             Picker(String(localized: "Language"), selection: Binding(
                 get: { model.appLanguage }, set: { model.setAppLanguage($0) })) {
                 Text(String(localized: "System")).tag("")
@@ -993,7 +978,6 @@ struct SettingsMenu: View {
             }
             Toggle(String(localized: "Open at login"), isOn: $model.launchAtLogin)
             Toggle(String(localized: "Show panel"), isOn: $model.showHUD)
-            Toggle(String(localized: "Hide when an iPhone is connected"), isOn: $model.hideWhenPhone)
             Button(String(localized: "Open log")) { NSWorkspace.shared.open(logURL) }
             Button(String(localized: "Quit")) { NSApp.terminate(nil) }
         } label: {
@@ -1115,7 +1099,6 @@ final class HUDPanel: NSPanel {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let model = Model()
     private var panel: HUDPanel?
-    private var link: LinkServer?
     private var placed = false
 
     /// Opening the app again (Spotlight, Finder, `open`) always brings the panel back.
@@ -1127,9 +1110,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
         panel = HUDPanel(model: model)
-        let server = LinkServer(model: model)
-        link = server
-        model.onNewPairingCode = { [weak server] in server?.newCode() }
         Task { @MainActor [weak self] in
             while true {
                 if let p = self?.panel, p.isVisible { p.trackMouse() }
@@ -1147,7 +1127,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func tick() {
         model.poll()
-        link?.tick()
         guard let panel else { return }
         if model.visible {
             if !panel.isVisible {

@@ -4,7 +4,7 @@ import json, re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-SOURCES = list((ROOT / "HUD/Sources").rglob("*.swift")) + list((ROOT / "iOS/Sources").rglob("*.swift"))
+SOURCES = list((ROOT / "HUD/Sources").rglob("*.swift"))
 STRINGISH = ("String(", '?? ""', "project", "text", "base", ".title", ".id")
 
 def literal_at(s, i):

@@ -1,4 +1,4 @@
-"""Writes <lang>.lproj/Localizable.strings + InfoPlist.strings for the Mac HUD and the iPhone app.
+"""Writes <lang>.lproj/Localizable.strings + InfoPlist.strings for the Mac HUD.
 Source of truth: keys.json (English, the development language) + translations.json."""
 import json
 from pathlib import Path
@@ -10,9 +10,6 @@ tr = json.loads((HERE / "translations.json").read_text()) if (HERE / "translatio
 
 PLIST_EN = {
     "mac.NSMicrophoneUsageDescription": "voice-loop listens to your reply to the agent when you click a chat in the panel. Audio is transcribed locally and never leaves your Mac.",
-    "mac.NSLocalNetworkUsageDescription": "voice-loop shows its panel on your iPhone over your home network. Data is encrypted and never goes to the internet.",
-    "ios.NSMicrophoneUsageDescription": "To dictate a reply to the agent. Audio goes only to your Mac over an encrypted connection and is transcribed there.",
-    "ios.NSLocalNetworkUsageDescription": "To show the voice-loop panel from your Mac over your home network. Data is encrypted and never goes to the internet.",
 }
 LANGS = ["en"] + sorted(tr)
 
@@ -23,7 +20,7 @@ def q(s):
 def write(dest, lang):
     table = {k: k for k in keys} if lang == "en" else tr[lang]
     plist = PLIST_EN if lang == "en" else tr[lang]
-    for app, folder in (("mac", ROOT / "HUD/Resources"), ("ios", ROOT / "iOS/Resources")):
+    for app, folder in (("mac", ROOT / "HUD/Resources"),):
         d = folder / f"{lang}.lproj"
         d.mkdir(parents=True, exist_ok=True)
         (d / "Localizable.strings").write_text(

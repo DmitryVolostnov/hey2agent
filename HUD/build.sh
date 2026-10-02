@@ -24,8 +24,6 @@ cat > $APP/Contents/Info.plist <<PLIST
   <key>CFBundleShortVersionString</key><string>0.1</string>
   <key>LSMinimumSystemVersion</key><string>15.0</string>
   <key>LSUIElement</key><true/>
-  <key>NSLocalNetworkUsageDescription</key><string>voice-loop shows its panel on your iPhone over your home network. Data is encrypted and never goes to the internet.</string>
-  <key>NSBonjourServices</key><array><string>_voiceloop._tcp</string></array>
   <key>NSMicrophoneUsageDescription</key><string>voice-loop listens to your reply to the agent when you click a chat in the panel. Audio is transcribed locally and never leaves your Mac.</string>
 </dict></plist>
 PLIST

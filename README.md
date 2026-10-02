@@ -1,29 +1,42 @@
-# voice-loop
+<p align="center"><img src="docs/logo.png" width="128" alt="voice-loop logo"></p>
 
-**English** · [Русский](README.ru.md)
+<h1 align="center">voice-loop</h1>
 
-**Talk to your coding agents without leaving the flow.** When Claude Code or Codex finishes a turn,
-voice-loop says what was done, opens the mic, and sends your spoken reply back into **the same
-session** as the next instruction. Fully local, Russian + English.
+<p align="center"><b>Talk to Claude Code and Codex.</b> When the agent finishes, it tells you what it did —
+you answer by voice, and your reply goes straight into <b>the same session</b>.<br>
+Local speech recognition · Russian + English · macOS menu-bar panel</p>
 
+<p align="center"><b>English</b> · <a href="README.ru.md">Русский</a></p>
+
+<p align="center">
+  <img src="docs/speaking.png" width="420" alt="Agent finished: summary is read aloud">
+  <img src="docs/confirming.png" width="420" alt="Your reply, 3 seconds to undo">
+</p>
+
+## What it does
 ```
-Agent finishes ─► "Voice notification chat. Done. Added the HUD and tests. Commit now?"
+Agent finishes ─► "Refactored the auth flow, 42 tests pass. Shall I open a pull request?"
                      ▼  *tink*
-You: "Yes, commit and open a pull request"   (2 s pause)
-                     ▼
-Same session continues with your instruction
+You: "Yes, open it and ask Anna for review"     (2 s pause)
+                     ▼  3 s to undo
+The same session continues with your instruction
 ```
 
-## Why
-- **Same session, no copy-paste.** Uses the agents' own Stop hooks (`decision: block`), so your reply
-  lands in the running Claude Code / Codex conversation — no MCP tool the agent must remember to call,
-  no typing into a terminal.
-- **Local only.** macOS `say` or Piper for speech, `whisper.cpp` for recognition. Nothing leaves the Mac.
-- **Built for mixed Russian/English dev speech.** Whisper prompt with dev jargon
-  («закоммить», «пул-реквест», «деплой») and Cyrillic-friendly spoken summaries.
-- **A HUD that shows what's going on.** Floating pill with every agent session in progress
-  (pulsing dot = thinking, blue = waiting for you), live mic level, send / cancel / skip / repeat,
-  and a text field when you'd rather type.
+- **Replies land in the same session.** Uses the agents' own Stop hooks (`decision: block`): no MCP tool
+  the agent has to remember to call, no typing into a terminal.
+- **Local.** macOS voices for speech, [whisper.cpp](https://github.com/ggml-org/whisper.cpp) for
+  recognition. Audio never leaves your Mac.
+- **Made for mixed Russian/English dev speech** («закоммить», «пул-реквест», «деплой»).
+- **A floating panel that stays out of the way:** a logo square when idle, the tasks in progress with
+  their running time, recent chats on hover (click to open the chat, 🎙 to dictate into it).
+- **Safety nets:** 3 s to undo or edit what was recognised; **Undo** even after sending (Claude's next
+  actions are blocked and it stops); **Stop voice** to read the summary yourself; **Mute** for meetings.
+- **10 languages** for the interface (follows the system, or pick one in settings).
+
+<p align="center">
+  <img src="docs/badge.png" width="48" alt="Idle: just the logo">&nbsp;&nbsp;
+  <img src="docs/list.png" width="230" alt="Tasks in progress">
+</p>
 
 ## Voice commands
 | Say at the end of a phrase | Effect |
@@ -34,37 +47,25 @@ Same session continues with your instruction
 | «отмена» / "cancel" | discard |
 | «стоп», «хватит» / silence | let the agent stop |
 
-While voice mode is on, the agent is asked to start every answer with a one-line
-**«Кратко:» / summary**, and only that line is spoken.
+While voice mode is on, the agent is asked to start every answer with a one-line **Summary:**
+(«Кратко:» in Russian) — only that line is read aloud.
 
 ## Install
-Requirements: macOS 15+ on Apple silicon, Python 3, `brew install whisper-cpp ffmpeg`.
+Requirements: macOS 15+ on Apple silicon, Python 3, [Homebrew](https://brew.sh).
 
 ```bash
+brew install whisper-cpp ffmpeg
 git clone https://github.com/DmitryVolostnov/voice-loop && cd voice-loop
 python3 voice_loop.py install        # Claude Code hooks; asks which speech model to download
 python3 voice_loop.py install-codex  # optional: Codex Stop hook, then approve it in Codex via /hooks
 python3 voice_loop.py on
-HUD/build.sh && open HUD/VoiceLoopHUD.app
+HUD/build.sh && open ~/Applications/VoiceLoopHUD.app
 ```
-The process that runs your agent (Terminal, iTerm, Claude app) needs microphone permission.
-
-Optional neural voice: `python3 -m venv .venv && .venv/bin/pip install piper-tts`, then pick a Piper
-voice in the HUD settings (it sounds nicer in Russian but mispronounces English words).
-
-## iPhone remote (optional)
-Keep your phone next to the laptop as an always-on screen: the same HUD, sessions in progress,
-recent chats, send / cancel / mute, typed replies. The phone talks to the Mac **directly over your
-Wi-Fi** (Bonjour + TLS with a key derived from a 6-digit pairing code shown in the HUD settings) —
-no server, nothing leaves your network.
-
-```bash
-cd iOS && xcodegen generate && open VoiceLoopRemote.xcodeproj   # pick your iPhone, Run
-```
+The panel asks for microphone access the first time you dictate from it. The app that runs your
+agent (Terminal, iTerm, Claude) needs microphone access too.
 
 ## Speech models
-`install` asks which whisper model to download (also: HUD settings → Download model, or
-`python3 voice_loop.py download-model <id>`). Switch in HUD settings → Recognition model.
+Pick at install, download more from the panel (settings → Download model), switch any time.
 
 | id | size | notes |
 |---|---|---|
@@ -75,32 +76,28 @@ cd iOS && xcodegen generate && open VoiceLoopRemote.xcodeproj   # pick your iPho
 | `tiny` | 78 MB | fastest, weakest |
 
 ## How it works
-`voice_loop.py hook` runs on the agent's Stop event: summary → TTS → energy VAD over `ffmpeg` mic
-input → `whisper-cli` → `{"decision":"block","reason":"<your reply>"}`. A `UserPromptSubmit` hook keeps
-a registry of sessions in progress for the HUD. The HUD and the script talk through small files in
-`~/.voice-loop/` (`state.json`, `sessions.json`, `control`), so the script works without the HUD.
+`voice_loop.py hook` runs on the agent's Stop event: summary → speech → energy-based voice detection on
+the mic (`ffmpeg`) → `whisper-cli` → `{"decision":"block","reason":"<your reply>"}`.
+`UserPromptSubmit` keeps a list of sessions in progress, `PreToolUse` implements **Undo**.
+The panel (SwiftUI) and the script talk through small files in `~/.voice-loop/`, so the script also
+works without the panel. Chats open via the Claude app's own `claude://code/continue` link.
 
 ```bash
 python3 -m unittest discover tests                       # logic
 VOICE_LOOP_SLOW=1 python3 -m unittest tests.test_speech  # say → whisper round trip
 ```
+Translations: edit `Localization/translations.json`, run `python3 Localization/generate.py`.
 
 ## Similar projects
 [Heard](https://github.com/heardlabs/heard) (closest; multi-agent voices, paid cloud tiers),
 [VoiceMode](https://github.com/mbailey/voicemode) (MCP `converse` tool),
-[spanderok/jarvis](https://github.com/spanderok/jarvis) (wake-word, Russian),
-and many speak-only Stop-hook scripts. voice-loop focuses on replying into the same session via hooks,
-a multi-session HUD across Claude Code and Codex, and local Russian/English.
-
-## Languages
-The Mac panel and the iPhone app follow the system language: English (base), Russian, Ukrainian,
-German, Spanish, French, Portuguese (Brazil), Italian, Japanese, Chinese (Simplified).
-Edit `Localization/translations.json`, then run `python3 Localization/generate.py`.
-Speech recognition and the voice are configured separately (`language`, `voice` in the config).
+[spanderok/jarvis](https://github.com/spanderok/jarvis) (wake word, Russian), and many
+speak-only Stop-hook scripts. voice-loop focuses on replying into the same session via hooks, a
+multi-session panel for Claude Code and Codex, and local Russian/English.
 
 ## Status
-Personal tool, early. Known limits: the hook blocks the session while listening (≤180 s);
-Codex sessions show the folder name instead of the chat title.
+Early, built for daily personal use. Known limits: while listening the hook holds the session
+(≤ 3 min); Codex chats show the folder name and open the Codex app, not the exact chat.
 
 ## License
 MIT

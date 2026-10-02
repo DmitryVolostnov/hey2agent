@@ -1,2 +1,0 @@
-NSMicrophoneUsageDescription = "Pour dicter une réponse à l’agent. L’audio est envoyé uniquement à votre Mac via une connexion chiffrée et y est transcrit.";
-NSLocalNetworkUsageDescription = "Pour afficher le panneau voice-loop de votre Mac via votre réseau domestique. Les données sont chiffrées et ne vont jamais sur Internet.";
