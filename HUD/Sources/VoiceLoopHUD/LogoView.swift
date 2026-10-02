@@ -2,48 +2,49 @@ import AVFoundation
 import AppKit
 import SwiftUI
 
-/// The animated logo: rests on its first frame, plays once every `interval` seconds.
+/// The animated logo, looping continuously (muted). Fills its frame edge to edge;
+/// the panel card clips the corners.
 struct LogoView: NSViewRepresentable {
-    var interval: TimeInterval = 40
-
-    func makeNSView(context: Context) -> LogoPlayerView { LogoPlayerView(interval: interval) }
+    func makeNSView(context: Context) -> LogoPlayerView { LogoPlayerView() }
     func updateNSView(_ view: LogoPlayerView, context: Context) {}
 }
 
 final class LogoPlayerView: NSView {
-    private let player: AVPlayer?
-    private var timer: Timer?
+    private let player = AVQueuePlayer()
+    private var looper: AVPlayerLooper?
 
-    init(interval: TimeInterval) {
-        let url = Bundle.main.url(forResource: "badge", withExtension: "mp4")
-        player = url.map { AVPlayer(url: $0) }
+    init() {
         super.init(frame: .zero)
         wantsLayer = true
-        layer?.cornerRadius = 7
-        layer?.masksToBounds = true
-        guard let player else { return }
+        guard let url = Bundle.main.url(forResource: "badge", withExtension: "mp4") else { return }
         player.isMuted = true
-        player.actionAtItemEnd = .pause
+        looper = AVPlayerLooper(player: player, templateItem: AVPlayerItem(url: url))
         let pl = AVPlayerLayer(player: player)
         pl.videoGravity = .resizeAspectFill
         pl.frame = bounds
         pl.autoresizingMask = [.layerWidthSizable, .layerHeightSizable]
         layer?.addSublayer(pl)
-        NotificationCenter.default.addObserver(forName: .AVPlayerItemDidPlayToEndTime,
-                                               object: player.currentItem, queue: .main) { [weak player] _ in
-            player?.seek(to: .zero)  // freeze on the first frame (= the static logo)
-        }
-        timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
-            guard let self, self.window?.isVisible == true else { return }
-            self.player?.seek(to: .zero)
-            self.player?.play()
-        }
     }
 
     required init?(coder: NSCoder) { fatalError() }
 
+    private var occlusion: NSObjectProtocol?
+
+    /// Play only while actually visible (no decoding while the panel is hidden, e.g. phone mode).
     override func viewDidMoveToWindow() {
         super.viewDidMoveToWindow()
-        if window == nil { timer?.invalidate() }
+        if let occlusion { NotificationCenter.default.removeObserver(occlusion) }
+        occlusion = nil
+        guard let window else { player.pause(); return }
+        occlusion = NotificationCenter.default.addObserver(
+            forName: NSWindow.didChangeOcclusionStateNotification, object: window, queue: .main) { [weak self] _ in
+            MainActor.assumeIsolated { self?.syncPlayback() }
+        }
+        syncPlayback()
+    }
+
+    private func syncPlayback() {
+        let visible = window?.isVisible == true && window?.occlusionState.contains(.visible) == true
+        visible ? player.play() : player.pause()
     }
 }

@@ -510,7 +510,7 @@ struct IdleBadge: View {
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(.orange)
             } else {
-                LogoView().frame(width: 30, height: 30)
+                LogoView()  // edge to edge, no inset
             }
         }
         .frame(width: Self.side, height: Self.side)
