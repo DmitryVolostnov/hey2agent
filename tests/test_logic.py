@@ -82,8 +82,8 @@ class Transcript(unittest.TestCase):
 class Gates(unittest.TestCase):
     def test_projects(self):
         self.assertTrue(v.project_allowed("any", {"projects": []}))
-        self.assertTrue(v.project_allowed("stark treck", {"projects": ["stark treck"]}))
-        self.assertFalse(v.project_allowed("rafeeq code", {"projects": ["stark treck"]}))
+        self.assertTrue(v.project_allowed("my-app", {"projects": ["my-app"]}))
+        self.assertFalse(v.project_allowed("other-app", {"projects": ["my-app"]}))
 
     def test_duplicate(self):
         with tempfile.TemporaryDirectory() as d:
