@@ -77,6 +77,6 @@
  "Show panel",
  "Open log",
  "Quit",
- "No microphone access. Allow it for voice-loop: System Settings → Privacy & Security → Microphone.",
+ "No microphone access. Allow it for hey2agent: System Settings → Privacy & Security → Microphone.",
  "Something went wrong: %@"
 ]

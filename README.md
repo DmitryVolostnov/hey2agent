@@ -1,6 +1,6 @@
-<p align="center"><img src="docs/logo.png" width="128" alt="voice-loop logo"></p>
+<p align="center"><img src="docs/logo.png" width="128" alt="hey2agent logo"></p>
 
-<h1 align="center">voice-loop</h1>
+<h1 align="center">hey2agent</h1>
 
 <p align="center"><b>Talk to Claude Code and Codex.</b> When the agent finishes, it tells you what it did —
 you answer by voice, and your reply goes straight into <b>the same session</b>.<br>
@@ -55,7 +55,7 @@ Requirements: macOS 15+ on Apple silicon, Python 3, [Homebrew](https://brew.sh).
 
 ```bash
 brew install whisper-cpp ffmpeg
-git clone https://github.com/DmitryVolostnov/voice-loop && cd voice-loop
+git clone https://github.com/DmitryVolostnov/hey2agent && cd hey2agent
 python3 voice_loop.py install        # Claude Code hooks; asks which speech model to download
 python3 voice_loop.py install-codex  # optional: Codex Stop hook, then approve it in Codex via /hooks
 python3 voice_loop.py on
@@ -92,7 +92,7 @@ Translations: edit `Localization/translations.json`, run `python3 Localization/g
 [Heard](https://github.com/heardlabs/heard) (closest; multi-agent voices, paid cloud tiers),
 [VoiceMode](https://github.com/mbailey/voicemode) (MCP `converse` tool),
 [spanderok/jarvis](https://github.com/spanderok/jarvis) (wake word, Russian), and many
-speak-only Stop-hook scripts. voice-loop focuses on replying into the same session via hooks, a
+speak-only Stop-hook scripts. hey2agent focuses on replying into the same session via hooks, a
 multi-session panel for Claude Code and Codex, and local Russian/English.
 
 ## Status

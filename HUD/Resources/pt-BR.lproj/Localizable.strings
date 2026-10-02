@@ -77,5 +77,5 @@
 "Show panel" = "Mostrar painel";
 "Open log" = "Abrir registro";
 "Quit" = "Encerrar";
-"No microphone access. Allow it for voice-loop: System Settings → Privacy & Security → Microphone." = "Sem acesso ao microfone. Permita para o voice-loop: Ajustes do Sistema → Privacidade e Segurança → Microfone.";
+"No microphone access. Allow it for hey2agent: System Settings → Privacy & Security → Microphone." = "Sem acesso ao microfone. Permita para o hey2agent: Ajustes do Sistema → Privacidade e Segurança → Microfone.";
 "Something went wrong: %@" = "Algo deu errado: %@";

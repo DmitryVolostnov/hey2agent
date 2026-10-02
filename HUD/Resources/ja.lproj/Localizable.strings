@@ -77,5 +77,5 @@
 "Show panel" = "パネルを表示";
 "Open log" = "ログを開く";
 "Quit" = "終了";
-"No microphone access. Allow it for voice-loop: System Settings → Privacy & Security → Microphone." = "マイクへのアクセスがありません。voice-loopを許可してください：システム設定 → プライバシーとセキュリティ → マイク。";
+"No microphone access. Allow it for hey2agent: System Settings → Privacy & Security → Microphone." = "マイクへのアクセスがありません。hey2agentを許可してください：システム設定 → プライバシーとセキュリティ → マイク。";
 "Something went wrong: %@" = "問題が発生しました：%@";

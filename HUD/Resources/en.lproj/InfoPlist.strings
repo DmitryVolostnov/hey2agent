@@ -1,1 +1,1 @@
-NSMicrophoneUsageDescription = "voice-loop listens to your reply to the agent when you click a chat in the panel. Audio is transcribed locally and never leaves your Mac.";
+NSMicrophoneUsageDescription = "hey2agent listens to your reply to the agent when you click a chat in the panel. Audio is transcribed locally and never leaves your Mac.";

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""voice-loop: when a Claude Code turn ends, speak a short summary, listen, and feed
+"""hey2agent (voice_loop.py): when a Claude Code turn ends, speak a short summary, listen, and feed
 the dictated text back as the next instruction (Stop hook, decision=block).
 
 Stdlib only. External tools: ffmpeg (mic), whisper-cli (local STT), say/afplay (macOS).
@@ -492,7 +492,7 @@ def update_session(data, status, prompt=None):
 # ---------- cancelling a message that was already sent ----------
 
 CANCEL_DIR = STATE_DIR / "cancel"
-CANCEL_REASON = ("The user cancelled their last message (the «Undo» button in voice-loop). Do not "
+CANCEL_REASON = ("The user cancelled their last message (the «Undo» button in hey2agent). Do not "
                  "continue this task and take no further actions. In one sentence, in the language "
                  "of the conversation, confirm you stopped and list what you already changed, if anything.")
 
@@ -936,7 +936,7 @@ def hook():
     if reply:
         print(json.dumps({
             "decision": "block",
-            "reason": f"The user replied by voice or from the voice-loop panel (speech is "
+            "reason": f"The user replied by voice or from the hey2agent panel (speech is "
                       f"recognized locally and may contain recognition errors): {reply}\n\n{VOICE_CONTEXT}",
         }, ensure_ascii=False))
 
@@ -944,7 +944,7 @@ def hook():
 # ---------- install ----------
 
 VOICE_CONTEXT = (
-    "voice-loop voice mode is on: the summary of your answer will be read aloud. Start every final "
+    "hey2agent voice mode is on: the summary of your answer will be read aloud. Start every final "
     "answer with a separate line «**Summary:** …» in the language of the conversation, using that "
     "language's word for “Summary” (e.g. «**Кратко:** …» in Russian): 1–2 short conversational "
     "sentences — what was done and whether anything is needed from the user. No paths, code, links "

@@ -1,6 +1,6 @@
-<p align="center"><img src="docs/logo.png" width="128" alt="voice-loop"></p>
+<p align="center"><img src="docs/logo.png" width="128" alt="hey2agent"></p>
 
-<h1 align="center">voice-loop</h1>
+<h1 align="center">hey2agent</h1>
 
 <p align="center"><b>Разговаривайте с Claude Code и Codex голосом.</b> Агент закончил — плашка коротко
 рассказывает, что сделано, вы отвечаете голосом, и ответ уходит <b>в ту же сессию</b>.<br>
@@ -36,7 +36,7 @@
 macOS 15+ на Apple Silicon, Python 3, [Homebrew](https://brew.sh).
 ```bash
 brew install whisper-cpp ffmpeg
-git clone https://github.com/DmitryVolostnov/voice-loop && cd voice-loop
+git clone https://github.com/DmitryVolostnov/hey2agent && cd hey2agent
 python3 voice_loop.py install        # hooks Claude Code; спросит, какую модель распознавания скачать
 python3 voice_loop.py install-codex  # по желанию: hook для Codex, затем одобрить его в Codex через /hooks
 python3 voice_loop.py on

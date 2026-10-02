@@ -567,7 +567,7 @@ struct IdleBadge: View {
             }
         }
         .frame(width: Self.side, height: Self.side)
-        .help(muted ? String(localized: "Muted") : "voice-loop")
+        .help(muted ? String(localized: "Muted") : "hey2agent")
     }
 }
 
@@ -993,7 +993,7 @@ struct SettingsMenu: View {
 func errorText(code: String?, detail: String?) -> String {
     switch code {
     case "no_mic":
-        String(localized: "No microphone access. Allow it for voice-loop: System Settings → Privacy & Security → Microphone.")
+        String(localized: "No microphone access. Allow it for hey2agent: System Settings → Privacy & Security → Microphone.")
     default:
         String(localized: "Something went wrong: \(detail ?? "")")
     }

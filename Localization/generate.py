@@ -9,7 +9,7 @@ keys = json.loads((HERE / "keys.json").read_text())
 tr = json.loads((HERE / "translations.json").read_text()) if (HERE / "translations.json").exists() else {}
 
 PLIST_EN = {
-    "mac.NSMicrophoneUsageDescription": "voice-loop listens to your reply to the agent when you click a chat in the panel. Audio is transcribed locally and never leaves your Mac.",
+    "mac.NSMicrophoneUsageDescription": "hey2agent listens to your reply to the agent when you click a chat in the panel. Audio is transcribed locally and never leaves your Mac.",
 }
 LANGS = ["en"] + sorted(tr)
 

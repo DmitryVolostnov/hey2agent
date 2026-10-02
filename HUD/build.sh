@@ -20,11 +20,11 @@ cat > $APP/Contents/Info.plist <<PLIST
   <key>CFBundleIconFile</key><string>AppIcon</string>
   <key>CFBundleDevelopmentRegion</key><string>en</string>
   <key>CFBundleAllowMixedLocalizations</key><true/>
-  <key>CFBundleDisplayName</key><string>voice-loop</string>
+  <key>CFBundleDisplayName</key><string>hey2agent</string>
   <key>CFBundleShortVersionString</key><string>0.1</string>
   <key>LSMinimumSystemVersion</key><string>15.0</string>
   <key>LSUIElement</key><true/>
-  <key>NSMicrophoneUsageDescription</key><string>voice-loop listens to your reply to the agent when you click a chat in the panel. Audio is transcribed locally and never leaves your Mac.</string>
+  <key>NSMicrophoneUsageDescription</key><string>hey2agent listens to your reply to the agent when you click a chat in the panel. Audio is transcribed locally and never leaves your Mac.</string>
 </dict></plist>
 PLIST
 # Sign with the developer's Apple Development identity when available: a stable signature lets

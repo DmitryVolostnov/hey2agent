@@ -77,5 +77,5 @@
 "Show panel" = "Показывать плашку";
 "Open log" = "Открыть лог";
 "Quit" = "Выйти";
-"No microphone access. Allow it for voice-loop: System Settings → Privacy & Security → Microphone." = "Нет доступа к микрофону. Разрешите его для voice-loop: Системные настройки → Конфиденциальность и безопасность → Микрофон.";
+"No microphone access. Allow it for hey2agent: System Settings → Privacy & Security → Microphone." = "Нет доступа к микрофону. Разрешите его для hey2agent: Системные настройки → Конфиденциальность и безопасность → Микрофон.";
 "Something went wrong: %@" = "Что-то пошло не так: %@";
