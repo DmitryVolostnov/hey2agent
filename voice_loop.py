@@ -818,6 +818,8 @@ def wait_while_reading(ui, deadline, prefix=None):
     ui("reading", text=prefix or "")
     while time.time() < deadline:
         cmd, payload = take_control()
+        if cmd:
+            log(f"reading: control {cmd!r}")
         if cmd in ("listen", "skip", "send"):
             return "listen", None
         if cmd == "text":

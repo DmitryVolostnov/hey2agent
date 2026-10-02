@@ -236,10 +236,18 @@ struct ConversationCard: View {
             let field = editing || ["speaking", "listening", "reading", "phone"].contains(state.state)
             do {
                 HStack {
-                    TextField(editing ? String(localized: "Edit the text") : String(localized: "Type a reply"), text: $typed, axis: .vertical)
-                        .textFieldStyle(.roundedBorder)
-                        .lineLimit(1...5)
-                        .onSubmit(submit)
+                    // Single line so Return sends; editing a recognised text keeps multi-line.
+                    Group {
+                        if editing {
+                            TextField(String(localized: "Edit the text"), text: $typed, axis: .vertical)
+                                .lineLimit(1...5)
+                        } else {
+                            TextField(String(localized: "Type a reply"), text: $typed)
+                                .submitLabel(.send)
+                        }
+                    }
+                    .textFieldStyle(.roundedBorder)
+                    .onSubmit(submit)
                     Button(action: submit) { Image(systemName: "arrow.up.circle.fill").font(.title) }
                         .disabled(typed.trimmingCharacters(in: .whitespaces).isEmpty)
                 }
@@ -283,27 +291,34 @@ struct ConversationCard: View {
                 Spacer()
                 Button(String(localized: "Skip")) { send(.control("skip")) }.buttonStyle(.borderedProminent)
             case "reading":
-                Button(String(localized: "Cancel")) { speaker?.stop(); send(.control("cancel")) }
-                    .buttonStyle(.bordered)
-                if speaker?.speaking == true {
-                    Button { speaker?.stop() } label: { Image(systemName: "speaker.slash") }
-                        .buttonStyle(.bordered)
-                        .accessibilityLabel(String(localized: "Stop voice"))
-                } else if let summary = state.summary, speaker != nil {
-                    Button { speaker?.speakOnce(summary, key: Date().timeIntervalSince1970) } label: {
-                        Image(systemName: "speaker.wave.2")
+                // Two rows: small actions on top, one big «Reply by voice» below (thumb-friendly).
+                VStack(spacing: 12) {
+                    HStack(spacing: 10) {
+                        Button(String(localized: "Cancel")) { speaker?.stop(); send(.control("cancel")) }
+                        Spacer()
+                        if speaker?.speaking == true {
+                            Button { speaker?.stop() } label: { Image(systemName: "speaker.slash") }
+                                .accessibilityLabel(String(localized: "Stop voice"))
+                        } else if let summary = state.summary, speaker != nil {
+                            Button { speaker?.speakOnce(summary, key: Date().timeIntervalSince1970) } label: {
+                                Image(systemName: "speaker.wave.2")
+                            }
+                            .accessibilityLabel(String(localized: "Read aloud"))
+                        }
+                        if !(state.details ?? "").isEmpty {
+                            Button(String(localized: "More")) { showDetails = true }
+                        }
                     }
                     .buttonStyle(.bordered)
-                    .accessibilityLabel(String(localized: "Read aloud"))
+                    .controlSize(.regular)
+                    .lineLimit(1)
+                    Button { replyByPhone() } label: {
+                        Label(String(localized: "Reply by voice"), systemImage: "mic.fill")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .lineLimit(1)
                 }
-                if !(state.details ?? "").isEmpty {
-                    Button(String(localized: "More")) { showDetails = true }.buttonStyle(.bordered)
-                }
-                Spacer()
-                Button { replyByPhone() } label: {
-                    Label(String(localized: "Reply by voice"), systemImage: "mic.fill")
-                }
-                .buttonStyle(.borderedProminent)
             case "listening":
                 Button { replyByPhone() } label: { Label(String(localized: "Reply from the phone"), systemImage: "mic.fill") }
                     .buttonStyle(.borderedProminent)
