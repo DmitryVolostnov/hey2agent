@@ -146,6 +146,7 @@ final class Model {
     /// Cheap when nothing changed: files are re-read only if their mtime moved
     /// (sessions also every 5 s, because liveness depends on transcript age).
     func poll() {
+        pollDownload()
         enabled = FileManager.default.fileExists(atPath: flagURL.path)
         muted = FileManager.default.fileExists(atPath: mutedURL.path)
         let st = Self.mtime(stateURL)
@@ -372,6 +373,51 @@ final class Model {
             out[cli] = f / 1000
         }
         return out
+    }
+
+    // MARK: speech models catalog (mirrors MODELS in voice_loop.py)
+
+    struct SpeechModel { let id, file: String; let mb: Int; let note: String }
+    static let catalog: [SpeechModel] = [
+        .init(id: "turbo", file: "ggml-large-v3-turbo-q8_0.bin", mb: 874,
+              note: String(localized: "best for mixed Russian/English")),
+        .init(id: "turbo-q5", file: "ggml-large-v3-turbo-q5_0.bin", mb: 574,
+              note: String(localized: "almost the same quality, 1/3 smaller")),
+        .init(id: "small", file: "ggml-small-q5_1.bin", mb: 190,
+              note: String(localized: "faster, mistakes with English terms")),
+        .init(id: "base", file: "ggml-base.bin", mb: 148, note: String(localized: "fast, weak for Russian")),
+        .init(id: "tiny", file: "ggml-tiny.bin", mb: 78, note: String(localized: "fastest, weakest")),
+    ]
+
+    /// Model being downloaded and its progress 0…1 (from ~/.voice-loop/download.json).
+    var downloading: (id: String, progress: Double)?
+    private var downloadProcess: Process?
+
+    func isDownloaded(_ m: SpeechModel) -> Bool {
+        Self.whisperModels().contains { URL(fileURLWithPath: $0.path).lastPathComponent == m.file }
+    }
+
+    func downloadModel(_ m: SpeechModel) {
+        guard downloadProcess?.isRunning != true, let loc = scriptLocation else { return }
+        let p = Process()
+        p.executableURL = URL(fileURLWithPath: loc.python)
+        p.arguments = [loc.script, "download-model", m.id]
+        try? p.run()
+        downloadProcess = p
+        downloading = (m.id, 0)
+    }
+
+    fileprivate func pollDownload() {
+        let url = stateDir.appendingPathComponent("download.json")
+        guard let d = try? Data(contentsOf: url),
+              let o = try? JSONSerialization.jsonObject(with: d) as? [String: Any],
+              let id = o["id"] as? String, let done = o["done"] as? Double, let total = o["total"] as? Double
+        else {
+            if downloading != nil && downloadProcess?.isRunning != true { downloading = nil }
+            return
+        }
+        let p = total > 0 ? min(1, done / total) : 0
+        if downloading?.id != id || abs((downloading?.progress ?? 0) - p) > 0.004 { downloading = (id, p) }
     }
 
     /// Downloaded whisper models; tag "" = automatic (large-v3-turbo when present).
@@ -782,6 +828,12 @@ struct SessionList: View {
                             .lineLimit(1)
                             .truncationMode(.tail)
                         Spacer(minLength: 6)
+                        if !detailed && (s.status == "working" || s.status == "waiting") {
+                            // Collapsed: still show how long the task has been running.
+                            Text(elapsed(since: s.since, now: now))
+                                .font(.system(size: 11).monospacedDigit())
+                                .foregroundStyle(.tertiary)
+                        }
                         if detailed {
                             if wide {
                                 Text(label(s))
@@ -878,6 +930,15 @@ struct SettingsMenu: View {
                 ForEach(model.voices) { Text($0.label).tag($0) }
             }
             Button(String(localized: "Preview voice")) { model.previewVoice() }
+            Menu(model.downloading.map {
+                String(localized: "Downloading \($0.id)… \(Int($0.progress * 100))%")
+            } ?? String(localized: "Download model")) {
+                ForEach(Model.catalog, id: \.id) { m in
+                    let have = model.isDownloaded(m)
+                    Button("\(have ? "✓ " : "")\(m.id) · \(m.mb) MB — \(m.note)") { model.downloadModel(m) }
+                        .disabled(have || model.downloading != nil)
+                }
+            }
             Picker(String(localized: "Recognition model"), selection: Binding(
                 get: { model.config["model"] as? String ?? "" }, set: { model.set("model", $0) })) {
                 ForEach(Model.whisperModels(), id: \.path) { m in

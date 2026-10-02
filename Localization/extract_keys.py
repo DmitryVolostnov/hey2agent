@@ -5,11 +5,13 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 SOURCES = list((ROOT / "HUD/Sources").rglob("*.swift")) + list((ROOT / "iOS/Sources").rglob("*.swift"))
-STRINGISH = ("String(", '?? ""', "project", "text", "base", ".title")
+STRINGISH = ("String(", '?? ""', "project", "text", "base", ".title", ".id")
 
 def literal_at(s, i):
-    """Swift string literal starting at s[i] == '"' (handles \\( ... ) with nested quotes)."""
-    j, out, parts = i + 1, "", []
+    """Swift string literal starting at s[i] == '"' (handles \\( ... ) with nested quotes).
+    Like String.LocalizationValue: with interpolations, a literal % is escaped as %%."""
+    j, out, interp = i + 1, "", False
+    literal_pct = []
     while True:
         c = s[j]
         if c == "\\" and s[j + 1] == "(":
@@ -22,12 +24,18 @@ def literal_at(s, i):
                 k += 1
             expr = s[j + 2:k - 1]
             out += "%@" if any(t in expr for t in STRINGISH) else "%lld"
+            interp = True
             j = k
         elif c == "\\":
             out += s[j:j + 2]; j += 2
         elif c == '"':
+            if interp:
+                for pos in reversed(literal_pct):
+                    out = out[:pos] + "%" + out[pos:]
             return out
         else:
+            if c == "%":
+                literal_pct.append(len(out))
             out += c; j += 1
 
 keys = []

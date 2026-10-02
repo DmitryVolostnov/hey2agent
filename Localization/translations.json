@@ -112,7 +112,14 @@
   "Language": "Язык",
   "System": "Как в системе",
   "Recognition model": "Модель распознавания",
-  "Automatic (best available)": "Автоматически (лучшая из скачанных)"
+  "Automatic (best available)": "Автоматически (лучшая из скачанных)",
+  "best for mixed Russian/English": "лучшая для смеси русского и английского",
+  "almost the same quality, 1/3 smaller": "почти то же качество, на треть меньше",
+  "faster, mistakes with English terms": "быстрее, ошибается в английских терминах",
+  "fast, weak for Russian": "быстрая, слабая для русского",
+  "fastest, weakest": "самая быстрая, самая слабая",
+  "Download model": "Скачать модель",
+  "Downloading %@… %lld%%": "Скачиваю %@… %lld%%"
  },
  "uk": {
   "Recent": "Нещодавні",
@@ -227,7 +234,14 @@
   "Language": "Мова",
   "System": "Як у системі",
   "Recognition model": "Модель розпізнавання",
-  "Automatic (best available)": "Автоматично (найкраща із завантажених)"
+  "Automatic (best available)": "Автоматично (найкраща із завантажених)",
+  "best for mixed Russian/English": "найкраща для суміші російської та англійської",
+  "almost the same quality, 1/3 smaller": "майже та сама якість, на третину менша",
+  "faster, mistakes with English terms": "швидша, помиляється в англійських термінах",
+  "fast, weak for Russian": "швидка, слабка для російської",
+  "fastest, weakest": "найшвидша, найслабша",
+  "Download model": "Завантажити модель",
+  "Downloading %@… %lld%%": "Завантажую %@… %lld%%"
  },
  "de": {
   "Recent": "Zuletzt",
@@ -342,7 +356,14 @@
   "Language": "Sprache",
   "System": "Wie System",
   "Recognition model": "Erkennungsmodell",
-  "Automatic (best available)": "Automatisch (beste verfügbare)"
+  "Automatic (best available)": "Automatisch (beste verfügbare)",
+  "best for mixed Russian/English": "am besten für gemischtes Russisch/Englisch",
+  "almost the same quality, 1/3 smaller": "fast gleiche Qualität, ein Drittel kleiner",
+  "faster, mistakes with English terms": "schneller, Fehler bei englischen Begriffen",
+  "fast, weak for Russian": "schnell, schwach für Russisch",
+  "fastest, weakest": "am schnellsten, am schwächsten",
+  "Download model": "Modell laden",
+  "Downloading %@… %lld%%": "Lade %@… %lld%%"
  },
  "es": {
   "Recent": "Recientes",
@@ -457,7 +478,14 @@
   "Language": "Idioma",
   "System": "Como el sistema",
   "Recognition model": "Modelo de reconocimiento",
-  "Automatic (best available)": "Automático (el mejor disponible)"
+  "Automatic (best available)": "Automático (el mejor disponible)",
+  "best for mixed Russian/English": "la mejor para ruso e inglés mezclados",
+  "almost the same quality, 1/3 smaller": "casi la misma calidad, un tercio menor",
+  "faster, mistakes with English terms": "más rápido, falla con términos en inglés",
+  "fast, weak for Russian": "rápido, débil para ruso",
+  "fastest, weakest": "la más rápida, la más débil",
+  "Download model": "Descargar modelo",
+  "Downloading %@… %lld%%": "Descargando %@… %lld%%"
  },
  "fr": {
   "Recent": "Récents",
@@ -572,7 +600,14 @@
   "Language": "Langue",
   "System": "Comme le système",
   "Recognition model": "Modèle de reconnaissance",
-  "Automatic (best available)": "Automatique (le meilleur disponible)"
+  "Automatic (best available)": "Automatique (le meilleur disponible)",
+  "best for mixed Russian/English": "la meilleure pour un mélange russe/anglais",
+  "almost the same quality, 1/3 smaller": "qualité presque identique, un tiers plus léger",
+  "faster, mistakes with English terms": "plus rapide, erreurs sur les termes anglais",
+  "fast, weak for Russian": "rapide, faible en russe",
+  "fastest, weakest": "la plus rapide, la plus faible",
+  "Download model": "Télécharger un modèle",
+  "Downloading %@… %lld%%": "Téléchargement de %@… %lld%%"
  },
  "pt-BR": {
   "Recent": "Recentes",
@@ -687,7 +722,14 @@
   "Language": "Idioma",
   "System": "Como o sistema",
   "Recognition model": "Modelo de reconhecimento",
-  "Automatic (best available)": "Automático (o melhor disponível)"
+  "Automatic (best available)": "Automático (o melhor disponível)",
+  "best for mixed Russian/English": "a melhor para russo e inglês misturados",
+  "almost the same quality, 1/3 smaller": "quase a mesma qualidade, 1/3 menor",
+  "faster, mistakes with English terms": "mais rápido, erra termos em inglês",
+  "fast, weak for Russian": "rápido, fraco para russo",
+  "fastest, weakest": "a mais rápida, a mais fraca",
+  "Download model": "Baixar modelo",
+  "Downloading %@… %lld%%": "Baixando %@… %lld%%"
  },
  "it": {
   "Recent": "Recenti",
@@ -802,7 +844,14 @@
   "Language": "Lingua",
   "System": "Come il sistema",
   "Recognition model": "Modello di riconoscimento",
-  "Automatic (best available)": "Automatico (il migliore disponibile)"
+  "Automatic (best available)": "Automatico (il migliore disponibile)",
+  "best for mixed Russian/English": "la migliore per russo e inglese misti",
+  "almost the same quality, 1/3 smaller": "qualità quasi uguale, un terzo più piccolo",
+  "faster, mistakes with English terms": "più veloce, sbaglia i termini inglesi",
+  "fast, weak for Russian": "veloce, debole per il russo",
+  "fastest, weakest": "la più veloce, la più debole",
+  "Download model": "Scarica modello",
+  "Downloading %@… %lld%%": "Scarico %@… %lld%%"
  },
  "ja": {
   "Recent": "最近",
@@ -917,7 +966,14 @@
   "Language": "言語",
   "System": "システムと同じ",
   "Recognition model": "認識モデル",
-  "Automatic (best available)": "自動（利用可能な最良のモデル）"
+  "Automatic (best available)": "自動（利用可能な最良のモデル）",
+  "best for mixed Russian/English": "ロシア語と英語の混在に最適",
+  "almost the same quality, 1/3 smaller": "ほぼ同じ品質で1/3小さい",
+  "faster, mistakes with English terms": "高速だが英語の用語を誤りやすい",
+  "fast, weak for Russian": "高速だがロシア語に弱い",
+  "fastest, weakest": "最速だが最も弱い",
+  "Download model": "モデルをダウンロード",
+  "Downloading %@… %lld%%": "%@をダウンロード中… %lld%%"
  },
  "zh-Hans": {
   "Recent": "最近",
@@ -1032,6 +1088,13 @@
   "Language": "语言",
   "System": "跟随系统",
   "Recognition model": "识别模型",
-  "Automatic (best available)": "自动（最佳可用模型）"
+  "Automatic (best available)": "自动（最佳可用模型）",
+  "best for mixed Russian/English": "最适合俄英混合",
+  "almost the same quality, 1/3 smaller": "质量几乎相同，小三分之一",
+  "faster, mistakes with English terms": "更快，英文术语易出错",
+  "fast, weak for Russian": "快速，俄语较弱",
+  "fastest, weakest": "最快，最弱",
+  "Download model": "下载模型",
+  "Downloading %@… %lld%%": "正在下载 %@… %lld%%"
  }
 }

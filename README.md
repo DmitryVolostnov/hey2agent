@@ -42,7 +42,7 @@ Requirements: macOS 15+ on Apple silicon, Python 3, `brew install whisper-cpp ff
 
 ```bash
 git clone https://github.com/DmitryVolostnov/voice-loop && cd voice-loop
-python3 voice_loop.py install        # Claude Code hooks (+ downloads the whisper model if missing)
+python3 voice_loop.py install        # Claude Code hooks; asks which speech model to download
 python3 voice_loop.py install-codex  # optional: Codex Stop hook, then approve it in Codex via /hooks
 python3 voice_loop.py on
 HUD/build.sh && open HUD/VoiceLoopHUD.app
@@ -61,6 +61,18 @@ no server, nothing leaves your network.
 ```bash
 cd iOS && xcodegen generate && open VoiceLoopRemote.xcodeproj   # pick your iPhone, Run
 ```
+
+## Speech models
+`install` asks which whisper model to download (also: HUD settings → Download model, or
+`python3 voice_loop.py download-model <id>`). Switch in HUD settings → Recognition model.
+
+| id | size | notes |
+|---|---|---|
+| `turbo` | 874 MB | best for mixed Russian/English (default) |
+| `turbo-q5` | 574 MB | almost the same quality, 1/3 smaller |
+| `small` | 190 MB | faster, mistakes with English terms |
+| `base` | 148 MB | fast, weak for Russian |
+| `tiny` | 78 MB | fastest, weakest |
 
 ## How it works
 `voice_loop.py hook` runs on the agent's Stop event: summary → TTS → energy VAD over `ffmpeg` mic

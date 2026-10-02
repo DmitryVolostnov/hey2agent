@@ -7,6 +7,8 @@ Nothing leaves the machine.
 
   voice_loop.py on | off | status     toggle via flag file
   voice_loop.py mute | unmute         meetings: stay silent, HUD still shows finished sessions
+  voice_loop.py models                list speech models (✓ = downloaded)
+  voice_loop.py download-model <id>   turbo | turbo-q5 | small | base | tiny
   voice_loop.py install | uninstall   add/remove the Stop hook in ~/.claude/settings.json
   voice_loop.py say "text"            test TTS
   voice_loop.py listen                test mic + transcription
@@ -86,8 +88,18 @@ HALLUCINATIONS = ["субтитры", "продолжение следует", "
                   "thanks for watching", "amara.org"]
 
 
-MODEL_NAME = "ggml-large-v3-turbo-q8_0.bin"
-MODEL_URL = f"https://huggingface.co/ggerganov/whisper.cpp/resolve/main/{MODEL_NAME}"
+# Whisper models (whisper.cpp ggml builds on Hugging Face), best first.
+MODELS = [
+    # id, file, MB, note
+    ("turbo", "ggml-large-v3-turbo-q8_0.bin", 874, "best for mixed Russian/English (default)"),
+    ("turbo-q5", "ggml-large-v3-turbo-q5_0.bin", 574, "almost the same quality, 1/3 smaller"),
+    ("small", "ggml-small-q5_1.bin", 190, "faster, mistakes with English terms"),
+    ("base", "ggml-base.bin", 148, "fast, weak for Russian"),
+    ("tiny", "ggml-tiny.bin", 78, "fastest, weakest"),
+]
+MODEL_NAME = MODELS[0][1]
+MODEL_BASE_URL = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/"
+DOWNLOAD = STATE_DIR / "download.json"  # progress for the HUD
 
 
 def list_models():
@@ -98,10 +110,40 @@ def list_models():
 
 
 def find_model():
-    """Default: large-v3-turbo (best for mixed Russian/English), else any downloaded model."""
+    """Default: the best downloaded model in MODELS order, else any downloaded model."""
     models = list_models()
-    best = [p for p in models if p.name == MODEL_NAME]
-    return str((best or models or [""])[0])
+    rank = {f: i for i, (_, f, _, _) in enumerate(MODELS)}
+    models.sort(key=lambda p: rank.get(p.name, len(rank)))
+    return str(models[0]) if models else ""
+
+
+def download_model(model_id):
+    """Download a model into ~/.voice-loop/models with resume + retries; progress in download.json."""
+    entry = next((m for m in MODELS if m[0] == model_id), None)
+    if not entry:
+        sys.exit(f"unknown model {model_id}; choose: {', '.join(m[0] for m in MODELS)}")
+    _, name, mb, _ = entry
+    dest = STATE_DIR / "models" / name
+    part = dest.with_suffix(".part")
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    if dest.exists():
+        print(f"{name} already downloaded")
+        return
+    p = subprocess.Popen(["curl", "-sL", "--fail", "-C", "-", "--retry", "20", "--retry-delay", "5",
+                          "--retry-all-errors", "-o", str(part), MODEL_BASE_URL + name])
+    total = mb * 1_000_000
+    while p.poll() is None:
+        done = part.stat().st_size if part.exists() else 0
+        DOWNLOAD.write_text(json.dumps({"id": model_id, "done": done, "total": total, "t": time.time()}))
+        if sys.stdout.isatty():
+            print(f"\r{name}: {done * 100 // total}% of {mb} MB", end="", flush=True)
+        time.sleep(1)
+    _rm(DOWNLOAD)
+    if p.returncode == 0 and part.exists():
+        part.rename(dest)
+        print(f"\ndownloaded {dest}")
+    else:
+        sys.exit(f"\ndownload failed (curl exit {p.returncode}); run again to resume")
 
 
 def cfg():
@@ -939,12 +981,18 @@ def _ours(group):
 
 
 def ensure_model():
+    """No model yet: let the user pick one (interactive) or take the default."""
     if find_model():
         return
-    dest = STATE_DIR / "models" / MODEL_NAME
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    print(f"downloading whisper model (~870 MB) to {dest} …")
-    subprocess.run(["curl", "-L", "--fail", "-o", str(dest), MODEL_URL], check=True)
+    choice = MODELS[0][0]
+    if sys.stdin.isatty():
+        print("Choose a speech recognition model to download:")
+        for i, (mid, _, mb, note) in enumerate(MODELS, 1):
+            print(f"  {i}. {mid:9} {mb:4} MB  {note}")
+        ans = input("Number [1]: ").strip()
+        if ans.isdigit() and 1 <= int(ans) <= len(MODELS):
+            choice = MODELS[int(ans) - 1][0]
+    download_model(choice)
 
 
 def install():
@@ -1063,6 +1111,12 @@ def main():
         install()
     elif cmd == "uninstall":
         uninstall()
+    elif cmd == "download-model" and len(sys.argv) > 2:
+        download_model(sys.argv[2])
+    elif cmd == "models":
+        for mid, name, mb, note in MODELS:
+            have = (STATE_DIR / "models" / name).exists() or any(p.name == name for p in list_models())
+            print(f"{'✓' if have else ' '} {mid:9} {mb:4} MB  {note}")
     elif cmd == "install-codex":
         install_codex()
     elif cmd == "uninstall-codex":
