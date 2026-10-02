@@ -38,6 +38,19 @@ The same session continues with your instruction
   <img src="docs/list.png" width="230" alt="Tasks in progress">
 </p>
 
+## iPhone: walk away from the Mac
+Open the iPhone app and the Mac goes quiet: the **phone** shows the tasks in progress, reads the summary
+aloud, shows the agent's full answer (**More**), and you reply by voice or text — the session waits up
+to 10 minutes. Close the app and everything is back on the Mac.
+The phone talks to the Mac directly over your Wi-Fi (Bonjour + TLS keyed by a 6-digit pairing code
+from the panel settings) — no server, nothing leaves your network.
+
+Install with Xcode on your own iPhone (a free Apple ID works; free signing expires after 7 days):
+```bash
+brew install xcodegen
+cd iOS && xcodegen generate && open VoiceLoopRemote.xcodeproj   # Signing: pick your team → Run
+```
+
 ## Voice commands
 | Say at the end of a phrase | Effect |
 |---|---|
