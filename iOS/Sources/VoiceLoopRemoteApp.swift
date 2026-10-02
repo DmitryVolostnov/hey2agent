@@ -1,10 +1,16 @@
 import SwiftUI
+import TipKit
 import UIKit
 
 @main
 struct VoiceLoopRemoteApp: App {
     @State private var model = RemoteModel()
     @Environment(\.scenePhase) private var phase
+    @AppStorage("appearance") private var appearance = Appearance.system.rawValue
+
+    init() {
+        try? Tips.configure([.displayFrequency(.immediate)])
+    }
 
     var body: some Scene {
         WindowGroup {
@@ -15,7 +21,7 @@ struct VoiceLoopRemoteApp: App {
                     PairingView(model: model)
                 }
             }
-            .preferredColorScheme(.dark)
+            .preferredColorScheme(Appearance(rawValue: appearance)?.scheme)
             .onAppear {
                 UIApplication.shared.isIdleTimerDisabled = true  // always-on screen next to the laptop
                 model.start()

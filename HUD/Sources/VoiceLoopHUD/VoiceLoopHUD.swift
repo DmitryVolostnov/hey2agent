@@ -2,6 +2,7 @@ import AppKit
 import Observation
 import ServiceManagement
 import SwiftUI
+import VoiceLoopLink
 
 // Reads ~/.voice-loop/state.json and sessions.json (written by voice_loop.py), writes
 // ~/.voice-loop/control (send | cancel | skip | repeat | text\n…), config.json and the
@@ -50,8 +51,14 @@ struct AgentSession: Decodable, Equatable, Identifiable {
     var transcript: String?
     var agent: String?
     var ended: Double?
+    var activity: String?
+    var activity_target: String?
+    var activity_t: Double?
+    var note: String?
 
-    enum CodingKeys: String, CodingKey { case project, title, status, since, updated, transcript, agent, ended }
+    enum CodingKeys: String, CodingKey {
+        case project, title, status, since, updated, transcript, agent, ended, activity, activity_target, activity_t, note
+    }
 }
 
 /// A voice the script can use: macOS `say` voice or a downloaded Piper model.
@@ -892,6 +899,7 @@ struct SessionList: View {
         case "finished": String(localized: "done")
         case "idle": s.project
         case "stopping": String(localized: "stopping…")
+        case "working": "\(s.project) • \(sessionStatus(note: s.note, kind: s.activity, target: s.activity_target, at: s.activity_t))"
         default: s.project
         }
     }

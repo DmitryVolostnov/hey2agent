@@ -9,6 +9,12 @@ final class Speaker: NSObject, AVSpeechSynthesizerDelegate {
         didSet { UserDefaults.standard.set(enabled, forKey: "readAloud"); if !enabled { stop() } }
     }
     var speaking = false
+    /// Start recording on the phone right after the summary was read (like the Mac does).
+    var listenAfter = UserDefaults.standard.object(forKey: "listenAfter") as? Bool ?? true {
+        didSet { UserDefaults.standard.set(listenAfter, forKey: "listenAfter") }
+    }
+    /// Called when an utterance finished on its own (not when stopped).
+    var onFinished: (() -> Void)?
     private let synth = AVSpeechSynthesizer()
     private var lastSpoken: Double?
 
@@ -37,7 +43,10 @@ final class Speaker: NSObject, AVSpeechSynthesizerDelegate {
     }
 
     nonisolated func speechSynthesizer(_ s: AVSpeechSynthesizer, didFinish u: AVSpeechUtterance) {
-        Task { @MainActor in self.speaking = false }
+        Task { @MainActor in
+            self.speaking = false
+            if self.listenAfter { self.onFinished?() }
+        }
     }
     nonisolated func speechSynthesizer(_ s: AVSpeechSynthesizer, didCancel u: AVSpeechUtterance) {
         Task { @MainActor in self.speaking = false }

@@ -85,6 +85,10 @@
 "Quit" = "退出";
 "No microphone access. Allow it for hey2agent: System Settings → Privacy & Security → Microphone." = "无法访问麦克风。请为 hey2agent 开启权限：系统设置 → 隐私与安全性 → 麦克风。";
 "Something went wrong: %@" = "出现问题：%@";
+"Light" = "浅色";
+"Dark" = "深色";
+"Tap a chat to open it on the Mac" = "轻点聊天即可在 Mac 上打开";
+"The mic button dictates a message into that chat." = "麦克风按钮可向该聊天语音输入消息。";
 "Looking for a Mac running hey2agent on this network…" = "正在此网络中查找运行 hey2agent 的 Mac…";
 "The hey2agent panel must be running and the phone and Mac on the same Wi-Fi." = "hey2agent 面板必须正在运行，且手机和 Mac 连接同一 Wi-Fi。";
 "6 digits" = "6 位数字";
@@ -96,12 +100,9 @@
 "Reconnecting…" = "正在重新连接…";
 "Mute" = "静音";
 "Read summaries aloud" = "朗读摘要";
+"Listen after reading" = "朗读后开始聆听";
+"Appearance" = "外观";
 "Unpair Mac" = "取消配对 Mac";
-"Connecting to the Mac…" = "正在连接 Mac…";
-"Voice mode is off" = "语音模式已关闭";
-"In progress: %lld" = "进行中：%lld";
-"Voice on" = "语音已开启";
-"%@ · muted" = "%@ · 已静音";
 "Open the chat on the Mac" = "在 Mac 上打开聊天";
 "Type a reply" = "输入回复";
 "Reading aloud is off (settings)" = "朗读已关闭（设置）";
@@ -121,3 +122,11 @@
 "Listening…" = "正在聆听…";
 "Speak" = "请说话";
 "A 2-second pause sends it. Transcribed on the Mac." = "停顿 2 秒即发送。在 Mac 上转写。";
+"Thinking…" = "思考中…";
+"Reading %@" = "正在读取 %@";
+"Editing %@" = "正在编辑 %@";
+"Running %@" = "正在运行：%@";
+"Searching %@" = "正在搜索 %@";
+"Browsing %@" = "正在浏览 %@";
+"Delegating: %@" = "委派：%@";
+"Using %@" = "正在使用 %@";

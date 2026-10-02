@@ -85,6 +85,10 @@
 "Quit" = "終了";
 "No microphone access. Allow it for hey2agent: System Settings → Privacy & Security → Microphone." = "マイクへのアクセスがありません。hey2agentを許可してください：システム設定 → プライバシーとセキュリティ → マイク。";
 "Something went wrong: %@" = "問題が発生しました：%@";
+"Light" = "ライト";
+"Dark" = "ダーク";
+"Tap a chat to open it on the Mac" = "チャットをタップするとMacで開きます";
+"The mic button dictates a message into that chat." = "マイクボタンでそのチャットに音声入力できます。";
 "Looking for a Mac running hey2agent on this network…" = "このネットワークでhey2agentが動作中のMacを探しています…";
 "The hey2agent panel must be running and the phone and Mac on the same Wi-Fi." = "hey2agentパネルが起動していて、電話とMacが同じWi-Fiに接続されている必要があります。";
 "6 digits" = "6桁";
@@ -96,12 +100,9 @@
 "Reconnecting…" = "再接続中…";
 "Mute" = "消音";
 "Read summaries aloud" = "要約を読み上げる";
+"Listen after reading" = "読み上げ後に聞き取る";
+"Appearance" = "外観";
 "Unpair Mac" = "Macのペアリングを解除";
-"Connecting to the Mac…" = "Macに接続中…";
-"Voice mode is off" = "音声モードはオフです";
-"In progress: %lld" = "作業中：%lld";
-"Voice on" = "音声オン";
-"%@ · muted" = "%@ · 消音中";
 "Open the chat on the Mac" = "Macでチャットを開く";
 "Type a reply" = "返信を入力";
 "Reading aloud is off (settings)" = "読み上げはオフ（設定）";
@@ -121,3 +122,11 @@
 "Listening…" = "聞き取り中…";
 "Speak" = "話してください";
 "A 2-second pause sends it. Transcribed on the Mac." = "2秒間話さないと送信されます。文字起こしはMacで行います。";
+"Thinking…" = "考え中…";
+"Reading %@" = "%@を読み込み中";
+"Editing %@" = "%@を編集中";
+"Running %@" = "実行中：%@";
+"Searching %@" = "%@を検索中";
+"Browsing %@" = "%@を閲覧中";
+"Delegating: %@" = "委任：%@";
+"Using %@" = "%@を使用中";

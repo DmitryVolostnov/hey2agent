@@ -500,6 +500,8 @@ def update_session(data, status, prompt=None):
             status = "idle"
         if status == "working" and cur.get("status") != "working":
             cur["since"] = now
+        if prompt is not None:
+            cur.pop("note", None)
         cur.setdefault("since", now)
         cur.update(project=project, status=status, updated=now,
                    cwd=data.get("cwd") or cur.get("cwd"),
@@ -534,12 +536,98 @@ def is_cancelled(sid, max_age=15 * 60):
         return False
 
 
+TOOL_KINDS = {  # tool → activity kind shown next to the project (worded by the apps)
+    "Read": "read", "NotebookRead": "read",
+    "Edit": "edit", "MultiEdit": "edit", "Write": "edit", "NotebookEdit": "edit",
+    "Bash": "run", "BashOutput": "run",
+    "Grep": "search", "Glob": "search", "LS": "search",
+    "WebFetch": "web", "WebSearch": "web",
+    "Task": "agent", "Agent": "agent",
+}
+
+
+def activity_of(data):
+    """(kind, target) for a PreToolUse payload, e.g. ('edit', 'Views.swift')."""
+    tool = data.get("tool_name") or ""
+    inp = data.get("tool_input") or {}
+    kind = TOOL_KINDS.get(tool, "mcp" if tool.startswith("mcp__") else "tool")
+    path = inp.get("file_path") or inp.get("notebook_path") or inp.get("path") or ""
+    if path:
+        target = Path(path).name
+    elif tool == "Bash":
+        target = (inp.get("description") or (inp.get("command") or "").split("\n")[0])[:40]
+    elif kind == "search":
+        target = (inp.get("pattern") or "")[:30]
+    elif kind == "web":
+        target = re.sub(r"^https?://(www\.)?", "", inp.get("url") or inp.get("query") or "")[:30]
+    elif kind == "agent":
+        target = (inp.get("description") or "")[:30]
+    elif kind == "mcp":
+        target = tool.split("__")[-1][:30]
+    else:
+        target = tool[:30]
+    return kind, target
+
+
+def turn_note(transcript_path, limit=140):
+    """The latest text Claude wrote in the current turn («Нашёл причину…»), from the transcript
+    tail; None if it hasn't written anything since the user's last message."""
+    try:
+        with open(transcript_path, "rb") as f:
+            f.seek(0, 2)
+            f.seek(max(0, f.tell() - 300_000))
+            lines = f.read().decode("utf-8", "ignore").splitlines()[1:]
+    except (OSError, TypeError):
+        return None
+    note = None
+    for line in lines:
+        try:
+            e = json.loads(line)
+        except ValueError:
+            continue
+        content = (e.get("message") or {}).get("content")
+        if e.get("type") == "user":
+            is_prompt = isinstance(content, str) or (
+                isinstance(content, list) and not any(b.get("type") == "tool_result" for b in content))
+            if is_prompt:
+                note = None  # a new turn starts here
+        elif e.get("type") == "assistant" and isinstance(content, list):
+            texts = [b.get("text", "") for b in content if b.get("type") == "text" and b.get("text", "").strip()]
+            if texts:
+                note = texts[-1]
+    if not note:
+        return None
+    first = clean_md(note.strip().split("\n")[0])
+    return first[:limit]
+
+
+def set_activity(sid, kind, target, note=None):
+    """Cheap registry update on every tool call: what the agent is doing right now."""
+    if not sid:
+        return
+    with open(STATE_DIR / "sessions.lock", "w") as lk:
+        fcntl.flock(lk, fcntl.LOCK_EX)
+        reg = load_sessions()
+        cur = reg.get(sid)
+        if not cur or cur.get("status") != "working":
+            return
+        cur.update(activity=kind, activity_target=target, activity_t=time.time(), note=note)
+        tmp = SESSIONS.with_suffix(".tmp")
+        tmp.write_text(json.dumps(reg, ensure_ascii=False))
+        os.replace(tmp, SESSIONS)
+
+
 def pretool_hook():
-    """Claude Code PreToolUse: after «Отменить», deny every tool call so Claude stops."""
+    """Claude Code PreToolUse: record the current activity; after «Отменить», deny every
+    tool call so Claude stops."""
     try:
         data = json.load(sys.stdin)
     except Exception:
         return
+    try:
+        set_activity(data.get("session_id"), *activity_of(data), note=turn_note(data.get("transcript_path")))
+    except Exception as e:
+        log(f"activity error: {e!r}")
     if is_cancelled(data.get("session_id")):
         print(json.dumps({"hookSpecificOutput": {
             "hookEventName": "PreToolUse",
@@ -817,11 +905,15 @@ def is_remote():
         return False
 
 
-def wait_while_reading(ui, deadline, prefix=None):
+def wait_while_reading(ui, deadline, prefix=None, remote=False):
     """Silent step: the user reads (on the Mac after «Stop voice», or on the iPhone).
-    Returns (verdict, payload): listen | text | audio (path) | cancel | timeout."""
+    Returns (verdict, payload): listen | text | audio (path) | cancel | timeout | local
+    (remote=True and the phone went away: hand the turn back to the Mac)."""
     ui("reading", text=prefix or "")
     while time.time() < deadline:
+        if remote and not is_remote():
+            log("phone went away — back to the Mac")
+            return "local", None
         cmd, payload = take_control()
         if cmd:
             log(f"reading: control {cmd!r}")
@@ -844,10 +936,10 @@ def remote_reply(c, ui, deadline):
     Returns text | None (release) | 'LISTEN' (use the Mac mic after all)."""
     prefix = None
     while True:
-        verdict, payload = wait_while_reading(ui, deadline, prefix)
+        verdict, payload = wait_while_reading(ui, deadline, prefix, remote=True)
         if verdict in ("cancel", "timeout"):
             return None
-        if verdict in ("text", "listen"):
+        if verdict in ("text", "listen", "local"):
             return payload if verdict == "text" else "LISTEN"
         ui("transcribing", text=prefix or "")
         wav = to_wav(read_wav(payload))

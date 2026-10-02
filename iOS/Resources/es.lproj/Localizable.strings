@@ -85,6 +85,10 @@
 "Quit" = "Salir";
 "No microphone access. Allow it for hey2agent: System Settings → Privacy & Security → Microphone." = "Sin acceso al micrófono. Permítelo para hey2agent: Ajustes del Sistema → Privacidad y seguridad → Micrófono.";
 "Something went wrong: %@" = "Algo salió mal: %@";
+"Light" = "Claro";
+"Dark" = "Oscuro";
+"Tap a chat to open it on the Mac" = "Toca un chat para abrirlo en el Mac";
+"The mic button dictates a message into that chat." = "El botón del micrófono dicta un mensaje en ese chat.";
 "Looking for a Mac running hey2agent on this network…" = "Buscando un Mac con hey2agent en esta red…";
 "The hey2agent panel must be running and the phone and Mac on the same Wi-Fi." = "El panel de hey2agent debe estar abierto, y el teléfono y el Mac en la misma Wi-Fi.";
 "6 digits" = "6 dígitos";
@@ -96,12 +100,9 @@
 "Reconnecting…" = "Reconectando…";
 "Mute" = "Silenciar";
 "Read summaries aloud" = "Leer resúmenes en voz alta";
+"Listen after reading" = "Escuchar tras leer";
+"Appearance" = "Apariencia";
 "Unpair Mac" = "Desenlazar Mac";
-"Connecting to the Mac…" = "Conectando con el Mac…";
-"Voice mode is off" = "El modo de voz está desactivado";
-"In progress: %lld" = "En curso: %lld";
-"Voice on" = "Voz activada";
-"%@ · muted" = "%@ · silenciado";
 "Open the chat on the Mac" = "Abrir el chat en el Mac";
 "Type a reply" = "Escribir respuesta";
 "Reading aloud is off (settings)" = "Lectura en voz alta desactivada (ajustes)";
@@ -121,3 +122,11 @@
 "Listening…" = "Escuchando…";
 "Speak" = "Habla";
 "A 2-second pause sends it. Transcribed on the Mac." = "Una pausa de 2 segundos lo envía. Se transcribe en el Mac.";
+"Thinking…" = "Pensando…";
+"Reading %@" = "Leyendo %@";
+"Editing %@" = "Editando %@";
+"Running %@" = "Ejecutando: %@";
+"Searching %@" = "Buscando %@";
+"Browsing %@" = "Consultando %@";
+"Delegating: %@" = "Delegando: %@";
+"Using %@" = "Usando %@";

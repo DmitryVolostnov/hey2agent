@@ -85,6 +85,10 @@
 "Quit" = "Quit";
 "No microphone access. Allow it for hey2agent: System Settings → Privacy & Security → Microphone." = "No microphone access. Allow it for hey2agent: System Settings → Privacy & Security → Microphone.";
 "Something went wrong: %@" = "Something went wrong: %@";
+"Light" = "Light";
+"Dark" = "Dark";
+"Tap a chat to open it on the Mac" = "Tap a chat to open it on the Mac";
+"The mic button dictates a message into that chat." = "The mic button dictates a message into that chat.";
 "Looking for a Mac running hey2agent on this network…" = "Looking for a Mac running hey2agent on this network…";
 "The hey2agent panel must be running and the phone and Mac on the same Wi-Fi." = "The hey2agent panel must be running and the phone and Mac on the same Wi-Fi.";
 "6 digits" = "6 digits";
@@ -96,12 +100,9 @@
 "Reconnecting…" = "Reconnecting…";
 "Mute" = "Mute";
 "Read summaries aloud" = "Read summaries aloud";
+"Listen after reading" = "Listen after reading";
+"Appearance" = "Appearance";
 "Unpair Mac" = "Unpair Mac";
-"Connecting to the Mac…" = "Connecting to the Mac…";
-"Voice mode is off" = "Voice mode is off";
-"In progress: %lld" = "In progress: %lld";
-"Voice on" = "Voice on";
-"%@ · muted" = "%@ · muted";
 "Open the chat on the Mac" = "Open the chat on the Mac";
 "Type a reply" = "Type a reply";
 "Reading aloud is off (settings)" = "Reading aloud is off (settings)";
@@ -121,3 +122,11 @@
 "Listening…" = "Listening…";
 "Speak" = "Speak";
 "A 2-second pause sends it. Transcribed on the Mac." = "A 2-second pause sends it. Transcribed on the Mac.";
+"Thinking…" = "Thinking…";
+"Reading %@" = "Reading %@";
+"Editing %@" = "Editing %@";
+"Running %@" = "Running %@";
+"Searching %@" = "Searching %@";
+"Browsing %@" = "Browsing %@";
+"Delegating: %@" = "Delegating: %@";
+"Using %@" = "Using %@";

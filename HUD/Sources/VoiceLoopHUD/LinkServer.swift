@@ -148,7 +148,9 @@ extension Model {
     func snapshot() -> LinkSnapshot {
         func conv(_ s: AgentSession) -> LinkSession {
             LinkSession(id: s.id, project: s.project, title: s.title, status: s.status,
-                        since: s.since, ended: s.ended, agent: s.agent)
+                        since: s.since, ended: s.ended, agent: s.agent,
+                        activity: s.activity, activity_target: s.activity_target, activity_t: s.activity_t,
+                        note: s.note)
         }
         let a = active.map {
             LinkVoiceState(state: $0.state, project: $0.project, summary: $0.summary, text: $0.text,

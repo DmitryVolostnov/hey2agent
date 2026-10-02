@@ -267,6 +267,7 @@ class Remote(unittest.TestCase):
         d = Path(self.dir.name)
         self.saved = (v.CONTROL, v.REMOTE)
         v.CONTROL, v.REMOTE = d / "control", d / "remote"
+        v.REMOTE.touch()  # the phone is connected
         self.states = []
         self.ui = lambda state=None, **k: self.states.append(state)
 
@@ -276,6 +277,7 @@ class Remote(unittest.TestCase):
 
     def test_remote_flag_freshness(self):
         import os, time
+        v.REMOTE.unlink()
         self.assertFalse(v.is_remote())
         v.REMOTE.touch()
         self.assertTrue(v.is_remote())
@@ -306,3 +308,56 @@ class Remote(unittest.TestCase):
         threading.Thread(target=later).start()
         self.assertEqual(v.remote_reply({}, self.ui, time.time() + 5), "готово")
         self.assertEqual([s for s in self.states if s][:3], ["reading", "phone", "reading"])
+
+
+class Activity(unittest.TestCase):
+    def test_activity_of(self):
+        self.assertEqual(v.activity_of({"tool_name": "Edit", "tool_input": {"file_path": "/a/b/Views.swift"}}),
+                         ("edit", "Views.swift"))
+        self.assertEqual(v.activity_of({"tool_name": "Bash", "tool_input": {"command": "git status", "description": "Show status"}}),
+                         ("run", "Show status"))
+        self.assertEqual(v.activity_of({"tool_name": "Grep", "tool_input": {"pattern": "TODO"}}), ("search", "TODO"))
+        self.assertEqual(v.activity_of({"tool_name": "WebFetch", "tool_input": {"url": "https://www.example.com/x"}}),
+                         ("web", "example.com/x"))
+        self.assertEqual(v.activity_of({"tool_name": "mcp__figma__get_screenshot", "tool_input": {}}),
+                         ("mcp", "get_screenshot"))
+
+
+class TurnNote(unittest.TestCase):
+    def test_latest_text_of_the_current_turn(self):
+        lines = [
+            {"type": "user", "message": {"content": "старый вопрос"}},
+            {"type": "assistant", "message": {"content": [{"type": "text", "text": "Старый ответ"}]}},
+            {"type": "user", "message": {"content": "новый вопрос"}},
+            {"type": "assistant", "message": {"content": [{"type": "text", "text": "**Нашёл** причину.\nДальше"}]}},
+            {"type": "assistant", "message": {"content": [{"type": "tool_use", "name": "Bash"}]}},
+            {"type": "user", "message": {"content": [{"type": "tool_result", "content": "ok"}]}},
+        ]
+        with tempfile.NamedTemporaryFile("w", suffix=".jsonl", delete=False) as f:
+            f.write("\n" + "\n".join(json.dumps(l, ensure_ascii=False) for l in lines))
+        try:
+            self.assertEqual(v.turn_note(f.name), "Нашёл причину.")
+        finally:
+            os.remove(f.name)
+
+    def test_none_before_any_text_in_the_turn(self):
+        lines = [{"type": "assistant", "message": {"content": [{"type": "text", "text": "Старый"}]}},
+                 {"type": "user", "message": {"content": "новый"}}]
+        with tempfile.NamedTemporaryFile("w", suffix=".jsonl", delete=False) as f:
+            f.write("\n" + "\n".join(json.dumps(l, ensure_ascii=False) for l in lines))
+        try:
+            self.assertIsNone(v.turn_note(f.name))
+        finally:
+            os.remove(f.name)
+
+
+class PhoneLeaves(unittest.TestCase):
+    def test_turn_goes_back_to_the_mac(self):
+        import time
+        with tempfile.TemporaryDirectory() as d:
+            saved = (v.CONTROL, v.REMOTE)
+            v.CONTROL, v.REMOTE = Path(d) / "control", Path(d) / "remote"
+            try:
+                self.assertEqual(v.remote_reply({}, lambda *a, **k: None, time.time() + 5), "LISTEN")
+            finally:
+                v.CONTROL, v.REMOTE = saved

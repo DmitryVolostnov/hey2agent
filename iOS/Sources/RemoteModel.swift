@@ -23,6 +23,11 @@ final class RemoteModel {
     var paired: Bool { macName != nil && code.count == 6 }
 
     func start() {
+        // After the phone read a summary aloud, listen for the answer (same flow as on the Mac).
+        speaker.onFinished = { [weak self] in
+            guard let self, self.snapshot?.active?.state == "reading", !self.recorder.active else { return }
+            self.recordOnPhone(for: nil)
+        }
         startBrowser()
         guard watchdog == nil else { return }
         // Every 5 s: ping the Mac; reconnect when there is no link (after a failure, coming back

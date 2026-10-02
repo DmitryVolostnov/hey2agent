@@ -1,6 +1,7 @@
 import AVFoundation
 import Network
 import SwiftUI
+import TipKit
 import UIKit
 import VoiceLoopLink
 
@@ -80,6 +81,7 @@ struct PairingView: View {
 struct RemoteView: View {
     @Bindable var model: RemoteModel
     @State private var dismissed: Double?
+    @AppStorage("appearance") private var appearance = Appearance.system.rawValue
 
     var body: some View {
         let snap = model.snapshot
@@ -99,6 +101,7 @@ struct RemoteView: View {
                     }
                 }
                 if let s = snap, !s.recent.isEmpty {
+                    TipView(OpenChatTip())
                     SessionSection(title: String(localized: "Recent"),
                                    sessions: s.recent, model: model) { session in
                         s.active == nil ? { model.recordOnPhone(for: session) } : nil
@@ -107,7 +110,7 @@ struct RemoteView: View {
             }
             .padding(20)
         }
-        .background(Color.black.ignoresSafeArea())
+        .background(AppBackground())
         .overlay(alignment: .bottom) {
             if model.recorder.active { RecordingPanel(model: model).padding(16) }
         }
@@ -128,23 +131,33 @@ struct RemoteView: View {
                 } label: {
                     Image(systemName: s.muted ? "speaker.slash.fill" : "speaker.wave.2")
                         .font(.title3)
-                        .foregroundStyle(s.muted ? .orange : .secondary)
+                        .foregroundStyle(s.muted ? .orange : .primary)
+                        .frame(width: 44, height: 44)
+                        .glassCircle()
                 }
+                .buttonStyle(.plain)
                 .accessibilityLabel(s.muted ? String(localized: "Unmute") : String(localized: "Mute"))
             }
             Menu {
                 // iOS has a per-app language switch in Settings; open it.
                 Toggle(String(localized: "Read summaries aloud"), isOn: Binding(
                     get: { model.speaker.enabled }, set: { model.speaker.enabled = $0 }))
+                Toggle(String(localized: "Listen after reading"), isOn: Binding(
+                    get: { model.speaker.listenAfter }, set: { model.speaker.listenAfter = $0 }))
+                Picker(String(localized: "Appearance"), selection: $appearance) {
+                    ForEach(Appearance.allCases) { Text($0.label).tag($0.rawValue) }
+                }
                 Button(String(localized: "Language")) {
                     if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }
                 }
                 Button(String(localized: "Unpair Mac"), role: .destructive) { model.unpair() }
             } label: {
-                Image(systemName: "gearshape").font(.title3).foregroundStyle(.secondary)
+                Image(systemName: "gearshape").font(.title3).foregroundStyle(.primary)
                     .frame(width: 44, height: 44)
-                    .contentShape(Rectangle())
+                    .glassCircle()
+                    .contentShape(Circle())
             }
+            .tint(.primary)
         }
     }
 }
@@ -239,9 +252,10 @@ struct ConversationCard: View {
             }
 
             buttons
+                .frame(maxWidth: .infinity, minHeight: 104, alignment: .top)  // same size in every step
         }
         .padding(18)
-        .background(RoundedRectangle(cornerRadius: 20).fill(Color.white.opacity(0.08)))
+        .glassCard(26)
         .sheet(isPresented: $showDetails) {
             NavigationStack {
                 ScrollView {
@@ -266,13 +280,13 @@ struct ConversationCard: View {
         HStack(spacing: 12) {
             switch state.state {
             case "speaking":
-                Button(String(localized: "Cancel")) { send(.control("cancel")) }.buttonStyle(.bordered)
+                Button(String(localized: "Cancel")) { send(.control("cancel")) }.glassButton()
                 Button { send(.control("quiet")) } label: {
                     Label(String(localized: "Stop voice"), systemImage: "speaker.slash")
                 }
-                .buttonStyle(.bordered)
+                .glassButton()
                 Spacer()
-                Button(String(localized: "Skip")) { send(.control("skip")) }.buttonStyle(.borderedProminent)
+                Button(String(localized: "Skip")) { send(.control("skip")) }.glassButton(prominent: true)
             case "reading":
                 // Two rows: small actions on top, one big «Reply by voice» below (thumb-friendly).
                 VStack(spacing: 12) {
@@ -292,35 +306,35 @@ struct ConversationCard: View {
                             Button(String(localized: "More")) { showDetails = true }
                         }
                     }
-                    .buttonStyle(.bordered)
+                    .glassButton()
                     .controlSize(.regular)
                     .lineLimit(1)
                     Button { replyByPhone() } label: {
                         Label(String(localized: "Reply by voice"), systemImage: "mic.fill")
                             .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.borderedProminent)
+                    .glassButton(prominent: true)
                     .lineLimit(1)
                 }
             case "listening":
                 Button { replyByPhone() } label: { Label(String(localized: "Reply from the phone"), systemImage: "mic.fill") }
-                    .buttonStyle(.borderedProminent)
+                    .glassButton(prominent: true)
                 Spacer()
-                Button(String(localized: "Repeat")) { send(.control("repeat")) }.buttonStyle(.bordered)
-                Button(String(localized: "Cancel")) { send(.control("cancel")) }.buttonStyle(.bordered)
+                Button(String(localized: "Repeat")) { send(.control("repeat")) }.glassButton()
+                Button(String(localized: "Cancel")) { send(.control("cancel")) }.glassButton()
             case "confirming" where !editing:
                 Button(String(localized: "Edit")) {
                     typed = state.text ?? ""
                     editing = true
                     send(.control("hold"))
                 }
-                .buttonStyle(.bordered)
-                Button(String(localized: "Add more")) { send(.control("append")) }.buttonStyle(.bordered)
-                Button(String(localized: "Again")) { send(.control("again")) }.buttonStyle(.bordered)
+                .glassButton()
+                Button(String(localized: "Add more")) { send(.control("append")) }.glassButton()
+                Button(String(localized: "Again")) { send(.control("again")) }.glassButton()
                 Spacer()
-                Button(String(localized: "Cancel")) { send(.control("cancel")) }.buttonStyle(.borderedProminent).tint(.red)
+                Button(String(localized: "Cancel")) { send(.control("cancel")) }.glassButton(prominent: true).tint(.red)
             case "confirming":
-                Button(String(localized: "Cancel")) { send(.control("cancel")) }.buttonStyle(.bordered)
+                Button(String(localized: "Cancel")) { send(.control("cancel")) }.glassButton()
                 Spacer()
             case "sent" where state.cancellable == true && state.delivery != "clipboard" && !cancelled:
                 Spacer()
@@ -328,7 +342,7 @@ struct ConversationCard: View {
                     if let sid = state.session_id { send(.cancelSent(session: sid)) }
                     cancelled = true
                 }
-                .buttonStyle(.bordered)
+                .glassButton()
                 .tint(.red)
             default:
                 EmptyView()
@@ -394,7 +408,7 @@ struct SessionSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(title).font(.footnote).foregroundStyle(.secondary).padding(.bottom, 4)
+            Text(title).font(.footnote).foregroundStyle(.secondary).padding(.bottom, 4).padding(.leading, 6)
                 .frame(maxWidth: .infinity, alignment: centeredTitle ? .center : .leading)
                 .multilineTextAlignment(centeredTitle ? .center : .leading)
             TimelineView(.periodic(from: .now, by: 1)) { ctx in
@@ -403,7 +417,10 @@ struct SessionSection: View {
                         let mic = action(s)
                         HStack(spacing: 8) {
                             // Tap the row: open this chat on the Mac.
-                            Button { model.send(.open(session: s.id)) } label: { row(s, now: ctx.date) }
+                            Button {
+                                OpenChatTip().invalidate(reason: .actionPerformed)
+                                model.send(.open(session: s.id))
+                            } label: { row(s, now: ctx.date) }
                                 .buttonStyle(.plain)
                             if let mic {
                                 // Tap the mic: dictate a message into this chat from the phone.
@@ -427,6 +444,9 @@ struct SessionSection: View {
                         }
                     }
                 }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 4)
+                .glassCard(22)
             }
         }
     }
@@ -441,6 +461,7 @@ struct SessionSection: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(s.title).font(.body).lineLimit(1)
                 Text(label(s)).font(.caption).foregroundStyle(.secondary)
+                    .lineLimit(1).truncationMode(.tail)
             }
             Spacer()
             Text(time(s, now: now)).font(.caption.monospacedDigit()).foregroundStyle(.tertiary)
@@ -463,6 +484,7 @@ struct SessionSection: View {
         case "waiting": String(localized: "waiting for you · \(s.project)")
         case "finished": String(localized: "done · \(s.project)")
         case "stopping": String(localized: "stopping…")
+        case "working": "\(s.project) • \(sessionStatus(note: s.note, kind: s.activity, target: s.activity_target, at: s.activity_t))"
         default: s.project
         }
     }
@@ -511,14 +533,14 @@ struct RecordingPanel: View {
             Text(String(localized: "A 2-second pause sends it. Transcribed on the Mac."))
                 .font(.footnote).foregroundStyle(.secondary)
             HStack {
-                Button(String(localized: "Cancel"), role: .cancel) { r.finish(send: false) }.buttonStyle(.bordered)
+                Button(String(localized: "Cancel"), role: .cancel) { r.finish(send: false) }.glassButton()
                 Spacer()
-                Button(String(localized: "Send")) { r.finish(send: true) }.buttonStyle(.borderedProminent)
+                Button(String(localized: "Send")) { r.finish(send: true) }.glassButton(prominent: true)
                     .disabled(!r.speaking)
             }
             .controlSize(.large)
         }
         .padding(18)
-        .background(RoundedRectangle(cornerRadius: 22).fill(.regularMaterial))
+        .glassCard(26)
     }
 }

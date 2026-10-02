@@ -33,11 +33,19 @@ public struct LinkSession: Codable, Equatable, Identifiable, Sendable {
     public var since: Double
     public var ended: Double?
     public var agent: String?
+    public var activity: String?         // read | edit | run | search | web | agent | mcp | tool
+    public var activity_target: String?
+    public var activity_t: Double?
+    public var note: String?              // latest text Claude wrote in this turn
 
     public init(id: String, project: String, title: String, status: String, since: Double,
-                ended: Double? = nil, agent: String? = nil) {
+                ended: Double? = nil, agent: String? = nil,
+                activity: String? = nil, activity_target: String? = nil, activity_t: Double? = nil,
+                note: String? = nil) {
         self.id = id; self.project = project; self.title = title; self.status = status
         self.since = since; self.ended = ended; self.agent = agent
+        self.activity = activity; self.activity_target = activity_target; self.activity_t = activity_t
+        self.note = note
     }
 }
 

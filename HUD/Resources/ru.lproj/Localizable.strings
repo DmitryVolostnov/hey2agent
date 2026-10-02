@@ -85,6 +85,10 @@
 "Quit" = "Выйти";
 "No microphone access. Allow it for hey2agent: System Settings → Privacy & Security → Microphone." = "Нет доступа к микрофону. Разрешите его для hey2agent: Системные настройки → Конфиденциальность и безопасность → Микрофон.";
 "Something went wrong: %@" = "Что-то пошло не так: %@";
+"Light" = "Светлое";
+"Dark" = "Тёмное";
+"Tap a chat to open it on the Mac" = "Нажмите на чат — он откроется на Mac";
+"The mic button dictates a message into that chat." = "Кнопка микрофона — надиктовать сообщение в этот чат.";
 "Looking for a Mac running hey2agent on this network…" = "Ищу Mac с hey2agent в этой сети…";
 "The hey2agent panel must be running and the phone and Mac on the same Wi-Fi." = "Плашка hey2agent должна быть запущена, телефон и Mac в одной Wi-Fi сети.";
 "6 digits" = "6 цифр";
@@ -96,12 +100,9 @@
 "Reconnecting…" = "Переподключаюсь…";
 "Mute" = "Без звука";
 "Read summaries aloud" = "Читать саммари вслух";
+"Listen after reading" = "Слушать после чтения";
+"Appearance" = "Оформление";
 "Unpair Mac" = "Отвязать Mac";
-"Connecting to the Mac…" = "Подключаюсь к Mac…";
-"Voice mode is off" = "Голосовой режим выключен";
-"In progress: %lld" = "В работе: %lld";
-"Voice on" = "Голос включён";
-"%@ · muted" = "%@ · без звука";
 "Open the chat on the Mac" = "Открыть чат на Mac";
 "Type a reply" = "Ответить текстом";
 "Reading aloud is off (settings)" = "Чтение вслух выключено (настройки)";
@@ -121,3 +122,11 @@
 "Listening…" = "Слушаю…";
 "Speak" = "Говорите";
 "A 2-second pause sends it. Transcribed on the Mac." = "Пауза 2 секунды — отправлю. Распознавание на Mac.";
+"Thinking…" = "Думает…";
+"Reading %@" = "Читает %@";
+"Editing %@" = "Правит %@";
+"Running %@" = "Запускает: %@";
+"Searching %@" = "Ищет %@";
+"Browsing %@" = "Смотрит %@";
+"Delegating: %@" = "Поручил: %@";
+"Using %@" = "Использует %@";
