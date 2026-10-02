@@ -93,7 +93,7 @@
 "Wrong code. Check the digits on the Mac." = "配对码错误。请核对 Mac 上的数字。";
 "Connect" = "连接";
 "In progress" = "进行中";
-"Recent: tap and speak. Long press: open on Mac" = "最近：轻点并说话。长按：在 Mac 上打开";
+"Recent: tap to open on the Mac, mic to dictate" = "最近：轻点在 Mac 上打开，麦克风语音输入";
 "Reconnecting…" = "正在重新连接…";
 "Mute" = "静音";
 "Read summaries aloud" = "朗读摘要";

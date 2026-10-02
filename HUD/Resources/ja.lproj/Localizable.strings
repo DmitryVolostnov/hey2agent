@@ -93,7 +93,7 @@
 "Wrong code. Check the digits on the Mac." = "コードが違います。Macに表示された数字を確認してください。";
 "Connect" = "接続";
 "In progress" = "作業中";
-"Recent: tap and speak. Long press: open on Mac" = "最近：タップして話す。長押し：Macで開く";
+"Recent: tap to open on the Mac, mic to dictate" = "最近：タップでMacで開く、マイクで音声入力";
 "Reconnecting…" = "再接続中…";
 "Mute" = "消音";
 "Read summaries aloud" = "要約を読み上げる";

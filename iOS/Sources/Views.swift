@@ -78,7 +78,6 @@ struct PairingView: View {
 
 struct RemoteView: View {
     @Bindable var model: RemoteModel
-    @State private var showMore = false
     @State private var dismissed: Double?
 
     var body: some View {
@@ -101,13 +100,9 @@ struct RemoteView: View {
                     }
                 }
                 if let s = snap, !s.recent.isEmpty {
-                    SessionSection(title: String(localized: "Recent: tap and speak. Long press: open on Mac"),
-                                   sessions: Array(s.recent.prefix(showMore ? 10 : 5)), model: model) { session in
+                    SessionSection(title: String(localized: "Recent: tap to open on the Mac, mic to dictate"),
+                                   sessions: s.recent, model: model, centeredTitle: true) { session in
                         s.active == nil ? { model.recordOnPhone(for: session) } : nil
-                    }
-                    if s.recent.count > 5 && !showMore {
-                        Button(String(localized: "More \(s.recent.count - 5)")) { withAnimation { showMore = true } }
-                            .foregroundStyle(.secondary)
                     }
                 }
             }
@@ -147,7 +142,9 @@ struct RemoteView: View {
                 }
                 Button(String(localized: "Unpair Mac"), role: .destructive) { model.unpair() }
             } label: {
-                Image(systemName: "ellipsis.circle").font(.title3).foregroundStyle(.secondary)
+                Image(systemName: "gearshape").font(.title3).foregroundStyle(.secondary)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
             }
         }
     }
@@ -157,14 +154,14 @@ struct IdleCard: View {
     let snap: LinkSnapshot?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            TimelineView(.periodic(from: .now, by: 1)) { ctx in
-                Text(ctx.date, format: .dateTime.hour().minute())
-                    .font(.system(size: 64, weight: .thin, design: .rounded).monospacedDigit())
-            }
+        VStack(spacing: 10) {
+            LogoVideo()
+                .frame(width: 120, height: 120)
+                .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
             Text(status).font(.headline).foregroundStyle(.secondary)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 8)
     }
 
     private var status: String {
@@ -405,34 +402,50 @@ struct SessionSection: View {
     let title: String
     let sessions: [LinkSession]
     let model: RemoteModel
+    var centeredTitle = false
+    /// Mic action (record on the phone for this chat), or nil if dictation isn't possible now.
     let action: (LinkSession) -> (() -> Void)?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title).font(.footnote).foregroundStyle(.secondary).padding(.bottom, 4)
+                .frame(maxWidth: .infinity, alignment: centeredTitle ? .center : .leading)
+                .multilineTextAlignment(centeredTitle ? .center : .leading)
             TimelineView(.periodic(from: .now, by: 1)) { ctx in
                 VStack(spacing: 0) {
                     ForEach(sessions) { s in
-                        let tap = action(s)
-                        Button { tap?() } label: { row(s, now: ctx.date, tappable: tap != nil) }
-                            .buttonStyle(.plain)
-                            .contextMenu {
-                                Button { model.send(.open(session: s.id)) } label: {
-                                    Label(String(localized: "Open on Mac"), systemImage: "macbook")
+                        let mic = action(s)
+                        HStack(spacing: 8) {
+                            // Tap the row: open this chat on the Mac.
+                            Button { model.send(.open(session: s.id)) } label: { row(s, now: ctx.date) }
+                                .buttonStyle(.plain)
+                            if let mic {
+                                // Tap the mic: dictate a message into this chat from the phone.
+                                Button(action: mic) {
+                                    Image(systemName: "mic").font(.title3).frame(width: 44, height: 44)
                                 }
-                                if tap != nil {
-                                    Button { model.send(.dictate(session: s.id)) } label: {
-                                        Label(String(localized: "Dictate with the Mac mic"), systemImage: "mic")
-                                    }
+                                .buttonStyle(.plain)
+                                .foregroundStyle(.secondary)
+                                .accessibilityLabel(String(localized: "Dictate a message to this chat"))
+                            }
+                        }
+                        .contextMenu {
+                            Button { model.send(.open(session: s.id)) } label: {
+                                Label(String(localized: "Open on Mac"), systemImage: "macbook")
+                            }
+                            if mic != nil {
+                                Button { model.send(.dictate(session: s.id)) } label: {
+                                    Label(String(localized: "Dictate with the Mac mic"), systemImage: "mic")
                                 }
                             }
+                        }
                     }
                 }
             }
         }
     }
 
-    private func row(_ s: LinkSession, now: Date, tappable: Bool) -> some View {
+    private func row(_ s: LinkSession, now: Date) -> some View {
         HStack(spacing: 12) {
             Image(systemName: s.status == "finished" ? "checkmark.circle.fill" : "circle.fill")
                 .font(.system(size: s.status == "finished" ? 13 : 10))
@@ -445,7 +458,6 @@ struct SessionSection: View {
             }
             Spacer()
             Text(time(s, now: now)).font(.caption.monospacedDigit()).foregroundStyle(.tertiary)
-            if tappable { Image(systemName: "mic").foregroundStyle(.secondary) }
         }
         .padding(.vertical, 10)
         .contentShape(Rectangle())

@@ -93,7 +93,7 @@
 "Wrong code. Check the digits on the Mac." = "Код не підійшов. Перевірте цифри на Mac.";
 "Connect" = "Підключити";
 "In progress" = "У роботі";
-"Recent: tap and speak. Long press: open on Mac" = "Нещодавні: торкніться й говоріть. Довге натискання: відкрити на Mac";
+"Recent: tap to open on the Mac, mic to dictate" = "Нещодавні: натисніть — відкриється на Mac, мікрофон — надиктувати";
 "Reconnecting…" = "Перепідключаюся…";
 "Mute" = "Без звуку";
 "Read summaries aloud" = "Читати підсумки вголос";
