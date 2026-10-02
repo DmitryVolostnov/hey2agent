@@ -16,6 +16,8 @@
 "%lld s" = "%lld 秒";
 "Open this chat and reply there" = "打开此聊天并在其中回复";
 "Close" = "关闭";
+"Stop voice" = "停止朗读";
+"Stop reading aloud — read it yourself" = "停止朗读，我自己看";
 "Repeat" = "重播";
 "Edit" = "编辑";
 "Add more" = "补充";
@@ -25,10 +27,12 @@
 "Undo" = "撤销";
 "Claude will stop: all its next actions will be blocked" = "Claude 将停止：其后续所有操作都将被阻止";
 "Skip" = "跳过";
+"Reply by voice" = "语音回复";
 "Send" = "发送";
 "Send now" = "立即发送";
 "Copied. Paste into “%@” in Claude: ⌘V and ↩\n\n%@" = "已复制。粘贴到 Claude 中的“%@”：⌘V 和 ↩\n\n%@";
 "Speaking" = "正在播报";
+"Summary" = "摘要";
 "Listening" = "正在聆听";
 "Transcribing…" = "正在转写…";
 "Speak into the iPhone…" = "请对着 iPhone 说话…";

@@ -202,7 +202,7 @@ struct ConversationCard: View {
                         .foregroundStyle(.secondary)
                         .accessibilityLabel(String(localized: "Close"))
                 }
-                if let sid = state.session_id, ["speaking", "listening", "phone"].contains(state.state) {
+                if let sid = state.session_id, ["speaking", "listening", "phone", "reading"].contains(state.state) {
                     Button { send(.open(session: sid)) } label: {
                         Image(systemName: "arrow.up.forward.app").font(.title2)
                     }
@@ -229,7 +229,7 @@ struct ConversationCard: View {
                 .textSelection(.enabled)
                 .frame(maxWidth: .infinity, minHeight: 150, maxHeight: 150, alignment: .topLeading)
 
-            let field = editing || state.state == "speaking" || state.state == "listening"
+            let field = editing || ["speaking", "listening", "reading"].contains(state.state)
             do {
                 HStack {
                     TextField(editing ? String(localized: "Edit the text") : String(localized: "Type a reply"), text: $typed, axis: .vertical)
@@ -261,8 +261,19 @@ struct ConversationCard: View {
             switch state.state {
             case "speaking":
                 Button(String(localized: "Cancel")) { send(.control("cancel")) }.buttonStyle(.bordered)
+                Button { send(.control("quiet")) } label: {
+                    Label(String(localized: "Stop voice"), systemImage: "speaker.slash")
+                }
+                .buttonStyle(.bordered)
                 Spacer()
                 Button(String(localized: "Skip")) { send(.control("skip")) }.buttonStyle(.borderedProminent)
+            case "reading":
+                Button(String(localized: "Cancel")) { send(.control("cancel")) }.buttonStyle(.bordered)
+                Spacer()
+                Button { send(.control("listen")) } label: {
+                    Label(String(localized: "Reply by voice"), systemImage: "mic.fill")
+                }
+                .buttonStyle(.borderedProminent)
             case "listening":
                 Button { replyByPhone() } label: { Label(String(localized: "Reply from the phone"), systemImage: "mic.fill") }
                     .buttonStyle(.borderedProminent)
@@ -300,7 +311,7 @@ struct ConversationCard: View {
 
     private var bodyText: String? {
         switch state.state {
-        case "speaking": state.summary
+        case "speaking", "reading": state.summary
         case "confirming": editing ? nil : state.text
         case "sent" where cancelled: String(localized: "Cancelled, Claude will stop")
         case "sent" where state.delivery == "clipboard":
@@ -317,6 +328,7 @@ struct ConversationCard: View {
     private var title: String {
         switch state.state {
         case "speaking": String(localized: "Speaking")
+        case "reading": String(localized: "Summary")
         case "listening": String(localized: "Listening")
         case "transcribing": String(localized: "Transcribing…")
         case "phone": String(localized: "Listening to the phone")
@@ -332,6 +344,7 @@ struct ConversationCard: View {
     @ViewBuilder private var icon: some View {
         switch state.state {
         case "speaking": Image(systemName: "speaker.wave.2.fill").foregroundStyle(.blue)
+        case "reading": Image(systemName: "text.bubble").foregroundStyle(.blue)
         case "listening": Image(systemName: "mic.fill").foregroundStyle(.red)
         case "transcribing": ProgressView()
         case "phone": Image(systemName: "iphone.radiowaves.left.and.right").foregroundStyle(.red)

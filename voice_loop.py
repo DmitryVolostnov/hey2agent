@@ -711,12 +711,13 @@ def tts_process(text, c):
 
 
 def speak(text, c):
-    """Speak text; the HUD can skip or cancel. Returns None | 'skip' | 'cancel' | 'text'."""
+    """Speak text; the HUD can skip, cancel or silence it.
+    Returns None | 'skip' | 'cancel' | 'text' | 'quiet'."""
     sp = tts_process(text, c)
     try:
         while sp.poll() is None:
             cmd, payload = take_control()
-            if cmd in ("skip", "cancel", "send"):
+            if cmd in ("skip", "cancel", "send", "quiet"):
                 return "skip" if cmd == "send" else cmd
             if cmd == "text":
                 speak.payload = payload
@@ -766,6 +767,13 @@ def converse(project, summary, c, title=None, announce=True, sid=None, cancellab
         return finish(None)
     if r == "text":
         return finish(speak.payload)
+    if r == "quiet":
+        # «Замолчать»: the user reads the summary; no mic until they ask for it.
+        verdict, payload = wait_while_reading(ui, deadline)
+        if verdict in ("cancel", "timeout"):
+            return finish(None)
+        if verdict == "text":
+            return finish(payload)
 
     lis = Listener(c, ui)
     try:
@@ -785,6 +793,20 @@ def converse(project, summary, c, title=None, announce=True, sid=None, cancellab
         raise
     finally:
         lis.close()
+
+
+def wait_while_reading(ui, deadline):
+    """Silent «reading» step after «Замолчать». Returns (verdict, payload):
+    listen (start the mic) | text (typed reply) | cancel | timeout."""
+    ui("reading")
+    while time.time() < deadline:
+        cmd, payload = take_control()
+        if cmd in ("listen", "skip", "send"):
+            return "listen", None
+        if cmd in ("cancel", "text"):
+            return cmd, payload
+        time.sleep(0.1)
+    return "timeout", None
 
 
 def listen(lis, c, ui, summary, deadline, prefix=None):

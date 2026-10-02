@@ -16,6 +16,8 @@
 "%lld s" = "%lld s";
 "Open this chat and reply there" = "Apri questa chat e rispondi lì";
 "Close" = "Chiudi";
+"Stop voice" = "Silenzio";
+"Stop reading aloud — read it yourself" = "Smetti di leggere ad alta voce — leggo io";
 "Repeat" = "Ripeti";
 "Edit" = "Modifica";
 "Add more" = "Aggiungi";
@@ -25,10 +27,12 @@
 "Undo" = "Annulla invio";
 "Claude will stop: all its next actions will be blocked" = "Claude si fermerà: tutte le sue prossime azioni saranno bloccate";
 "Skip" = "Salta";
+"Reply by voice" = "Rispondi a voce";
 "Send" = "Invia";
 "Send now" = "Invia ora";
 "Copied. Paste into “%@” in Claude: ⌘V and ↩\n\n%@" = "Copiato. Incolla in «%@» in Claude: ⌘V e ↩\n\n%@";
 "Speaking" = "Sto parlando";
+"Summary" = "Riepilogo";
 "Listening" = "In ascolto";
 "Transcribing…" = "Trascrizione…";
 "Speak into the iPhone…" = "Parla nell’iPhone…";

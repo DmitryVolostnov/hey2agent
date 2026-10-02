@@ -238,3 +238,24 @@ class CancelAfterSend(unittest.TestCase):
         v.cancel_marker("s1").touch()
         self.call(v.prompt_hook, {"session_id": "s1", "cwd": "/tmp/p", "prompt": "новое"})
         self.assertFalse(v.is_cancelled("s1"))
+
+
+class Reading(unittest.TestCase):
+    def setUp(self):
+        self.dir = tempfile.TemporaryDirectory()
+        v.CONTROL = Path(self.dir.name) / "control"
+        self.ui = lambda *a, **k: None
+
+    def tearDown(self):
+        self.dir.cleanup()
+
+    def test_reading_waits_for_the_user(self):
+        import time
+        for cmd, expected in (("listen", ("listen", None)), ("cancel", ("cancel", "")),
+                              ("text\nответ", ("text", "ответ"))):
+            v.CONTROL.write_text(cmd)
+            self.assertEqual(v.wait_while_reading(self.ui, time.time() + 5), expected)
+
+    def test_reading_times_out_silently(self):
+        import time
+        self.assertEqual(v.wait_while_reading(self.ui, time.time() + 0.3), ("timeout", None))

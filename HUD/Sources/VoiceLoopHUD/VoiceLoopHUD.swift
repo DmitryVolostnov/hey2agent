@@ -117,7 +117,7 @@ final class Model {
         guard let s = current, s.t != dismissedAt else { return nil }
         let age = Date().timeIntervalSince1970 - s.t
         switch s.state {
-        case "speaking", "listening", "transcribing", "confirming", "phone":
+        case "speaking", "listening", "transcribing", "confirming", "phone", "reading":
             return age < 200 ? s : nil  // hook dies at 180 s
         case "sent":
             let linger: Double = s.delivery == "clipboard" ? 12 : (s.cancellable == true ? 10 : 4)
@@ -648,7 +648,7 @@ struct ConversationView: View {
         .padding(.bottom, 10)
     }
 
-    private var replyField: Bool { s.state == "speaking" || s.state == "listening" }
+    private var replyField: Bool { ["speaking", "listening", "reading"].contains(s.state) }
 
     @ViewBuilder private var header: some View {
         HStack(spacing: 8) {
@@ -667,7 +667,7 @@ struct ConversationView: View {
                     .font(.system(size: 12).monospacedDigit())
                     .foregroundStyle(.secondary)
             }
-            if s.session_id != nil && ["speaking", "listening", "phone"].contains(s.state) {
+            if s.session_id != nil && ["speaking", "listening", "phone", "reading"].contains(s.state) {
                 Button { model.openActive() } label: { Image(systemName: "arrow.up.forward.app") }
                     .buttonStyle(.borderless)
                     .help(String(localized: "Open this chat and reply there"))
@@ -687,9 +687,13 @@ struct ConversationView: View {
         HStack(spacing: 8) {
             cancelSlot
             switch s.state {
-            case "speaking", "listening":
+            case "speaking":
+                Button { model.send("quiet") } label: {
+                    Label(String(localized: "Stop voice"), systemImage: "speaker.slash")
+                }
+                .help(String(localized: "Stop reading aloud — read it yourself"))
+            case "listening":
                 Button(String(localized: "Repeat")) { model.send("repeat") }
-                    .disabled(s.state != "listening")
             case "confirming" where !editMode:
                 HStack(spacing: 8) {
                     Button(String(localized: "Edit")) {
@@ -716,7 +720,7 @@ struct ConversationView: View {
 
     @ViewBuilder private var cancelSlot: some View {
         switch s.state {
-        case "speaking", "listening", "phone", "confirming":
+        case "speaking", "listening", "phone", "confirming", "reading":
             Button(String(localized: "Cancel")) { model.send("cancel") }
         case "sent" where s.cancellable == true && s.delivery != "clipboard" && !cancelled:
             if let sid = s.session_id {
@@ -735,6 +739,11 @@ struct ConversationView: View {
         switch s.state {
         case "speaking":
             Button(String(localized: "Skip")) { model.send("skip") }.keyboardShortcut(.defaultAction)
+        case "reading":
+            Button { model.send("listen") } label: {
+                Label(String(localized: "Reply by voice"), systemImage: "mic.fill")
+            }
+            .keyboardShortcut(.defaultAction)
         case "listening", "phone":
             Button(String(localized: "Send")) { model.send("send") }.keyboardShortcut(.defaultAction)
         case "confirming":
@@ -751,7 +760,7 @@ struct ConversationView: View {
 
     private var bodyText: String? {
         switch s.state {
-        case "speaking": s.summary
+        case "speaking", "reading": s.summary
         case _ where s.state == "sent" && s.delivery == "clipboard":
             String(localized: "Copied. Paste into “\(s.project ?? "")” in Claude: ⌘V and ↩\n\n\(s.text ?? "")")
         case "listening", "transcribing", "sent": s.text
@@ -764,6 +773,7 @@ struct ConversationView: View {
     private var title: String {
         switch s.state {
         case "speaking": String(localized: "Speaking")
+        case "reading": String(localized: "Summary")
         case "listening": String(localized: "Listening")
         case "transcribing": String(localized: "Transcribing…")
         case "phone": String(localized: "Speak into the iPhone…")
@@ -780,6 +790,7 @@ struct ConversationView: View {
     @ViewBuilder private var icon: some View {
         switch s.state {
         case "speaking": Image(systemName: "speaker.wave.2.fill").foregroundStyle(.blue)
+        case "reading": Image(systemName: "text.bubble").foregroundStyle(.blue)
         case "listening": Image(systemName: "mic.fill").foregroundStyle(.red)
         case "transcribing": ProgressView().controlSize(.small)
         case "phone": Image(systemName: "iphone.radiowaves.left.and.right").foregroundStyle(.red)
