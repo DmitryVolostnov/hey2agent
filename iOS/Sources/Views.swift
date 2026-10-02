@@ -1,3 +1,4 @@
+import AVFoundation
 import Network
 import SwiftUI
 import UIKit
@@ -90,8 +91,6 @@ struct RemoteView: View {
                                      replyByPhone: { model.speaker.stop(); model.recordOnPhone(for: nil) },
                                      close: { dismissed = a.t }, speaker: model.speaker)
                         .id("\(a.project ?? "")|\(a.state)")
-                } else {
-                    IdleCard(snap: snap)
                 }
                 if let s = snap, !s.sessions.isEmpty {
                     SessionSection(title: String(localized: "In progress"), sessions: s.sessions, model: model) { session in
@@ -100,8 +99,8 @@ struct RemoteView: View {
                     }
                 }
                 if let s = snap, !s.recent.isEmpty {
-                    SessionSection(title: String(localized: "Recent: tap to open on the Mac, mic to dictate"),
-                                   sessions: s.recent, model: model, centeredTitle: true) { session in
+                    SessionSection(title: String(localized: "Recent"),
+                                   sessions: s.recent, model: model) { session in
                         s.active == nil ? { model.recordOnPhone(for: session) } : nil
                     }
                 }
@@ -147,29 +146,6 @@ struct RemoteView: View {
                     .contentShape(Rectangle())
             }
         }
-    }
-}
-
-struct IdleCard: View {
-    let snap: LinkSnapshot?
-
-    var body: some View {
-        VStack(spacing: 10) {
-            LogoVideo()
-                .frame(width: 120, height: 120)
-                .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
-            Text(status).font(.headline).foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 8)
-    }
-
-    private var status: String {
-        guard let s = snap else { return String(localized: "Connecting to the Mac…") }
-        if !s.enabled { return String(localized: "Voice mode is off") }
-        let working = s.sessions.filter { $0.status == "working" || $0.status == "waiting" }.count
-        let base = working > 0 ? String(localized: "In progress: \(working)") : String(localized: "Voice on")
-        return s.muted ? String(localized: "\(base) · muted") : base
     }
 }
 
@@ -250,6 +226,16 @@ struct ConversationCard: View {
                 }
                 .opacity(field ? 1 : 0)
                 .disabled(!field)
+            }
+
+            if state.state == "reading", let speaker {
+                if !speaker.enabled {
+                    Label(String(localized: "Reading aloud is off (settings)"), systemImage: "speaker.slash")
+                        .font(.footnote).foregroundStyle(.secondary)
+                } else if AVAudioSession.sharedInstance().outputVolume < 0.05 {
+                    Label(String(localized: "The phone volume is off"), systemImage: "speaker.slash")
+                        .font(.footnote).foregroundStyle(.orange)
+                }
             }
 
             buttons

@@ -93,7 +93,6 @@
 "Wrong code. Check the digits on the Mac." = "配对码错误。请核对 Mac 上的数字。";
 "Connect" = "连接";
 "In progress" = "进行中";
-"Recent: tap to open on the Mac, mic to dictate" = "最近：轻点在 Mac 上打开，麦克风语音输入";
 "Reconnecting…" = "正在重新连接…";
 "Mute" = "静音";
 "Read summaries aloud" = "朗读摘要";
@@ -105,6 +104,8 @@
 "%@ · muted" = "%@ · 已静音";
 "Open the chat on the Mac" = "在 Mac 上打开聊天";
 "Type a reply" = "输入回复";
+"Reading aloud is off (settings)" = "朗读已关闭（设置）";
+"The phone volume is off" = "手机音量已关闭";
 "Read aloud" = "朗读";
 "More" = "详情";
 "Reply from the phone" = "从手机回复";

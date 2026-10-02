@@ -93,7 +93,6 @@
 "Wrong code. Check the digits on the Mac." = "Код не підійшов. Перевірте цифри на Mac.";
 "Connect" = "Підключити";
 "In progress" = "У роботі";
-"Recent: tap to open on the Mac, mic to dictate" = "Нещодавні: натисніть — відкриється на Mac, мікрофон — надиктувати";
 "Reconnecting…" = "Перепідключаюся…";
 "Mute" = "Без звуку";
 "Read summaries aloud" = "Читати підсумки вголос";
@@ -105,6 +104,8 @@
 "%@ · muted" = "%@ · без звуку";
 "Open the chat on the Mac" = "Відкрити чат на Mac";
 "Type a reply" = "Відповісти текстом";
+"Reading aloud is off (settings)" = "Читання вголос вимкнено (налаштування)";
+"The phone volume is off" = "На телефоні вимкнено звук";
 "Read aloud" = "Прочитати вголос";
 "More" = "Детальніше";
 "Reply from the phone" = "Відповісти з телефона";

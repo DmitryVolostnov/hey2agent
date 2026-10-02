@@ -93,7 +93,6 @@
 "Wrong code. Check the digits on the Mac." = "コードが違います。Macに表示された数字を確認してください。";
 "Connect" = "接続";
 "In progress" = "作業中";
-"Recent: tap to open on the Mac, mic to dictate" = "最近：タップでMacで開く、マイクで音声入力";
 "Reconnecting…" = "再接続中…";
 "Mute" = "消音";
 "Read summaries aloud" = "要約を読み上げる";
@@ -105,6 +104,8 @@
 "%@ · muted" = "%@ · 消音中";
 "Open the chat on the Mac" = "Macでチャットを開く";
 "Type a reply" = "返信を入力";
+"Reading aloud is off (settings)" = "読み上げはオフ（設定）";
+"The phone volume is off" = "電話の音量がオフです";
 "Read aloud" = "読み上げる";
 "More" = "詳細";
 "Reply from the phone" = "電話から返信";

@@ -76,6 +76,8 @@ public enum LinkCommand: Codable, Equatable, Sendable {
     case audio(session: String?, data: Data)
     /// Phone heartbeat (every 5 s) so the Mac notices a vanished phone and shows its panel again.
     case ping
+    /// The phone is going to the background (locked): show the Mac panel again right away.
+    case bye
     case setMuted(Bool)
     case setEnabled(Bool)
 }

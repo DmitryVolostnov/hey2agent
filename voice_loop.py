@@ -253,7 +253,12 @@ def say(text, c):
 
 
 def beep(name="Tink"):
-    subprocess.run(["afplay", f"/System/Library/Sounds/{name}.aiff"], check=False)
+    """Fire and forget: a hung audio device must never keep the hook (and the agent) waiting."""
+    try:
+        subprocess.Popen(["afplay", f"/System/Library/Sounds/{name}.aiff"],
+                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+    except OSError:
+        pass
 
 
 def write_state(state, **kw):

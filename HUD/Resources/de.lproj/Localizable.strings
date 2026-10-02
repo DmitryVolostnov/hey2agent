@@ -93,7 +93,6 @@
 "Wrong code. Check the digits on the Mac." = "Falscher Code. Prüfe die Ziffern auf dem Mac.";
 "Connect" = "Verbinden";
 "In progress" = "In Arbeit";
-"Recent: tap to open on the Mac, mic to dictate" = "Zuletzt: Tippen öffnet am Mac, Mikrofon zum Diktieren";
 "Reconnecting…" = "Verbindung wird wiederhergestellt …";
 "Mute" = "Stumm";
 "Read summaries aloud" = "Zusammenfassungen vorlesen";
@@ -105,6 +104,8 @@
 "%@ · muted" = "%@ · stumm";
 "Open the chat on the Mac" = "Chat auf dem Mac öffnen";
 "Type a reply" = "Antwort tippen";
+"Reading aloud is off (settings)" = "Vorlesen ist aus (Einstellungen)";
+"The phone volume is off" = "Die Lautstärke ist aus";
 "Read aloud" = "Vorlesen";
 "More" = "Mehr";
 "Reply from the phone" = "Vom Telefon antworten";

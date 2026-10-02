@@ -70,9 +70,17 @@ final class LinkServer {
                 break
             }
         }
-        c.onEnvelope = { [weak self] env in
-            self?.seen[key] = Date()
-            if let cmd = env.command { self?.handle(cmd) }
+        c.onEnvelope = { [weak self, weak c] env in
+            guard let self else { return }
+            if env.command == .bye {  // phone locked / app in background
+                c?.cancel()
+                self.clients[key] = nil
+                self.seen[key] = nil
+                self.model.phones = self.clients.count
+                return
+            }
+            self.seen[key] = Date()
+            if let cmd = env.command { self.handle(cmd) }
         }
         c.start()
     }
@@ -80,13 +88,19 @@ final class LinkServer {
     /// Called from the HUD tick: push a snapshot whenever something changed, and at least
     /// every 5 s as a heartbeat so the phone notices a dead connection.
     func tick() {
-        // A phone silent for 15 s (slept, left the Wi-Fi) is gone: drop it, the Mac panel returns.
-        for (key, at) in seen where Date().timeIntervalSince(at) > 15 {
-            clients[key]?.cancel()
-            clients[key] = nil
-            seen[key] = nil
-            model.phones = clients.count
+        // A phone that closed, failed, or was silent for 15 s (locked, left the Wi-Fi) is gone:
+        // drop it so the Mac panel returns. Checked every tick, not only on state callbacks.
+        for (key, c) in clients {
+            var alive = true
+            if case .ready = c.connection.state {} else { alive = false }
+            if Date().timeIntervalSince(seen[key] ?? .distantPast) > 15 { alive = false }
+            if !alive {
+                c.cancel()
+                clients[key] = nil
+                seen[key] = nil
+            }
         }
+        if model.phones != clients.count { model.phones = clients.count }
         guard !clients.isEmpty else { return }
         let snap = model.snapshot()
         guard snap != last || Date().timeIntervalSince(lastSent) > 5 else { return }
@@ -110,7 +124,7 @@ final class LinkServer {
             } else if let s = (model.sessions + model.recent).first(where: { $0.id == id }) {
                 model.open(s)
             }
-        case .ping:
+        case .ping, .bye:
             break
         case .phoneRecording:
             if model.active?.state == "listening" { model.send("phone") }

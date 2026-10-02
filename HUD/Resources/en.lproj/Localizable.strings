@@ -93,7 +93,6 @@
 "Wrong code. Check the digits on the Mac." = "Wrong code. Check the digits on the Mac.";
 "Connect" = "Connect";
 "In progress" = "In progress";
-"Recent: tap to open on the Mac, mic to dictate" = "Recent: tap to open on the Mac, mic to dictate";
 "Reconnecting…" = "Reconnecting…";
 "Mute" = "Mute";
 "Read summaries aloud" = "Read summaries aloud";
@@ -105,6 +104,8 @@
 "%@ · muted" = "%@ · muted";
 "Open the chat on the Mac" = "Open the chat on the Mac";
 "Type a reply" = "Type a reply";
+"Reading aloud is off (settings)" = "Reading aloud is off (settings)";
+"The phone volume is off" = "The phone volume is off";
 "Read aloud" = "Read aloud";
 "More" = "More";
 "Reply from the phone" = "Reply from the phone";

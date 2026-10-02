@@ -23,6 +23,29 @@ final class RemoteModel {
     var paired: Bool { macName != nil && code.count == 6 }
 
     func start() {
+        startBrowser()
+        guard watchdog == nil else { return }
+        // Every 5 s: ping the Mac; reconnect when there is no link (after a failure, coming back
+        // from the background…); drop a link that went silent for 15 s.
+        watchdog = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(5))
+                guard let self, !self.inBackground else { continue }
+                if self.status == .connected { self.send(.ping) }
+                if self.link == nil {
+                    self.autoConnect()
+                } else if self.status == .connected, Date().timeIntervalSince(self.lastMessage) > 15 {
+                    self.link?.cancel()
+                    self.link = nil
+                    self.status = .lost
+                    self.autoConnect()
+                }
+            }
+        }
+    }
+
+    private func startBrowser() {
+        browser?.cancel()
         let b = NWBrowser(for: .bonjour(type: VoiceLoopLink.serviceType, domain: nil), using: .tcp)
         b.browseResultsChangedHandler = { [weak self] results, _ in
             MainActor.assumeIsolated {
@@ -33,20 +56,6 @@ final class RemoteModel {
         }
         b.start(queue: .main)
         browser = b
-        // The Mac sends at least every 5 s; silence for 15 s means the connection is dead
-        // (e.g. the Mac slept or the HUD restarted) even if TCP hasn't noticed yet.
-        watchdog = Task { [weak self] in
-            while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(5))
-                if let self, self.status == .connected { self.send(.ping) }
-                guard let self, self.link != nil, self.status == .connected,
-                      Date().timeIntervalSince(self.lastMessage) > 15 else { continue }
-                self.link?.cancel()
-                self.link = nil
-                self.status = .lost
-                self.autoConnect()
-            }
-        }
     }
 
     static func name(_ r: NWBrowser.Result) -> String {
@@ -151,6 +160,27 @@ final class RemoteModel {
             }
             self.recordingFor = nil
         }
+    }
+
+    /// Locked / backgrounded: tell the Mac and disconnect, so its panel comes back immediately.
+    private var inBackground = false
+
+    func goAway() {
+        inBackground = true
+        guard link != nil else { return }
+        link?.send(LinkEnvelope(command: .bye))
+        let l = link
+        link = nil
+        status = .lost
+        Task { try? await Task.sleep(for: .milliseconds(300)); l?.cancel() }
+    }
+
+    /// Back in the foreground: reconnect.
+    func comeBack() {
+        inBackground = false
+        if status == .badCode { return }
+        startBrowser()  // fresh Bonjour results after the background
+        if link == nil { autoConnect() }
     }
 
     func send(_ cmd: LinkCommand) {

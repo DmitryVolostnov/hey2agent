@@ -127,7 +127,9 @@
   "Read aloud": "Прочитать вслух",
   "More": "Подробнее",
   "Read summaries aloud": "Читать саммари вслух",
-  "Recent: tap to open on the Mac, mic to dictate": "Недавние: нажмите — откроется на Mac, микрофон — надиктовать"
+  "Recent: tap to open on the Mac, mic to dictate": "Недавние: нажмите — откроется на Mac, микрофон — надиктовать",
+  "Reading aloud is off (settings)": "Чтение вслух выключено (настройки)",
+  "The phone volume is off": "На телефоне выключен звук"
  },
  "uk": {
   "Recent": "Нещодавні",
@@ -257,7 +259,9 @@
   "Read aloud": "Прочитати вголос",
   "More": "Детальніше",
   "Read summaries aloud": "Читати підсумки вголос",
-  "Recent: tap to open on the Mac, mic to dictate": "Нещодавні: натисніть — відкриється на Mac, мікрофон — надиктувати"
+  "Recent: tap to open on the Mac, mic to dictate": "Нещодавні: натисніть — відкриється на Mac, мікрофон — надиктувати",
+  "Reading aloud is off (settings)": "Читання вголос вимкнено (налаштування)",
+  "The phone volume is off": "На телефоні вимкнено звук"
  },
  "de": {
   "Recent": "Zuletzt",
@@ -387,7 +391,9 @@
   "Read aloud": "Vorlesen",
   "More": "Mehr",
   "Read summaries aloud": "Zusammenfassungen vorlesen",
-  "Recent: tap to open on the Mac, mic to dictate": "Zuletzt: Tippen öffnet am Mac, Mikrofon zum Diktieren"
+  "Recent: tap to open on the Mac, mic to dictate": "Zuletzt: Tippen öffnet am Mac, Mikrofon zum Diktieren",
+  "Reading aloud is off (settings)": "Vorlesen ist aus (Einstellungen)",
+  "The phone volume is off": "Die Lautstärke ist aus"
  },
  "es": {
   "Recent": "Recientes",
@@ -517,7 +523,9 @@
   "Read aloud": "Leer en voz alta",
   "More": "Más",
   "Read summaries aloud": "Leer resúmenes en voz alta",
-  "Recent: tap to open on the Mac, mic to dictate": "Recientes: toca para abrir en el Mac, micrófono para dictar"
+  "Recent: tap to open on the Mac, mic to dictate": "Recientes: toca para abrir en el Mac, micrófono para dictar",
+  "Reading aloud is off (settings)": "Lectura en voz alta desactivada (ajustes)",
+  "The phone volume is off": "El volumen del teléfono está apagado"
  },
  "fr": {
   "Recent": "Récents",
@@ -647,7 +655,9 @@
   "Read aloud": "Lire à voix haute",
   "More": "Plus",
   "Read summaries aloud": "Lire les résumés à voix haute",
-  "Recent: tap to open on the Mac, mic to dictate": "Récents : touchez pour ouvrir sur le Mac, micro pour dicter"
+  "Recent: tap to open on the Mac, mic to dictate": "Récents : touchez pour ouvrir sur le Mac, micro pour dicter",
+  "Reading aloud is off (settings)": "Lecture à voix haute désactivée (réglages)",
+  "The phone volume is off": "Le volume du téléphone est coupé"
  },
  "pt-BR": {
   "Recent": "Recentes",
@@ -777,7 +787,9 @@
   "Read aloud": "Ler em voz alta",
   "More": "Mais",
   "Read summaries aloud": "Ler resumos em voz alta",
-  "Recent: tap to open on the Mac, mic to dictate": "Recentes: toque para abrir no Mac, microfone para ditar"
+  "Recent: tap to open on the Mac, mic to dictate": "Recentes: toque para abrir no Mac, microfone para ditar",
+  "Reading aloud is off (settings)": "Leitura em voz alta desligada (ajustes)",
+  "The phone volume is off": "O volume do telefone está desligado"
  },
  "it": {
   "Recent": "Recenti",
@@ -907,7 +919,9 @@
   "Read aloud": "Leggi ad alta voce",
   "More": "Altro",
   "Read summaries aloud": "Leggi i riepiloghi ad alta voce",
-  "Recent: tap to open on the Mac, mic to dictate": "Recenti: tocca per aprire sul Mac, microfono per dettare"
+  "Recent: tap to open on the Mac, mic to dictate": "Recenti: tocca per aprire sul Mac, microfono per dettare",
+  "Reading aloud is off (settings)": "Lettura ad alta voce disattivata (impostazioni)",
+  "The phone volume is off": "Il volume del telefono è spento"
  },
  "ja": {
   "Recent": "最近",
@@ -1037,7 +1051,9 @@
   "Read aloud": "読み上げる",
   "More": "詳細",
   "Read summaries aloud": "要約を読み上げる",
-  "Recent: tap to open on the Mac, mic to dictate": "最近：タップでMacで開く、マイクで音声入力"
+  "Recent: tap to open on the Mac, mic to dictate": "最近：タップでMacで開く、マイクで音声入力",
+  "Reading aloud is off (settings)": "読み上げはオフ（設定）",
+  "The phone volume is off": "電話の音量がオフです"
  },
  "zh-Hans": {
   "Recent": "最近",
@@ -1167,6 +1183,8 @@
   "Read aloud": "朗读",
   "More": "详情",
   "Read summaries aloud": "朗读摘要",
-  "Recent: tap to open on the Mac, mic to dictate": "最近：轻点在 Mac 上打开，麦克风语音输入"
+  "Recent: tap to open on the Mac, mic to dictate": "最近：轻点在 Mac 上打开，麦克风语音输入",
+  "Reading aloud is off (settings)": "朗读已关闭（设置）",
+  "The phone volume is off": "手机音量已关闭"
  }
 }
