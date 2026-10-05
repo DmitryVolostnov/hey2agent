@@ -276,6 +276,19 @@ struct ConversationCard: View {
         typed = ""
     }
 
+    /// Icon above a one-line caption: three of these fit side by side on any iPhone.
+    private func smallAction(_ title: String, _ icon: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            VStack(spacing: 3) {
+                Image(systemName: icon).font(.system(size: 16, weight: .medium))
+                Text(title).font(.caption).lineLimit(1).minimumScaleFactor(0.8)
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .glassButton()
+        .controlSize(.regular)
+    }
+
     @ViewBuilder private var buttons: some View {
         HStack(spacing: 12) {
             switch state.state {
@@ -317,22 +330,47 @@ struct ConversationCard: View {
                     .lineLimit(1)
                 }
             case "listening":
-                Button { replyByPhone() } label: { Label(String(localized: "Reply from the phone"), systemImage: "mic.fill") }
+                VStack(spacing: 12) {
+                    HStack(spacing: 10) {
+                        Button(String(localized: "Cancel")) { send(.control("cancel")) }
+                        Spacer()
+                        Button(String(localized: "Repeat")) { send(.control("repeat")) }
+                    }
+                    .glassButton()
+                    .controlSize(.regular)
+                    .lineLimit(1)
+                    Button { replyByPhone() } label: {
+                        Label(String(localized: "Reply from the phone"), systemImage: "mic.fill")
+                            .frame(maxWidth: .infinity)
+                    }
                     .glassButton(prominent: true)
-                Spacer()
-                Button(String(localized: "Repeat")) { send(.control("repeat")) }.glassButton()
-                Button(String(localized: "Cancel")) { send(.control("cancel")) }.glassButton()
-            case "confirming" where !editing:
-                Button(String(localized: "Edit")) {
-                    typed = state.text ?? ""
-                    editing = true
-                    send(.control("hold"))
+                    .lineLimit(1)
                 }
-                .glassButton()
-                Button(String(localized: "Add more")) { send(.control("append")) }.glassButton()
-                Button(String(localized: "Again")) { send(.control("again")) }.glassButton()
-                Spacer()
-                Button(String(localized: "Cancel")) { send(.control("cancel")) }.glassButton(prominent: true).tint(.red)
+            case "confirming" where !editing:
+                // Two rows: three small «fix the text» actions with icons, then Cancel / Send now.
+                VStack(spacing: 12) {
+                    HStack(spacing: 8) {
+                        smallAction(String(localized: "Edit"), "pencil") {
+                            typed = state.text ?? ""
+                            editing = true
+                            send(.control("hold"))
+                        }
+                        smallAction(String(localized: "Add more"), "plus.bubble") { send(.control("append")) }
+                        smallAction(String(localized: "Again"), "arrow.counterclockwise") { send(.control("again")) }
+                    }
+                    HStack(spacing: 10) {
+                        Button(role: .destructive) { send(.control("cancel")) } label: {
+                            Text(String(localized: "Cancel")).frame(maxWidth: .infinity)
+                        }
+                        .glassButton()
+                        .tint(.red)
+                        Button { send(.control("send")) } label: {
+                            Text(String(localized: "Send now")).frame(maxWidth: .infinity)
+                        }
+                        .glassButton(prominent: true)
+                    }
+                    .lineLimit(1)
+                }
             case "confirming":
                 Button(String(localized: "Cancel")) { send(.control("cancel")) }.glassButton()
                 Spacer()
