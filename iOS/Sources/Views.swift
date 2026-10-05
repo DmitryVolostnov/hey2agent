@@ -93,7 +93,8 @@ struct RemoteView: View {
                                      replyByPhone: { model.speaker.stop(); model.recordOnPhone(for: nil) },
                                      close: { dismissed = a.t }, cancel: { model.cancelConversation() },
                                      speaker: model.speaker,
-                                     recorder: model.recordingFor == nil ? model.recorder : nil)
+                                     recorder: model.recordingFor == nil ? model.recorder : nil,
+                                     onReading: { model.readingHold() })
                         .id("\(a.project ?? "")|\(a.state)")
                 }
                 if let s = snap, !s.sessions.isEmpty {
@@ -182,6 +183,8 @@ struct ConversationCard: View {
     var speaker: Speaker? = nil
     /// Set while the phone records the answer to this conversation: the card shows it inline.
     var recorder: Recorder? = nil
+    /// The user is scrolling the answer (keep the mic waiting).
+    var onReading: () -> Void = {}
     @State private var typed = ""
     @State private var showDetails = false
     @State private var editing = false
@@ -218,23 +221,21 @@ struct ConversationCard: View {
                 }
             }
 
-            if !compact {
-                let level = recording ? (recorder?.level ?? 0) : (state.level ?? 0)
-                GeometryReader { geo in
-                    ZStack(alignment: .leading) {
-                        Capsule().fill(.quaternary)
-                        Capsule().fill(.red.gradient)
-                            .frame(width: max(6, geo.size.width * level))
-                            .animation(.linear(duration: 0.12), value: level)
-                    }
-                }
-                .frame(height: 6)
-                .opacity(recording || state.state == "listening" ? 1 : 0)
-            }
-
             // Fixed height for every live step so the buttons below never move between states;
             // a finished step (sent / cancelled / error) shrinks to its text.
-            if !(compact && (bodyText ?? "").isEmpty) {  // «Session released»: just the header
+            if showsAnswer {
+                // Speaking, reading and listening look the same: the whole answer stays on screen
+                // (scroll for all of it); scrolling also keeps the mic from giving up on silence.
+                ScrollView(.vertical) {
+                    Text(answerText)
+                        .font(.title3)
+                        .foregroundStyle(.primary)
+                        .textSelection(.enabled)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .frame(height: 150)
+                .simultaneousGesture(DragGesture(minimumDistance: 0).onChanged { _ in onReading() })
+            } else if !(compact && (bodyText ?? "").isEmpty) {  // «Session released»: just the header
                 Text((recording ? state.summary : bodyText) ?? "")
                     .font(.title3)
                     .foregroundStyle(state.state == "speaking" || recording ? .secondary : .primary)
@@ -245,16 +246,34 @@ struct ConversationCard: View {
                     .fixedSize(horizontal: false, vertical: compact)
             }
 
-            let field = !recording && (editing || ["speaking", "listening", "reading", "phone"].contains(state.state))
+            let field = recording || editing || ["speaking", "listening", "reading", "phone"].contains(state.state)
             if !compact {
                 HStack {
+                    if recording || state.state == "listening" {
+                        let level = recording ? (recorder?.level ?? 0) : (state.level ?? 0)
+                        GeometryReader { geo in
+                            ZStack(alignment: .leading) {
+                                Capsule().fill(.quaternary)
+                                Capsule().fill(.red.gradient)
+                                    .frame(width: max(6, geo.size.width * level))
+                                    .animation(.linear(duration: 0.12), value: level)
+                            }
+                        }
+                        .frame(width: 56, height: 6)
+                    }
+                    if recording {
+                        Text(String(localized: "A 2 s pause sends it, “ok” closes"))
+                            .font(.footnote).foregroundStyle(.secondary).lineLimit(2)
+                        Spacer(minLength: 0)
+                    } else {
                     // Single line so Return sends; editing a recognised text keeps multi-line.
                     Group {
                         if editing {
                             TextField(String(localized: "Edit the text"), text: $typed, axis: .vertical)
                                 .lineLimit(1...5)
                         } else {
-                            TextField(String(localized: "Type a reply"), text: $typed)
+                            TextField(state.state == "listening" ? String(localized: "A 2 s pause sends it, “ok” closes")
+                                      : String(localized: "Type a reply"), text: $typed)
                                 .submitLabel(.send)
                         }
                     }
@@ -262,7 +281,9 @@ struct ConversationCard: View {
                     .onSubmit(submit)
                     Button(action: submit) { Image(systemName: "arrow.up.circle.fill").font(.title) }
                         .disabled(typed.trimmingCharacters(in: .whitespaces).isEmpty)
+                    }
                 }
+                .frame(minHeight: 36)
                 .opacity(field ? 1 : 0)
                 .disabled(!field)
             }
@@ -307,6 +328,15 @@ struct ConversationCard: View {
         return t.isEmpty ? nil : t
     }
 
+    private var showsAnswer: Bool {
+        !editing && (recording || ["speaking", "reading", "listening", "phone"].contains(state.state))
+    }
+    /// The whole answer (it starts with the summary), else just the summary.
+    private var answerText: String {
+        let full = state.details ?? ""
+        return full.isEmpty ? (state.summary ?? "") : full
+    }
+
     private var recording: Bool { recorder?.active == true }
     private var compact: Bool {
         !recording && (["released", "error"].contains(state.state) || (state.state == "sent" && !canUndo))
@@ -349,8 +379,6 @@ struct ConversationCard: View {
             switch state.state {
             case _ where recording:
                 VStack(alignment: .leading, spacing: 12) {
-                    Text(String(localized: "A 2-second pause sends it. Transcribed on the Mac.") + " " + String(localized: "Say “ok” to close"))
-                        .font(.footnote).foregroundStyle(.secondary)
                     HStack(spacing: 10) {
                         Button(role: .destructive, action: cancel) {
                             Text(String(localized: "Cancel")).frame(maxWidth: .infinity)

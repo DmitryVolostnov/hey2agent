@@ -148,6 +148,15 @@ final class RemoteModel {
     var micDenied = false
 
     private var cancelAll = false
+    private var holdSent = Date.distantPast
+
+    /// Scrolling the answer: the phone mic (or the Mac's) keeps waiting instead of giving up.
+    func readingHold() {
+        if recorder.active { recorder.hold() }
+        guard snapshot?.active?.state == "listening", Date().timeIntervalSince(holdSent) > 0.4 else { return }
+        holdSent = Date()
+        send(.control("hover"))
+    }
 
     /// Stop recording for the running conversation and cancel that conversation entirely.
     func cancelConversation() {

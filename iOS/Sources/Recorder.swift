@@ -14,6 +14,10 @@ final class Recorder {
     private var timer: Task<Void, Never>?
     private var onFinish: ((Data?) -> Void)?
     private let url = FileManager.default.temporaryDirectory.appendingPathComponent("voice-loop.m4a")
+    private var holdUntil = Date.distantPast
+
+    /// The user is reading (scrolling the answer): don't give up on silence for a moment.
+    func hold() { holdUntil = Date().addingTimeInterval(1.5) }
 
     func start(waitForSpeech: Double = 8, onFinish: @escaping (Data?) -> Void) {
         guard !active else { return }
@@ -25,7 +29,7 @@ final class Recorder {
         }
     }
 
-    private func begin(wait: Double) {
+    private func begin(wait initialWait: Double) {
         let session = AVAudioSession.sharedInstance()
         try? session.setCategory(.record, mode: .measurement)
         try? session.setActive(true)
@@ -41,6 +45,7 @@ final class Recorder {
         speaking = false
         let started = Date()
         timer = Task { [weak self] in
+            var wait = initialWait
             var calib: [Float] = []
             var floor: Float = -60
             var loudRun = 0
@@ -60,7 +65,9 @@ final class Recorder {
                 let t = Date().timeIntervalSince(started)
                 if !self.speaking {
                     loudRun = loud ? loudRun + 1 : 0
-                    self.secondsLeft = max(0, wait - t)
+                    let holding = Date() < self.holdUntil
+                    if holding { wait = max(wait, t + 2) }
+                    self.secondsLeft = holding ? nil : max(0, wait - t)
                     if loudRun >= 3 { self.speaking = true; self.secondsLeft = nil }
                     else if t > wait { self.finish(send: false); return }
                 } else {

@@ -482,10 +482,16 @@ def _norm(text):
     return re.sub(r"\s+", " ", re.sub(r"[^\w\s']", "", text.lower())).strip()
 
 
+CLOSE_PHRASES = ["all good", "all set", "sounds good", "looks good", "всё хорошо", "все хорошо",
+                 "всё отлично", "все отлично", "всё супер", "все супер", "всё понятно", "все понятно"]
+
+
 def is_stop(text):
     t = _norm(text)
     if not t or t in STOP_WORDS:
         return True
+    for phrase in CLOSE_PHRASES:  # «All good, thanks» → treated like «ok thanks»
+        t = re.sub(rf"\b{phrase}\b", "ok", t)
     words = t.replace("-", " ").split()
     return any(w in CLOSE_WORDS for w in words) and all(w in CLOSE_WORDS or w in CLOSE_FILLERS for w in words)
 

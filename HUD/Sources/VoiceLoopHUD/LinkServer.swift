@@ -111,6 +111,11 @@ final class LinkServer {
 
     private func handle(_ cmd: LinkCommand) {
         switch cmd {
+        case .control("hover"):  // the user is scrolling the answer on the phone: don't time out
+            let url = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".voice-loop/hover")
+            if !FileManager.default.createFile(atPath: url.path, contents: nil) {
+                try? FileManager.default.setAttributes([.modificationDate: Date()], ofItemAtPath: url.path)
+            }
         case .control(let c): model.send(c)
         case .reply(let t): model.reply(t)
         case .dictate(let id):
