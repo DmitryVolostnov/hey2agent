@@ -56,6 +56,9 @@ final class Speaker: NSObject, AVSpeechSynthesizerDelegate {
     /// Any Cyrillic → a Russian/Ukrainian voice (an English voice can't read Russian; a Russian
     /// one copes with English terms). Otherwise the dominant language.
     static func voiceLanguage(for text: String) -> String {
+        // Quoted words don't count (an English answer citing «всё хорошо» is still English).
+        let outside = text.replacingOccurrences(of: #"«[^»]*»|“[^”]*”|"[^"]*""#, with: " ", options: .regularExpression)
+        let text = outside.contains(where: \.isLetter) ? outside : text
         let cyr = text.unicodeScalars.filter { (0x0400...0x04FF).contains($0.value) }
         if cyr.count >= 2 {
             let uk = cyr.filter { "іїєґІЇЄҐ".unicodeScalars.contains($0) }.count

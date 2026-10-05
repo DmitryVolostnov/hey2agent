@@ -890,6 +890,11 @@ NOVELTY_VOICES = {"Albert", "Bad News", "Bahh", "Bells", "Boing", "Bubbles", "Ce
 
 def text_language(text):
     """Language for the voice: Cyrillic wins if there is any; plain Latin is en."""
+    # Quoted words don't count: an English answer citing «всё хорошо» is still English, while
+    # «Перевёл: “Thanks …”» is Russian (its own words, outside the quotes, are Russian).
+    outside = re.sub(r"«[^»]*»|“[^”]*”|\"[^\"]*\"", " ", text)
+    if any(ch.isalpha() for ch in outside):
+        text = outside
     letters = [ch for ch in text.lower() if ch.isalpha()]
     if not letters:
         return None
@@ -950,6 +955,7 @@ def voice_for(text, c):
 
 def tts_process(text, c):
     """Start speaking text; returns the playing process."""
+    voice = voice_for(text, c)  # before the quotes are stripped: quoted words don't pick the voice
     text = speech_text(text)
     if c["tts"] == "piper" and PIPER.exists():
         for old in Path(tempfile.gettempdir()).glob("voice-loop-tts-*.wav"):
@@ -961,7 +967,8 @@ def tts_process(text, c):
         if r.returncode == 0:
             return subprocess.Popen(["afplay", wav])
         log(f"piper failed, falling back to say: {r.stderr[-200:]!r}")
-    return subprocess.Popen(["say", "-v", voice_for(text, c), "-r", str(c["rate"]), text])
+    log(f"tts: {voice}")
+    return subprocess.Popen(["say", "-v", voice, "-r", str(c["rate"]), text])
 
 
 def speak(text, c):

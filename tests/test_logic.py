@@ -75,6 +75,7 @@ class Commands(unittest.TestCase):
         self.assertEqual(v.text_language("Готово: обновил README и закоммитил в main"), "ru")
         self.assertEqual(v.text_language("Зробив рефакторинг, усі тести проходять."), "uk")
         self.assertEqual(v.text_language("Перевёл: Thanks for the quick review, merged it into main."), "ru")
+        self.assertEqual(v.text_language("Done: «всё хорошо» and «всё понятно» now close the turn."), "en")
         self.assertEqual(v.text_language("Ich habe die Tests repariert, alles grün und schön."), "de")
 
 
