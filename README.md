@@ -57,6 +57,7 @@ cd iOS && xcodegen generate && open VoiceLoopRemote.xcodeproj   # Signing: pick 
 | *(pause 2 s)* or «отправь» / "send" | send |
 | «подожди», «надо подумать» / "wait" | keep listening (up to 30 s) |
 | «повтори» / "repeat" | replay the summary |
+| «прочитай всё» / "read it all" | read the whole answer aloud |
 | «отмена» / "cancel" | discard |
 | «стоп», «хватит» / silence | let the agent stop |
 | «ок», «спасибо» / "ok", "thanks" (the whole phrase) | close the turn, nothing is sent |

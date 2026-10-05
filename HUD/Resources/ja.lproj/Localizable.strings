@@ -19,6 +19,9 @@
 "Stop voice" = "読み上げ停止";
 "Stop reading aloud — read it yourself" = "読み上げを止めて自分で読む";
 "Repeat" = "もう一度再生";
+"Read the summary again" = "要約をもう一度読む";
+"Read it all" = "全部読む";
+"Read the whole answer aloud" = "回答全体を読み上げる";
 "Edit" = "編集";
 "Add more" = "追加";
 "Keep the text and dictate more" = "テキストを残して続けて音声入力";
@@ -29,7 +32,7 @@
 "Reply by voice" = "音声で返信";
 "Send" = "送信";
 "Copied. Paste into “%@” in Claude: ⌘V and ↩\n\n%@" = "コピーしました。Claudeの「%@」に貼り付け：⌘V、↩\n\n%@";
-"Speak — a 2-second pause sends it. Say “ok” or “thanks” to close, “repeat” to hear the summary again." = "話してください。2秒黙ると送信。「OK」「ありがとう」で閉じる、「もう一度」で要約を再生。";
+"Speak — a 2-second pause sends it. “Ok” or “thanks” closes, “repeat” replays the summary, “read it all” reads the whole answer." = "話してください。2秒黙ると送信。「OK」「ありがとう」で閉じる、「もう一度」で要約、「全部読んで」で回答全体を再生。";
 "Speaking" = "読み上げ中";
 "Summary" = "要約";
 "Speak into the iPhone…" = "iPhoneに話してください…";

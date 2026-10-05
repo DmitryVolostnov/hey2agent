@@ -147,7 +147,11 @@
     "Quit (turns voice off)": "Выйти (голос выключится)",
     "Speech speed": "Скорость речи",
     "Say “ok” to close": "Скажите “ок”, чтобы закрыть",
-    "Speak — a 2-second pause sends it. Say “ok” or “thanks” to close, “repeat” to hear the summary again.": "Говорите — пауза в 2 секунды отправит. «Ок» или «спасибо» — закрыть, «повтори» — прослушать сводку ещё раз."
+    "Speak — a 2-second pause sends it. Say “ok” or “thanks” to close, “repeat” to hear the summary again.": "Говорите — пауза в 2 секунды отправит. «Ок» или «спасибо» — закрыть, «повтори» — прослушать сводку ещё раз.",
+    "Speak — a 2-second pause sends it. “Ok” or “thanks” closes, “repeat” replays the summary, “read it all” reads the whole answer.": "Говорите — пауза в 2 секунды отправит. «Ок» или «спасибо» — закрыть, «повтори» — сводка ещё раз, «прочитай всё» — весь ответ.",
+    "Read it all": "Прочитать всё",
+    "Read the whole answer aloud": "Прочитать вслух весь ответ",
+    "Read the summary again": "Прочитать сводку ещё раз"
   },
   "uk": {
     "Recent": "Нещодавні",
@@ -297,7 +301,11 @@
     "Quit (turns voice off)": "Вийти (голос вимкнеться)",
     "Speech speed": "Швидкість мовлення",
     "Say “ok” to close": "Скажіть “ок”, щоб закрити",
-    "Speak — a 2-second pause sends it. Say “ok” or “thanks” to close, “repeat” to hear the summary again.": "Говоріть — пауза у 2 секунди надішле. «Ок» або «дякую» — закрити, «повтори» — прослухати ще раз."
+    "Speak — a 2-second pause sends it. Say “ok” or “thanks” to close, “repeat” to hear the summary again.": "Говоріть — пауза у 2 секунди надішле. «Ок» або «дякую» — закрити, «повтори» — прослухати ще раз.",
+    "Speak — a 2-second pause sends it. “Ok” or “thanks” closes, “repeat” replays the summary, “read it all” reads the whole answer.": "Говоріть — пауза у 2 секунди надішле. «Ок» або «дякую» — закрити, «повтори» — ще раз, «прочитай усе» — уся відповідь.",
+    "Read it all": "Прочитати все",
+    "Read the whole answer aloud": "Прочитати вголос усю відповідь",
+    "Read the summary again": "Прочитати підсумок ще раз"
   },
   "de": {
     "Recent": "Zuletzt",
@@ -447,7 +455,11 @@
     "Quit (turns voice off)": "Beenden (Sprache aus)",
     "Speech speed": "Sprechtempo",
     "Say “ok” to close": "Sag „ok“, um zu schließen",
-    "Speak — a 2-second pause sends it. Say “ok” or “thanks” to close, “repeat” to hear the summary again.": "Sprich — 2 Sekunden Pause senden. „Ok“ oder „danke“ schließt, „wiederholen“ spielt die Zusammenfassung erneut."
+    "Speak — a 2-second pause sends it. Say “ok” or “thanks” to close, “repeat” to hear the summary again.": "Sprich — 2 Sekunden Pause senden. „Ok“ oder „danke“ schließt, „wiederholen“ spielt die Zusammenfassung erneut.",
+    "Speak — a 2-second pause sends it. “Ok” or “thanks” closes, “repeat” replays the summary, “read it all” reads the whole answer.": "Sprich — 2 Sekunden Pause senden. „Ok“ oder „danke“ schließt, „wiederholen“ spielt die Zusammenfassung, „alles vorlesen“ die ganze Antwort.",
+    "Read it all": "Alles vorlesen",
+    "Read the whole answer aloud": "Die ganze Antwort vorlesen",
+    "Read the summary again": "Zusammenfassung noch einmal vorlesen"
   },
   "es": {
     "Recent": "Recientes",
@@ -597,7 +609,11 @@
     "Quit (turns voice off)": "Salir (apaga la voz)",
     "Speech speed": "Velocidad de voz",
     "Say “ok” to close": "Di “ok” para cerrar",
-    "Speak — a 2-second pause sends it. Say “ok” or “thanks” to close, “repeat” to hear the summary again.": "Habla: una pausa de 2 segundos lo envía. «Ok» o «gracias» cierra, «repite» vuelve a leer el resumen."
+    "Speak — a 2-second pause sends it. Say “ok” or “thanks” to close, “repeat” to hear the summary again.": "Habla: una pausa de 2 segundos lo envía. «Ok» o «gracias» cierra, «repite» vuelve a leer el resumen.",
+    "Speak — a 2-second pause sends it. “Ok” or “thanks” closes, “repeat” replays the summary, “read it all” reads the whole answer.": "Habla: una pausa de 2 segundos lo envía. «Ok» o «gracias» cierra, «repite» relee el resumen, «léelo todo» lee toda la respuesta.",
+    "Read it all": "Leer todo",
+    "Read the whole answer aloud": "Leer en voz alta toda la respuesta",
+    "Read the summary again": "Volver a leer el resumen"
   },
   "fr": {
     "Recent": "Récents",
@@ -747,7 +763,11 @@
     "Quit (turns voice off)": "Quitter (coupe la voix)",
     "Speech speed": "Vitesse de la voix",
     "Say “ok” to close": "Dites « ok » pour fermer",
-    "Speak — a 2-second pause sends it. Say “ok” or “thanks” to close, “repeat” to hear the summary again.": "Parlez — une pause de 2 secondes envoie. « Ok » ou « merci » ferme, « répète » relit le résumé."
+    "Speak — a 2-second pause sends it. Say “ok” or “thanks” to close, “repeat” to hear the summary again.": "Parlez — une pause de 2 secondes envoie. « Ok » ou « merci » ferme, « répète » relit le résumé.",
+    "Speak — a 2-second pause sends it. “Ok” or “thanks” closes, “repeat” replays the summary, “read it all” reads the whole answer.": "Parlez — une pause de 2 secondes envoie. « Ok » ou « merci » ferme, « répète » relit le résumé, « lis tout » lit toute la réponse.",
+    "Read it all": "Tout lire",
+    "Read the whole answer aloud": "Lire toute la réponse à voix haute",
+    "Read the summary again": "Relire le résumé"
   },
   "pt-BR": {
     "Recent": "Recentes",
@@ -897,7 +917,11 @@
     "Quit (turns voice off)": "Sair (desliga a voz)",
     "Speech speed": "Velocidade da fala",
     "Say “ok” to close": "Diga “ok” para fechar",
-    "Speak — a 2-second pause sends it. Say “ok” or “thanks” to close, “repeat” to hear the summary again.": "Fale — uma pausa de 2 segundos envia. “Ok” ou “obrigado” fecha, “repete” lê o resumo de novo."
+    "Speak — a 2-second pause sends it. Say “ok” or “thanks” to close, “repeat” to hear the summary again.": "Fale — uma pausa de 2 segundos envia. “Ok” ou “obrigado” fecha, “repete” lê o resumo de novo.",
+    "Speak — a 2-second pause sends it. “Ok” or “thanks” closes, “repeat” replays the summary, “read it all” reads the whole answer.": "Fale — uma pausa de 2 segundos envia. “Ok” ou “obrigado” fecha, “repete” relê o resumo, “leia tudo” lê a resposta inteira.",
+    "Read it all": "Ler tudo",
+    "Read the whole answer aloud": "Ler a resposta inteira em voz alta",
+    "Read the summary again": "Ler o resumo de novo"
   },
   "it": {
     "Recent": "Recenti",
@@ -1047,7 +1071,11 @@
     "Quit (turns voice off)": "Esci (disattiva la voce)",
     "Speech speed": "Velocità della voce",
     "Say “ok” to close": "Di’ “ok” per chiudere",
-    "Speak — a 2-second pause sends it. Say “ok” or “thanks” to close, “repeat” to hear the summary again.": "Parla: una pausa di 2 secondi invia. «Ok» o «grazie» chiude, «ripeti» rilegge il riepilogo."
+    "Speak — a 2-second pause sends it. Say “ok” or “thanks” to close, “repeat” to hear the summary again.": "Parla: una pausa di 2 secondi invia. «Ok» o «grazie» chiude, «ripeti» rilegge il riepilogo.",
+    "Speak — a 2-second pause sends it. “Ok” or “thanks” closes, “repeat” replays the summary, “read it all” reads the whole answer.": "Parla: una pausa di 2 secondi invia. «Ok» o «grazie» chiude, «ripeti» rilegge il riepilogo, «leggi tutto» legge tutta la risposta.",
+    "Read it all": "Leggi tutto",
+    "Read the whole answer aloud": "Leggi ad alta voce tutta la risposta",
+    "Read the summary again": "Rileggi il riepilogo"
   },
   "ja": {
     "Recent": "最近",
@@ -1197,7 +1225,11 @@
     "Quit (turns voice off)": "終了（音声オフ）",
     "Speech speed": "読み上げ速度",
     "Say “ok” to close": "「OK」と言うと閉じます",
-    "Speak — a 2-second pause sends it. Say “ok” or “thanks” to close, “repeat” to hear the summary again.": "話してください。2秒黙ると送信。「OK」「ありがとう」で閉じる、「もう一度」で要約を再生。"
+    "Speak — a 2-second pause sends it. Say “ok” or “thanks” to close, “repeat” to hear the summary again.": "話してください。2秒黙ると送信。「OK」「ありがとう」で閉じる、「もう一度」で要約を再生。",
+    "Speak — a 2-second pause sends it. “Ok” or “thanks” closes, “repeat” replays the summary, “read it all” reads the whole answer.": "話してください。2秒黙ると送信。「OK」「ありがとう」で閉じる、「もう一度」で要約、「全部読んで」で回答全体を再生。",
+    "Read it all": "全部読む",
+    "Read the whole answer aloud": "回答全体を読み上げる",
+    "Read the summary again": "要約をもう一度読む"
   },
   "zh-Hans": {
     "Recent": "最近",
@@ -1347,6 +1379,10 @@
     "Quit (turns voice off)": "退出（关闭语音）",
     "Speech speed": "语速",
     "Say “ok” to close": "说“好的”即可关闭",
-    "Speak — a 2-second pause sends it. Say “ok” or “thanks” to close, “repeat” to hear the summary again.": "请说话，停顿 2 秒即发送。说“好的”或“谢谢”关闭，说“重复”再听一遍摘要。"
+    "Speak — a 2-second pause sends it. Say “ok” or “thanks” to close, “repeat” to hear the summary again.": "请说话，停顿 2 秒即发送。说“好的”或“谢谢”关闭，说“重复”再听一遍摘要。",
+    "Speak — a 2-second pause sends it. “Ok” or “thanks” closes, “repeat” replays the summary, “read it all” reads the whole answer.": "请说话，停顿 2 秒即发送。说“好的”或“谢谢”关闭，“重复”再听摘要，“全部读”朗读完整回答。",
+    "Read it all": "全部朗读",
+    "Read the whole answer aloud": "朗读完整回答",
+    "Read the summary again": "再读一遍摘要"
   }
 }

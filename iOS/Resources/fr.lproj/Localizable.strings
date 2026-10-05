@@ -19,6 +19,9 @@
 "Stop voice" = "Se taire";
 "Stop reading aloud — read it yourself" = "Arrêter la lecture à voix haute — je lis moi-même";
 "Repeat" = "Répéter";
+"Read the summary again" = "Relire le résumé";
+"Read it all" = "Tout lire";
+"Read the whole answer aloud" = "Lire toute la réponse à voix haute";
 "Edit" = "Modifier";
 "Add more" = "Compléter";
 "Keep the text and dictate more" = "Garder le texte et dicter la suite";
@@ -29,7 +32,7 @@
 "Reply by voice" = "Répondre à la voix";
 "Send" = "Envoyer";
 "Copied. Paste into “%@” in Claude: ⌘V and ↩\n\n%@" = "Copié. Collez dans « %@ » dans Claude : ⌘V et ↩\n\n%@";
-"Speak — a 2-second pause sends it. Say “ok” or “thanks” to close, “repeat” to hear the summary again." = "Parlez — une pause de 2 secondes envoie. « Ok » ou « merci » ferme, « répète » relit le résumé.";
+"Speak — a 2-second pause sends it. “Ok” or “thanks” closes, “repeat” replays the summary, “read it all” reads the whole answer." = "Parlez — une pause de 2 secondes envoie. « Ok » ou « merci » ferme, « répète » relit le résumé, « lis tout » lit toute la réponse.";
 "Speaking" = "Je parle";
 "Summary" = "Résumé";
 "Speak into the iPhone…" = "Parlez dans l’iPhone…";

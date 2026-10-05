@@ -102,6 +102,13 @@ REPEAT_WORDS = {"повтори", "повтори пожалуйста", "пов
                 "еще раз", "не расслышал", "что", "repeat", "wiederholen", "repite", "répète", "repete",
                 "ripeti", "もう一度", "重复"}
 CANCEL_WORDS = ["отмена", "отменить", "отмени", "cancel"]
+# Read the whole answer, not just the summary.
+FULL_WORDS = {"прочитай всё", "прочитай все", "прочитай полностью", "прочитай весь ответ", "читай всё",
+              "читай все", "весь ответ", "прочитай целиком", "полностью", "прочитай всё полностью",
+              "read it all", "read all", "read everything", "read the whole answer", "read the full answer",
+              "read the whole thing", "прочитай усе", "прочитай повністю", "alles vorlesen", "lies alles vor",
+              "léelo todo", "lee todo", "lis tout", "lis tout le message", "leggi tutto", "leia tudo",
+              "全部読んで", "全部读一下", "全部读"}
 
 # Classic whisper hallucinations on silence / noise.
 HALLUCINATIONS = ["субтитры", "продолжение следует", "спасибо за просмотр", "dimatorzok",
@@ -357,7 +364,7 @@ class Listener:
             frames += 1
             t = frames / 10
             cmd, payload = take_control()
-            if cmd in ("cancel", "repeat", "text"):
+            if cmd in ("cancel", "repeat", "full", "text"):
                 return None, cmd, payload
             if cmd == "phone":  # the user is recording on the iPhone: ignore the Mac mic
                 self.phone = True
@@ -468,6 +475,18 @@ def is_stop(text):
         return True
     words = t.replace("-", " ").split()
     return any(w in CLOSE_WORDS for w in words) and all(w in CLOSE_WORDS or w in CLOSE_FILLERS for w in words)
+
+
+def is_full(text):
+    return _norm(text) in FULL_WORDS
+
+
+def full_answer(details, summary):
+    """The answer to read aloud in full, without the summary line that was just read."""
+    t = details or ""
+    if summary and summary in t:
+        t = t.split(summary, 1)[1]
+    return t.strip(" .:—-") or summary
 
 
 def is_repeat(text):
@@ -1003,7 +1022,7 @@ def converse(project, summary, c, title=None, announce=True, sid=None, cancellab
     try:
         prefix = None
         while True:
-            text, typed = listen(lis, c, ui, summary, deadline, prefix)
+            text, typed = listen(lis, c, ui, summary, deadline, prefix, full=full_answer(details, summary))
             if typed or not text or is_stop(text):
                 return finish(text)
             verdict, edited = confirm(text, c, ui, deadline)
@@ -1081,10 +1100,18 @@ def remote_reply(c, ui, deadline):
         prefix = edited if v == "append" else prefix
 
 
-def listen(lis, c, ui, summary, deadline, prefix=None):
+def listen(lis, c, ui, summary, deadline, prefix=None, full=None):
     """One dictated instruction. Returns (text | None, typed).
-    prefix: text already dictated («Дополнить») — new phrases are appended to it."""
+    prefix: text already dictated («Дополнить») — new phrases are appended to it.
+    full: the whole answer, for «Read all» / «прочитай всё»."""
     parts, wait, cue = ([prefix] if prefix else []), c["wait_sec"], "Tink"
+
+    def replay(text):
+        ui("speaking")
+        r = speak(text, c)
+        lis.drop_backlog()  # don't transcribe our own voice
+        return r
+
     while True:
         ui("listening", text=" ".join(parts))
         pcm, how, payload = lis.phrase(wait, cue, deadline)
@@ -1092,10 +1119,12 @@ def listen(lis, c, ui, summary, deadline, prefix=None):
             return None, False
         if how == "text":
             return " ".join(parts + [payload]), True
-        if how == "repeat":
-            ui("speaking")
-            speak(summary, c)
-            lis.drop_backlog()  # don't transcribe our own voice
+        if how in ("repeat", "full"):
+            r = replay(full or summary if how == "full" else summary)
+            if r == "cancel":
+                return None, False
+            if r == "text":
+                return " ".join(parts + [speak.payload]), True
             wait, cue = c["wait_sec"], "Tink"
             continue
         if pcm is None:  # timeout, or «send» with nothing new
@@ -1107,10 +1136,12 @@ def listen(lis, c, ui, summary, deadline, prefix=None):
         log(f"phrase: {text!r} ({how})")
         if strip_tail(text, CANCEL_WORDS) is not None:
             return None, False
-        if not prefix and not parts and is_repeat(text):
-            ui("speaking")
-            speak(summary, c)
-            lis.drop_backlog()
+        if not prefix and not parts and (is_repeat(text) or is_full(text)):
+            r = replay(full or summary if is_full(text) else summary)
+            if r == "cancel":
+                return None, False
+            if r == "text":
+                return speak.payload, True
             wait, cue = c["wait_sec"], "Tink"
             continue
         if how == "send":

@@ -297,6 +297,14 @@ struct ConversationCard: View {
         }
     }
 
+    /// The whole answer without the summary line that was already read.
+    private var fullAnswer: String? {
+        guard var t = state.details, !t.isEmpty else { return nil }
+        if let s = state.summary, let r = t.range(of: s) { t = String(t[r.upperBound...]) }
+        t = t.trimmingCharacters(in: CharacterSet(charactersIn: " .:—-\n"))
+        return t.isEmpty ? nil : t
+    }
+
     private var recording: Bool { recorder?.active == true }
     private var compact: Bool {
         !recording && (["released", "error"].contains(state.state) || (state.state == "sent" && !canUndo))
@@ -377,6 +385,10 @@ struct ConversationCard: View {
                                 Image(systemName: "speaker.wave.2")
                             }
                             .accessibilityLabel(String(localized: "Read aloud"))
+                            if let full = fullAnswer {
+                                Button { speaker?.speak(full) } label: { Image(systemName: "doc.plaintext") }
+                                    .accessibilityLabel(String(localized: "Read it all"))
+                            }
                         }
                         if !(state.details ?? "").isEmpty {
                             Button(String(localized: "More")) { showDetails = true }
@@ -398,6 +410,9 @@ struct ConversationCard: View {
                         Button(String(localized: "Cancel"), action: cancel)
                         Spacer()
                         Button(String(localized: "Repeat")) { send(.control("repeat")) }
+                        if !(state.details ?? "").isEmpty {
+                            Button(String(localized: "Read it all")) { send(.control("full")) }
+                        }
                     }
                     .glassButton()
                     .controlSize(.regular)
@@ -458,7 +473,7 @@ struct ConversationCard: View {
             state.code == "no_mic"
                 ? String(localized: "No microphone access on the Mac. Allow it for hey2agent in System Settings → Privacy & Security → Microphone.")
                 : String(localized: "Something went wrong: \(state.text ?? "")")
-        case "listening" where (state.text ?? "").isEmpty: String(localized: "Speak — a 2-second pause sends it. Say “ok” or “thanks” to close, “repeat” to hear the summary again.")
+        case "listening" where (state.text ?? "").isEmpty: String(localized: "Speak — a 2-second pause sends it. “Ok” or “thanks” closes, “repeat” replays the summary, “read it all” reads the whole answer.")
         case "listening", "transcribing", "sent": state.text
         default: nil
         }

@@ -745,6 +745,11 @@ struct ConversationView: View {
                 .help(String(localized: "Stop reading aloud — read it yourself"))
             case "listening":
                 Button(String(localized: "Repeat")) { model.send("repeat") }
+                    .help(String(localized: "Read the summary again"))
+                if !(s.details ?? "").isEmpty {
+                    Button(String(localized: "Read it all")) { model.send("full") }
+                        .help(String(localized: "Read the whole answer aloud"))
+                }
             case "confirming" where !editMode:
                 HStack(spacing: 8) {
                     Button(String(localized: "Edit")) {
@@ -813,7 +818,7 @@ struct ConversationView: View {
         case "speaking", "reading": s.summary
         case _ where s.state == "sent" && s.delivery == "clipboard":
             String(localized: "Copied. Paste into “\(s.project ?? "")” in Claude: ⌘V and ↩\n\n\(s.text ?? "")")
-        case "listening" where (s.text ?? "").isEmpty: String(localized: "Speak — a 2-second pause sends it. Say “ok” or “thanks” to close, “repeat” to hear the summary again.")
+        case "listening" where (s.text ?? "").isEmpty: String(localized: "Speak — a 2-second pause sends it. “Ok” or “thanks” closes, “repeat” replays the summary, “read it all” reads the whole answer.")
         case "listening", "transcribing", "sent": s.text
         case "confirming": editMode ? nil : s.text
         case "error": errorText(code: s.code, detail: s.text)

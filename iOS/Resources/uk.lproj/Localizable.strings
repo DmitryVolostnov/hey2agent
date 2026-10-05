@@ -19,6 +19,9 @@
 "Stop voice" = "Замовкнути";
 "Stop reading aloud — read it yourself" = "Перестати читати вголос — прочитаю сам";
 "Repeat" = "Повторити";
+"Read the summary again" = "Прочитати підсумок ще раз";
+"Read it all" = "Прочитати все";
+"Read the whole answer aloud" = "Прочитати вголос усю відповідь";
 "Edit" = "Змінити";
 "Add more" = "Доповнити";
 "Keep the text and dictate more" = "Залишити текст і договорити ще";
@@ -29,7 +32,7 @@
 "Reply by voice" = "Відповісти голосом";
 "Send" = "Надіслати";
 "Copied. Paste into “%@” in Claude: ⌘V and ↩\n\n%@" = "Скопійовано. Вставте в чат «%@» у Claude: ⌘V і ↩\n\n%@";
-"Speak — a 2-second pause sends it. Say “ok” or “thanks” to close, “repeat” to hear the summary again." = "Говоріть — пауза у 2 секунди надішле. «Ок» або «дякую» — закрити, «повтори» — прослухати ще раз.";
+"Speak — a 2-second pause sends it. “Ok” or “thanks” closes, “repeat” replays the summary, “read it all” reads the whole answer." = "Говоріть — пауза у 2 секунди надішле. «Ок» або «дякую» — закрити, «повтори» — ще раз, «прочитай усе» — уся відповідь.";
 "Speaking" = "Говорю";
 "Summary" = "Коротко";
 "Speak into the iPhone…" = "Говоріть в iPhone…";

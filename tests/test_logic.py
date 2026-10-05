@@ -63,6 +63,13 @@ class Commands(unittest.TestCase):
         for t in ("Ок, теперь сделай тесты", "Хорошо", "Okay, so do it"):
             self.assertFalse(v.is_stop(t), t)
 
+    def test_read_it_all(self):
+        self.assertTrue(v.is_full("Прочитай всё."))
+        self.assertTrue(v.is_full("Read it all"))
+        self.assertFalse(v.is_full("Прочитай всё и исправь"))
+        self.assertEqual(v.full_answer("Кратко: Готово. Подробности: тесты прошли.", "Готово."),
+                         "Подробности: тесты прошли")
+
     def test_text_language(self):
         self.assertEqual(v.text_language("Refactored the auth flow, 42 tests pass."), "en")
         self.assertEqual(v.text_language("Готово: обновил README и закоммитил в main"), "ru")
