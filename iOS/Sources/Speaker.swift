@@ -45,12 +45,24 @@ final class Speaker: NSObject, AVSpeechSynthesizerDelegate {
         try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
         try? AVAudioSession.sharedInstance().setActive(true)
         let u = AVSpeechUtterance(string: text)
-        let lang = NLLanguageRecognizer.dominantLanguage(for: text)?.rawValue ?? Locale.current.identifier
+        let lang = Self.voiceLanguage(for: text)
         u.voice = AVSpeechSynthesisVoice(language: lang)
         u.rate = min(rate, AVSpeechUtteranceMaximumSpeechRate)
         synth.stopSpeaking(at: .immediate)
         synth.speak(u)
         speaking = true
+    }
+
+    /// Any Cyrillic → a Russian/Ukrainian voice (an English voice can't read Russian; a Russian
+    /// one copes with English terms). Otherwise the dominant language.
+    static func voiceLanguage(for text: String) -> String {
+        let cyr = text.unicodeScalars.filter { (0x0400...0x04FF).contains($0.value) }
+        if cyr.count >= 2 {
+            let uk = cyr.filter { "іїєґІЇЄҐ".unicodeScalars.contains($0) }.count
+            let ru = cyr.filter { "ыэъёЫЭЪЁ".unicodeScalars.contains($0) }.count
+            return uk > ru ? "uk-UA" : "ru-RU"
+        }
+        return NLLanguageRecognizer.dominantLanguage(for: text)?.rawValue ?? Locale.current.identifier
     }
 
     func stop() {

@@ -850,7 +850,7 @@ NOVELTY_VOICES = {"Albert", "Bad News", "Bahh", "Bells", "Boing", "Bubbles", "Ce
 
 
 def text_language(text):
-    """Rough language of a summary by script and tell-tale letters (en for plain Latin)."""
+    """Language for the voice: Cyrillic wins if there is any; plain Latin is en."""
     letters = [ch for ch in text.lower() if ch.isalpha()]
     if not letters:
         return None
@@ -859,8 +859,10 @@ def text_language(text):
         return "ja"
     if sum("\u4e00" <= ch <= "\u9fff" for ch in letters) > n * 0.3:
         return "zh"
+    # Any Russian word → the Russian voice: an English voice can't read Russian at all, while
+    # Milena copes with English terms (and «translate this to English» answers are mixed).
     cyr = sum("а" <= ch <= "я" or ch in "ёіїєґ" for ch in letters)
-    if cyr > n * 0.4:
+    if cyr >= 2:
         uk = sum(ch in "іїєґ" for ch in letters)
         ru = sum(ch in "ыэъё" for ch in letters)
         return "uk" if uk > ru else "ru"
