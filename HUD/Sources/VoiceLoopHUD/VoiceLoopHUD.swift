@@ -76,6 +76,9 @@ struct Voice: Hashable, Identifiable {
 @MainActor @Observable
 final class Model {
     var current: VoiceState?
+    /// Observed clock: `active` depends on the time, and SwiftUI only re-renders on stored
+    /// properties — without this a «Session released» card stayed until the mouse moved over it.
+    private var now = Date()
     var sessions: [AgentSession] = []  // working / waiting / finished
     var recent: [AgentSession] = []    // idle chats, newest first
     var enabled = FileManager.default.fileExists(atPath: flagURL.path)
@@ -142,9 +145,11 @@ final class Model {
     // MARK: state
 
     /// Active conversation state, or nil when idle (finished states linger briefly).
-    var active: VoiceState? {
+    var active: VoiceState? { activeState(at: now) }
+
+    private func activeState(at date: Date) -> VoiceState? {
         guard let s = current, s.t != dismissedAt else { return nil }
-        let age = Date().timeIntervalSince1970 - s.t
+        let age = date.timeIntervalSince1970 - s.t
         switch s.state {
         case "speaking", "listening", "transcribing", "confirming", "reading", "phone":
             return age < 660 ? s : nil  // hook dies at 180 s
@@ -176,6 +181,8 @@ final class Model {
     /// (sessions also every 5 s, because liveness depends on transcript age).
     func poll() {
         pollDownload()
+        // Bump the clock only when a card should appear/disappear (no re-render every tick).
+        if (activeState(at: Date()) == nil) != (active == nil) { now = Date() }
         enabled = FileManager.default.fileExists(atPath: flagURL.path)
         muted = FileManager.default.fileExists(atPath: mutedURL.path)
         let st = Self.mtime(stateURL)
