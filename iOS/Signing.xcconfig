@@ -1,0 +1,4 @@
+// Your signing team lives in Local.xcconfig (not committed), e.g.:
+//   DEVELOPMENT_TEAM = ABCDE12345
+// Find it with: security find-certificate -c "Apple Development" -p | openssl x509 -noout -subject  (the OU= field)
+#include? "Local.xcconfig"

@@ -90,7 +90,28 @@ final class Model {
     var pairingCode = ""
     var phones = 0
     var onNewPairingCode: (() -> Void)?
-    var expanded = false
+    var expanded = false {
+        didSet {
+            guard expanded != oldValue else { return }
+            if expanded { expandedAt = Date() } else { markFinishedSeen() }
+        }
+    }
+    private var expandedAt = Date.distantPast
+    /// «готово» rows the user has looked at (hovered the panel ≥ 1 s): session id → its `ended`.
+    private var seenFinished = UserDefaults.standard.dictionary(forKey: "seenFinished") as? [String: Double] ?? [:]
+
+    /// Hovering the panel is enough to have seen a finished task: once the mouse leaves,
+    /// it moves to «Недавние» (no need to open the chat any more).
+    private func markFinishedSeen() {
+        guard Date().timeIntervalSince(expandedAt) >= 1 else { return }  // just passing by
+        let done = sessions.filter { $0.status == "finished" }
+        guard !done.isEmpty else { return }
+        for d in done { seenFinished[d.id] = d.ended ?? Date().timeIntervalSince1970 }
+        let cutoff = Date().timeIntervalSince1970 - 86400
+        seenFinished = seenFinished.filter { $0.value > cutoff }
+        UserDefaults.standard.set(seenFinished, forKey: "seenFinished")
+        sessionsCheckedAt = .distantPast  // re-sort on the next tick
+    }
     /// The visible card inside the (larger, transparent) panel, in SwiftUI window coordinates.
     var cardFrame: CGRect = .zero
     /// «Закрыть» on a finished step: hidden until the next state change.
@@ -169,7 +190,7 @@ final class Model {
         if ss != sessionsStamp || Date().timeIntervalSince(sessionsCheckedAt) > 5 {
             sessionsStamp = ss
             sessionsCheckedAt = Date()
-            let all = Self.loadSessions()
+            let all = Self.loadSessions(seen: seenFinished)
             let live = all.filter { $0.status != "idle" }.sorted { $0.since < $1.since }
             let idle = Array(all.filter { $0.status == "idle" }
                 .sorted { ($0.ended ?? $0.updated) > ($1.ended ?? $1.updated) }.prefix(10))
@@ -181,7 +202,7 @@ final class Model {
 
     /// All known sessions. One "in progress" whose transcript hasn't changed for 20 min was most
     /// likely interrupted (no Stop hook fires then), so it is shown as idle.
-    private static func loadSessions() -> [AgentSession] {
+    private static func loadSessions(seen: [String: Double]) -> [AgentSession] {
         guard let data = try? Data(contentsOf: sessionsURL),
               let dict = try? JSONDecoder().decode([String: AgentSession].self, from: data) else { return [] }
         let now = Date().timeIntervalSince1970
@@ -195,9 +216,10 @@ final class Model {
                 lastSeen = max(lastSeen, m.timeIntervalSince1970)
             }
             // «готово» (finished while muted) is news only until seen: after 10 min, or once the
-            // chat was focused in the Claude app after it ended, it moves to «Недавние».
+            // chat was focused in the Claude app after it ended, or the panel was hovered,
+            // it moves to «Недавние».
             if s.status == "finished", let ended = s.ended,
-               now - ended > 10 * 60 || (focusedAt[id] ?? 0) > ended {
+               now - ended > 10 * 60 || (focusedAt[id] ?? 0) > ended || (seen[id] ?? 0) >= ended {
                 s.status = "idle"
             }
             if s.status == "working",
@@ -619,8 +641,10 @@ struct ConversationView: View {
         VStack(alignment: .leading, spacing: 6) {
             header
 
-            LevelBar(level: s.level ?? 0)
-                .opacity(s.state == "listening" ? 1 : 0)
+            if !compact {
+                LevelBar(level: s.level ?? 0)
+                    .opacity(s.state == "listening" ? 1 : 0)
+            }
 
             Group {
                 if s.state == "confirming" && editMode {
@@ -637,23 +661,34 @@ struct ConversationView: View {
                 }
             }
             .font(.system(size: 12))
-            .frame(maxWidth: .infinity, minHeight: Self.textHeight, maxHeight: Self.textHeight, alignment: .topLeading)
+            .frame(maxWidth: .infinity, minHeight: compact ? 0 : Self.textHeight,
+                   maxHeight: compact ? nil : Self.textHeight, alignment: .topLeading)
+            .fixedSize(horizontal: false, vertical: compact)
 
-            TextField(String(localized: "Type a reply and press ↩"), text: $typed)
-                .textFieldStyle(.roundedBorder)
-                .font(.system(size: 12))
-                .onSubmit {
-                    model.reply(typed)
-                    typed = ""
-                }
-                .opacity(replyField ? 1 : 0)
-                .disabled(!replyField)
+            if !compact {
+                TextField(String(localized: "Type a reply and press ↩"), text: $typed)
+                    .textFieldStyle(.roundedBorder)
+                    .font(.system(size: 12))
+                    .onSubmit {
+                        model.reply(typed)
+                        typed = ""
+                    }
+                    .opacity(replyField ? 1 : 0)
+                    .disabled(!replyField)
+            }
 
-            buttonRow
+            if !compact || canUndo { buttonRow }
         }
         .padding(.horizontal, 12)
         .padding(.top, 10)
         .padding(.bottom, 10)
+    }
+
+    /// Finished step (sent / released / error): nothing left to do but read it, so the card
+    /// shrinks to its content instead of keeping the tall fixed conversation layout.
+    private var compact: Bool { ["sent", "released", "error"].contains(s.state) }
+    private var canUndo: Bool {
+        s.state == "sent" && s.cancellable == true && s.delivery != "clipboard" && s.session_id != nil && !cancelled
     }
 
     private var replyField: Bool { ["speaking", "listening", "reading"].contains(s.state) }

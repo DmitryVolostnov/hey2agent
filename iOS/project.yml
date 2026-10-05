@@ -13,6 +13,9 @@ targets:
     sources: [Sources, Assets.xcassets, Resources]
     dependencies:
       - package: VoiceLoopLink
+    configFiles:
+      Debug: Signing.xcconfig
+      Release: Signing.xcconfig
     info:
       path: Info.plist
       properties:
