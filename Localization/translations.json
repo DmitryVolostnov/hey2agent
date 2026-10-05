@@ -143,7 +143,8 @@
   "Light": "Светлое",
   "Dark": "Тёмное",
   "Tap a chat to open it on the Mac": "Нажмите на чат — он откроется на Mac",
-  "The mic button dictates a message into that chat.": "Кнопка микрофона — надиктовать сообщение в этот чат."
+  "The mic button dictates a message into that chat.": "Кнопка микрофона — надиктовать сообщение в этот чат.",
+  "Quit (turns voice off)": "Выйти (голос выключится)"
  },
  "uk": {
   "Recent": "Нещодавні",
@@ -289,7 +290,8 @@
   "Light": "Світле",
   "Dark": "Темне",
   "Tap a chat to open it on the Mac": "Натисніть на чат — він відкриється на Mac",
-  "The mic button dictates a message into that chat.": "Кнопка мікрофона — надиктувати повідомлення в цей чат."
+  "The mic button dictates a message into that chat.": "Кнопка мікрофона — надиктувати повідомлення в цей чат.",
+  "Quit (turns voice off)": "Вийти (голос вимкнеться)"
  },
  "de": {
   "Recent": "Zuletzt",
@@ -435,7 +437,8 @@
   "Light": "Hell",
   "Dark": "Dunkel",
   "Tap a chat to open it on the Mac": "Tippe auf einen Chat, um ihn am Mac zu öffnen",
-  "The mic button dictates a message into that chat.": "Mit dem Mikrofon diktierst du eine Nachricht in diesen Chat."
+  "The mic button dictates a message into that chat.": "Mit dem Mikrofon diktierst du eine Nachricht in diesen Chat.",
+  "Quit (turns voice off)": "Beenden (Sprache aus)"
  },
  "es": {
   "Recent": "Recientes",
@@ -581,7 +584,8 @@
   "Light": "Claro",
   "Dark": "Oscuro",
   "Tap a chat to open it on the Mac": "Toca un chat para abrirlo en el Mac",
-  "The mic button dictates a message into that chat.": "El botón del micrófono dicta un mensaje en ese chat."
+  "The mic button dictates a message into that chat.": "El botón del micrófono dicta un mensaje en ese chat.",
+  "Quit (turns voice off)": "Salir (apaga la voz)"
  },
  "fr": {
   "Recent": "Récents",
@@ -727,7 +731,8 @@
   "Light": "Clair",
   "Dark": "Sombre",
   "Tap a chat to open it on the Mac": "Touchez une conversation pour l’ouvrir sur le Mac",
-  "The mic button dictates a message into that chat.": "Le bouton micro dicte un message dans cette conversation."
+  "The mic button dictates a message into that chat.": "Le bouton micro dicte un message dans cette conversation.",
+  "Quit (turns voice off)": "Quitter (coupe la voix)"
  },
  "pt-BR": {
   "Recent": "Recentes",
@@ -873,7 +878,8 @@
   "Light": "Claro",
   "Dark": "Escuro",
   "Tap a chat to open it on the Mac": "Toque num chat para abri-lo no Mac",
-  "The mic button dictates a message into that chat.": "O botão do microfone dita uma mensagem nesse chat."
+  "The mic button dictates a message into that chat.": "O botão do microfone dita uma mensagem nesse chat.",
+  "Quit (turns voice off)": "Sair (desliga a voz)"
  },
  "it": {
   "Recent": "Recenti",
@@ -1019,7 +1025,8 @@
   "Light": "Chiaro",
   "Dark": "Scuro",
   "Tap a chat to open it on the Mac": "Tocca una chat per aprirla sul Mac",
-  "The mic button dictates a message into that chat.": "Il pulsante del microfono detta un messaggio in quella chat."
+  "The mic button dictates a message into that chat.": "Il pulsante del microfono detta un messaggio in quella chat.",
+  "Quit (turns voice off)": "Esci (disattiva la voce)"
  },
  "ja": {
   "Recent": "最近",
@@ -1165,7 +1172,8 @@
   "Light": "ライト",
   "Dark": "ダーク",
   "Tap a chat to open it on the Mac": "チャットをタップするとMacで開きます",
-  "The mic button dictates a message into that chat.": "マイクボタンでそのチャットに音声入力できます。"
+  "The mic button dictates a message into that chat.": "マイクボタンでそのチャットに音声入力できます。",
+  "Quit (turns voice off)": "終了（音声オフ）"
  },
  "zh-Hans": {
   "Recent": "最近",
@@ -1311,6 +1319,7 @@
   "Light": "浅色",
   "Dark": "深色",
   "Tap a chat to open it on the Mac": "轻点聊天即可在 Mac 上打开",
-  "The mic button dictates a message into that chat.": "麦克风按钮可向该聊天语音输入消息。"
+  "The mic button dictates a message into that chat.": "麦克风按钮可向该聊天语音输入消息。",
+  "Quit (turns voice off)": "退出（关闭语音）"
  }
 }

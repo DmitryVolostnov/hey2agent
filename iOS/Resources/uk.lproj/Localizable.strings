@@ -82,7 +82,7 @@
 "Open at login" = "Відкривати під час входу";
 "Show panel" = "Показувати панель";
 "Open log" = "Відкрити лог";
-"Quit" = "Вийти";
+"Quit (turns voice off)" = "Вийти (голос вимкнеться)";
 "No microphone access. Allow it for hey2agent: System Settings → Privacy & Security → Microphone." = "Немає доступу до мікрофона. Дозвольте його для hey2agent: Системні параметри → Приватність і безпека → Мікрофон.";
 "Something went wrong: %@" = "Щось пішло не так: %@";
 "Light" = "Світле";

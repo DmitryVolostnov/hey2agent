@@ -82,7 +82,7 @@
 "Open at login" = "Abrir ao iniciar sessão";
 "Show panel" = "Mostrar painel";
 "Open log" = "Abrir registro";
-"Quit" = "Encerrar";
+"Quit (turns voice off)" = "Sair (desliga a voz)";
 "No microphone access. Allow it for hey2agent: System Settings → Privacy & Security → Microphone." = "Sem acesso ao microfone. Permita para o hey2agent: Ajustes do Sistema → Privacidade e Segurança → Microfone.";
 "Something went wrong: %@" = "Algo deu errado: %@";
 "Light" = "Claro";

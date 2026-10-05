@@ -82,7 +82,7 @@
  "Open at login",
  "Show panel",
  "Open log",
- "Quit",
+ "Quit (turns voice off)",
  "No microphone access. Allow it for hey2agent: System Settings → Privacy & Security → Microphone.",
  "Something went wrong: %@",
  "Light",

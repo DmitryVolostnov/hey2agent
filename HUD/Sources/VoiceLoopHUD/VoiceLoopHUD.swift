@@ -1004,7 +1004,7 @@ struct SettingsMenu: View {
             Toggle(String(localized: "Open at login"), isOn: $model.launchAtLogin)
             Toggle(String(localized: "Show panel"), isOn: $model.showHUD)
             Button(String(localized: "Open log")) { NSWorkspace.shared.open(logURL) }
-            Button(String(localized: "Quit")) { NSApp.terminate(nil) }
+            Button(String(localized: "Quit (turns voice off)")) { NSApp.terminate(nil) }
         } label: {
             Image(systemName: "gearshape")
         }
@@ -1134,8 +1134,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return false
     }
 
+    /// Quitting the panel turns voice mode off (otherwise the script keeps speaking and listening
+    /// with nothing on screen); the next launch restores it.
+    func applicationWillTerminate(_ notification: Notification) {
+        UserDefaults.standard.set(model.enabled, forKey: "voiceWasOn")
+        if model.enabled { model.setEnabled(false) }
+        try? FileManager.default.removeItem(at: stateDir.appendingPathComponent("remote"))
+    }
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
+        try? FileManager.default.removeItem(at: stateDir.appendingPathComponent("remote"))  // stale
+        if UserDefaults.standard.bool(forKey: "voiceWasOn") {
+            model.setEnabled(true)
+            UserDefaults.standard.removeObject(forKey: "voiceWasOn")
+        }
         panel = HUDPanel(model: model)
         let server = LinkServer(model: model)
         link = server
@@ -1204,6 +1217,6 @@ struct MenuContent: View {
         Toggle(String(localized: "Show panel"), isOn: $model.showHUD)
         Toggle(String(localized: "Open at login"), isOn: $model.launchAtLogin)
         Divider()
-        Button(String(localized: "Quit")) { NSApp.terminate(nil) }.keyboardShortcut("q")
+        Button(String(localized: "Quit (turns voice off)")) { NSApp.terminate(nil) }.keyboardShortcut("q")
     }
 }

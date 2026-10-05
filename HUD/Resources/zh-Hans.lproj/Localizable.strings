@@ -82,7 +82,7 @@
 "Open at login" = "登录时打开";
 "Show panel" = "显示面板";
 "Open log" = "打开日志";
-"Quit" = "退出";
+"Quit (turns voice off)" = "退出（关闭语音）";
 "No microphone access. Allow it for hey2agent: System Settings → Privacy & Security → Microphone." = "无法访问麦克风。请为 hey2agent 开启权限：系统设置 → 隐私与安全性 → 麦克风。";
 "Something went wrong: %@" = "出现问题：%@";
 "Light" = "浅色";
