@@ -653,25 +653,27 @@ struct ConversationView: View {
                     .opacity(s.state == "listening" ? 1 : 0)
             }
 
-            Group {
-                if s.state == "confirming" && editMode {
-                    TextField(String(localized: "Edit and press ↩"), text: $typed, axis: .vertical)
-                        .textFieldStyle(.roundedBorder)
-                        .lineLimit(1...5)
-                        .focused($editing)
-                        .onSubmit { model.reply(typed) }
-                } else {
-                    Text(bodyText ?? "")
-                        .foregroundStyle(s.state == "speaking" || (s.state == "listening" && (s.text ?? "").isEmpty)
-                                         ? .secondary : .primary)
-                        .lineLimit(4)
-                        .textSelection(.enabled)
+            if !(compact && (bodyText ?? "").isEmpty) {  // «Session released»: just the header
+                Group {
+                    if s.state == "confirming" && editMode {
+                        TextField(String(localized: "Edit and press ↩"), text: $typed, axis: .vertical)
+                            .textFieldStyle(.roundedBorder)
+                            .lineLimit(1...5)
+                            .focused($editing)
+                            .onSubmit { model.reply(typed) }
+                    } else {
+                        Text(bodyText ?? "")
+                            .foregroundStyle(s.state == "speaking" || (s.state == "listening" && (s.text ?? "").isEmpty)
+                                             ? .secondary : .primary)
+                            .lineLimit(4)
+                            .textSelection(.enabled)
+                    }
                 }
+                .font(.system(size: 12))
+                .frame(maxWidth: .infinity, minHeight: compact ? 0 : Self.textHeight,
+                       maxHeight: compact ? nil : Self.textHeight, alignment: .topLeading)
+                .fixedSize(horizontal: false, vertical: compact)
             }
-            .font(.system(size: 12))
-            .frame(maxWidth: .infinity, minHeight: compact ? 0 : Self.textHeight,
-                   maxHeight: compact ? nil : Self.textHeight, alignment: .topLeading)
-            .fixedSize(horizontal: false, vertical: compact)
 
             if !compact {
                 TextField(String(localized: "Type a reply and press ↩"), text: $typed)

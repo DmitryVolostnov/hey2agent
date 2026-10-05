@@ -234,14 +234,16 @@ struct ConversationCard: View {
 
             // Fixed height for every live step so the buttons below never move between states;
             // a finished step (sent / cancelled / error) shrinks to its text.
-            Text((recording ? state.summary : bodyText) ?? "")
-                .font(.title3)
-                .foregroundStyle(state.state == "speaking" || recording ? .secondary : .primary)
-                .lineLimit(6)
-                .textSelection(.enabled)
-                .frame(maxWidth: .infinity, minHeight: compact ? 0 : 150, maxHeight: compact ? nil : 150,
-                       alignment: .topLeading)
-                .fixedSize(horizontal: false, vertical: compact)
+            if !(compact && (bodyText ?? "").isEmpty) {  // «Session released»: just the header
+                Text((recording ? state.summary : bodyText) ?? "")
+                    .font(.title3)
+                    .foregroundStyle(state.state == "speaking" || recording ? .secondary : .primary)
+                    .lineLimit(6)
+                    .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, minHeight: compact ? 0 : 150, maxHeight: compact ? nil : 150,
+                           alignment: .topLeading)
+                    .fixedSize(horizontal: false, vertical: compact)
+            }
 
             let field = !recording && (editing || ["speaking", "listening", "reading", "phone"].contains(state.state))
             if !compact {
