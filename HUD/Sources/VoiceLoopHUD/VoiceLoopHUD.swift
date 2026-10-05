@@ -694,7 +694,7 @@ struct ConversationView: View {
 
     /// Finished step (sent / released / error): nothing left to do but read it, so the card
     /// shrinks to its content instead of keeping the tall fixed conversation layout.
-    private var compact: Bool { ["sent", "released", "error"].contains(s.state) }
+    private var compact: Bool { ["released", "error"].contains(s.state) || (s.state == "sent" && !canUndo) }
     private var canUndo: Bool {
         s.state == "sent" && s.cancellable == true && s.delivery != "clipboard" && s.session_id != nil && !cancelled
     }
@@ -757,8 +757,6 @@ struct ConversationView: View {
                         .help(String(localized: "Keep the text and dictate more"))
                     Button(String(localized: "Say again")) { model.send("again") }
                 }
-                .buttonStyle(.link)
-                .font(.system(size: 11))
             default:
                 EmptyView()
             }
@@ -774,8 +772,9 @@ struct ConversationView: View {
         case "speaking", "listening", "confirming", "reading":
             Button(String(localized: "Cancel")) { model.send("cancel") }
         case "sent" where s.cancellable == true && s.delivery != "clipboard" && !cancelled:
+            // Same «Cancel» in the same spot as a moment ago: the message looked sent already.
             if let sid = s.session_id {
-                Button(String(localized: "Undo")) {
+                Button(String(localized: "Cancel")) {
                     model.cancelSent(sid)
                     cancelled = true
                 }
@@ -797,8 +796,8 @@ struct ConversationView: View {
             .keyboardShortcut(.defaultAction)
         case "listening":
             Button(String(localized: "Send")) { model.send("send") }.keyboardShortcut(.defaultAction)
-        case "confirming":
-            Button(editMode ? String(localized: "Send") : String(localized: "Send now")) {
+        case "confirming" where editMode || s.left == nil:
+            Button(String(localized: "Send")) {
                 editMode ? model.reply(typed) : model.send("send")
             }
             .keyboardShortcut(.defaultAction)
@@ -814,7 +813,7 @@ struct ConversationView: View {
         case "speaking", "reading": s.summary
         case _ where s.state == "sent" && s.delivery == "clipboard":
             String(localized: "Copied. Paste into “\(s.project ?? "")” in Claude: ⌘V and ↩\n\n\(s.text ?? "")")
-        case "listening" where (s.text ?? "").isEmpty: String(localized: "Say “ok” to close")
+        case "listening" where (s.text ?? "").isEmpty: String(localized: "Speak — a 2-second pause sends it. Say “ok” or “thanks” to close, “repeat” to hear the summary again.")
         case "listening", "transcribing", "sent": s.text
         case "confirming": editMode ? nil : s.text
         case "error": errorText(code: s.code, detail: s.text)
@@ -829,8 +828,10 @@ struct ConversationView: View {
         case "phone": String(localized: "Speak into the iPhone…")
         case "listening": String(localized: "Listening")
         case "transcribing": String(localized: "Transcribing…")
+        // Shown as sent right away (it really goes out after the undo window); only «Cancel»
+        // and the fix-it buttons tell it can still be taken back.
         case "confirming": editMode ? String(localized: "Edit the text")
-            : s.left.map { String(localized: "Sending in \(Int($0.rounded(.up))) s") } ?? String(localized: "Sending when you press ↩")
+            : s.left == nil ? String(localized: "Sending when you press ↩") : String(localized: "Sent")
         case "sent" where cancelled: String(localized: "Cancelled, Claude will stop")
         case "sent": s.delivery == "clipboard" ? String(localized: "In the clipboard") : s.delivery == "queued" ? String(localized: "Added to Codex") : String(localized: "Sent")
         case "released": String(localized: "Session released")
@@ -846,6 +847,7 @@ struct ConversationView: View {
         case "phone": Image(systemName: "iphone.radiowaves.left.and.right").foregroundStyle(.red)
         case "listening": Image(systemName: "mic.fill").foregroundStyle(.red)
         case "transcribing": ProgressView().controlSize(.small)
+        case "confirming" where !editMode && s.left != nil: Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
         case "confirming": Image(systemName: "paperplane").foregroundStyle(.blue)
         case "error": Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
         case "sent": Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)

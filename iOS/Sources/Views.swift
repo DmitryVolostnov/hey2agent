@@ -298,7 +298,9 @@ struct ConversationCard: View {
     }
 
     private var recording: Bool { recorder?.active == true }
-    private var compact: Bool { !recording && ["sent", "released", "error"].contains(state.state) }
+    private var compact: Bool {
+        !recording && (["released", "error"].contains(state.state) || (state.state == "sent" && !canUndo))
+    }
     private var canUndo: Bool {
         state.state == "sent" && state.cancellable == true && state.delivery != "clipboard" && !cancelled
     }
@@ -308,6 +310,15 @@ struct ConversationCard: View {
         guard !t.isEmpty else { return }
         send(.reply(t))
         typed = ""
+    }
+
+    private func cancelWide(_ action: @escaping () -> Void) -> some View {
+        Button(role: .destructive, action: action) {
+            Text(String(localized: "Cancel")).frame(maxWidth: .infinity)
+        }
+        .glassButton()
+        .tint(.red)
+        .lineLimit(1)
     }
 
     /// Icon above a one-line caption: three of these fit side by side on any iPhone.
@@ -410,30 +421,25 @@ struct ConversationCard: View {
                         smallAction(String(localized: "Add more"), "plus.bubble") { send(.control("append")) }
                         smallAction(String(localized: "Again"), "arrow.counterclockwise") { send(.control("again")) }
                     }
-                    HStack(spacing: 10) {
-                        Button(role: .destructive, action: cancel) {
-                            Text(String(localized: "Cancel")).frame(maxWidth: .infinity)
-                        }
-                        .glassButton()
-                        .tint(.red)
-                        Button { send(.control("send")) } label: {
-                            Text(String(localized: "Send now")).frame(maxWidth: .infinity)
-                        }
-                        .glassButton(prominent: true)
-                    }
-                    .lineLimit(1)
+                    cancelWide(cancel)
                 }
             case "confirming":
                 Button(String(localized: "Cancel"), action: cancel).glassButton()
                 Spacer()
-            case "sent" where state.cancellable == true && state.delivery != "clipboard" && !cancelled:
-                Spacer()
-                Button(String(localized: "Undo")) {
-                    if let sid = state.session_id { send(.cancelSent(session: sid)) }
-                    cancelled = true
+            case "sent" where canUndo:
+                // Same «Cancel» in the same place as a moment ago (the message looked sent already).
+                VStack(spacing: 12) {
+                    HStack(spacing: 8) {
+                        smallAction(String(localized: "Edit"), "pencil") {}
+                        smallAction(String(localized: "Add more"), "plus.bubble") {}
+                        smallAction(String(localized: "Again"), "arrow.counterclockwise") {}
+                    }
+                    .hidden()
+                    cancelWide {
+                        if let sid = state.session_id { send(.cancelSent(session: sid)) }
+                        cancelled = true
+                    }
                 }
-                .glassButton()
-                .tint(.red)
             default:
                 EmptyView()
             }
@@ -452,7 +458,7 @@ struct ConversationCard: View {
             state.code == "no_mic"
                 ? String(localized: "No microphone access on the Mac. Allow it for hey2agent in System Settings → Privacy & Security → Microphone.")
                 : String(localized: "Something went wrong: \(state.text ?? "")")
-        case "listening" where (state.text ?? "").isEmpty: String(localized: "Say “ok” to close")
+        case "listening" where (state.text ?? "").isEmpty: String(localized: "Speak — a 2-second pause sends it. Say “ok” or “thanks” to close, “repeat” to hear the summary again.")
         case "listening", "transcribing", "sent": state.text
         default: nil
         }
@@ -465,8 +471,7 @@ struct ConversationCard: View {
         case "listening": String(localized: "Listening")
         case "transcribing": String(localized: "Transcribing…")
         case "phone": String(localized: "Listening to the phone")
-        case "confirming": editing ? String(localized: "Edit the text")
-            : state.left.map { String(localized: "Sending in \(Int($0.rounded(.up))) s") } ?? String(localized: "Sending")
+        case "confirming": editing ? String(localized: "Edit the text") : String(localized: "Sent")
         case "sent": state.delivery == "clipboard" ? String(localized: "In the clipboard") : String(localized: "Sent")
         case "released": String(localized: "Session released")
         case "error": String(localized: "Didn’t work")
@@ -481,6 +486,7 @@ struct ConversationCard: View {
         case "listening": Image(systemName: "mic.fill").foregroundStyle(.red)
         case "transcribing": ProgressView()
         case "phone": Image(systemName: "iphone.radiowaves.left.and.right").foregroundStyle(.red)
+        case "confirming" where !editing: Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
         case "confirming": Image(systemName: "paperplane").foregroundStyle(.blue)
         case "sent": Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
         case "error": Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)

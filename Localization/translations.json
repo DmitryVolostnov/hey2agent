@@ -146,7 +146,8 @@
     "The mic button dictates a message into that chat.": "Кнопка микрофона — надиктовать сообщение в этот чат.",
     "Quit (turns voice off)": "Выйти (голос выключится)",
     "Speech speed": "Скорость речи",
-    "Say “ok” to close": "Скажите “ок”, чтобы закрыть"
+    "Say “ok” to close": "Скажите “ок”, чтобы закрыть",
+    "Speak — a 2-second pause sends it. Say “ok” or “thanks” to close, “repeat” to hear the summary again.": "Говорите — пауза в 2 секунды отправит. «Ок» или «спасибо» — закрыть, «повтори» — прослушать сводку ещё раз."
   },
   "uk": {
     "Recent": "Нещодавні",
@@ -295,7 +296,8 @@
     "The mic button dictates a message into that chat.": "Кнопка мікрофона — надиктувати повідомлення в цей чат.",
     "Quit (turns voice off)": "Вийти (голос вимкнеться)",
     "Speech speed": "Швидкість мовлення",
-    "Say “ok” to close": "Скажіть “ок”, щоб закрити"
+    "Say “ok” to close": "Скажіть “ок”, щоб закрити",
+    "Speak — a 2-second pause sends it. Say “ok” or “thanks” to close, “repeat” to hear the summary again.": "Говоріть — пауза у 2 секунди надішле. «Ок» або «дякую» — закрити, «повтори» — прослухати ще раз."
   },
   "de": {
     "Recent": "Zuletzt",
@@ -444,7 +446,8 @@
     "The mic button dictates a message into that chat.": "Mit dem Mikrofon diktierst du eine Nachricht in diesen Chat.",
     "Quit (turns voice off)": "Beenden (Sprache aus)",
     "Speech speed": "Sprechtempo",
-    "Say “ok” to close": "Sag „ok“, um zu schließen"
+    "Say “ok” to close": "Sag „ok“, um zu schließen",
+    "Speak — a 2-second pause sends it. Say “ok” or “thanks” to close, “repeat” to hear the summary again.": "Sprich — 2 Sekunden Pause senden. „Ok“ oder „danke“ schließt, „wiederholen“ spielt die Zusammenfassung erneut."
   },
   "es": {
     "Recent": "Recientes",
@@ -593,7 +596,8 @@
     "The mic button dictates a message into that chat.": "El botón del micrófono dicta un mensaje en ese chat.",
     "Quit (turns voice off)": "Salir (apaga la voz)",
     "Speech speed": "Velocidad de voz",
-    "Say “ok” to close": "Di “ok” para cerrar"
+    "Say “ok” to close": "Di “ok” para cerrar",
+    "Speak — a 2-second pause sends it. Say “ok” or “thanks” to close, “repeat” to hear the summary again.": "Habla: una pausa de 2 segundos lo envía. «Ok» o «gracias» cierra, «repite» vuelve a leer el resumen."
   },
   "fr": {
     "Recent": "Récents",
@@ -742,7 +746,8 @@
     "The mic button dictates a message into that chat.": "Le bouton micro dicte un message dans cette conversation.",
     "Quit (turns voice off)": "Quitter (coupe la voix)",
     "Speech speed": "Vitesse de la voix",
-    "Say “ok” to close": "Dites « ok » pour fermer"
+    "Say “ok” to close": "Dites « ok » pour fermer",
+    "Speak — a 2-second pause sends it. Say “ok” or “thanks” to close, “repeat” to hear the summary again.": "Parlez — une pause de 2 secondes envoie. « Ok » ou « merci » ferme, « répète » relit le résumé."
   },
   "pt-BR": {
     "Recent": "Recentes",
@@ -891,7 +896,8 @@
     "The mic button dictates a message into that chat.": "O botão do microfone dita uma mensagem nesse chat.",
     "Quit (turns voice off)": "Sair (desliga a voz)",
     "Speech speed": "Velocidade da fala",
-    "Say “ok” to close": "Diga “ok” para fechar"
+    "Say “ok” to close": "Diga “ok” para fechar",
+    "Speak — a 2-second pause sends it. Say “ok” or “thanks” to close, “repeat” to hear the summary again.": "Fale — uma pausa de 2 segundos envia. “Ok” ou “obrigado” fecha, “repete” lê o resumo de novo."
   },
   "it": {
     "Recent": "Recenti",
@@ -1040,7 +1046,8 @@
     "The mic button dictates a message into that chat.": "Il pulsante del microfono detta un messaggio in quella chat.",
     "Quit (turns voice off)": "Esci (disattiva la voce)",
     "Speech speed": "Velocità della voce",
-    "Say “ok” to close": "Di’ “ok” per chiudere"
+    "Say “ok” to close": "Di’ “ok” per chiudere",
+    "Speak — a 2-second pause sends it. Say “ok” or “thanks” to close, “repeat” to hear the summary again.": "Parla: una pausa di 2 secondi invia. «Ok» o «grazie» chiude, «ripeti» rilegge il riepilogo."
   },
   "ja": {
     "Recent": "最近",
@@ -1189,7 +1196,8 @@
     "The mic button dictates a message into that chat.": "マイクボタンでそのチャットに音声入力できます。",
     "Quit (turns voice off)": "終了（音声オフ）",
     "Speech speed": "読み上げ速度",
-    "Say “ok” to close": "「OK」と言うと閉じます"
+    "Say “ok” to close": "「OK」と言うと閉じます",
+    "Speak — a 2-second pause sends it. Say “ok” or “thanks” to close, “repeat” to hear the summary again.": "話してください。2秒黙ると送信。「OK」「ありがとう」で閉じる、「もう一度」で要約を再生。"
   },
   "zh-Hans": {
     "Recent": "最近",
@@ -1338,6 +1346,7 @@
     "The mic button dictates a message into that chat.": "麦克风按钮可向该聊天语音输入消息。",
     "Quit (turns voice off)": "退出（关闭语音）",
     "Speech speed": "语速",
-    "Say “ok” to close": "说“好的”即可关闭"
+    "Say “ok” to close": "说“好的”即可关闭",
+    "Speak — a 2-second pause sends it. Say “ok” or “thanks” to close, “repeat” to hear the summary again.": "请说话，停顿 2 秒即发送。说“好的”或“谢谢”关闭，说“重复”再听一遍摘要。"
   }
 }
