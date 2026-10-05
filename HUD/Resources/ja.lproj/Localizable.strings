@@ -100,6 +100,7 @@
 "Reconnecting…" = "再接続中…";
 "Mute" = "消音";
 "Read summaries aloud" = "要約を読み上げる";
+"Speech speed" = "読み上げ速度";
 "Listen after reading" = "読み上げ後に聞き取る";
 "Appearance" = "外観";
 "Unpair Mac" = "Macのペアリングを解除";

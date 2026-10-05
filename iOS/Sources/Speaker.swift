@@ -13,6 +13,13 @@ final class Speaker: NSObject, AVSpeechSynthesizerDelegate {
     var listenAfter = UserDefaults.standard.object(forKey: "listenAfter") as? Bool ?? true {
         didSet { UserDefaults.standard.set(listenAfter, forKey: "listenAfter") }
     }
+    /// Speech speed multiplier; iOS's default rate is noticeably slower than the Mac's `say -r 200`.
+    static let speeds: [Double] = [1, 1.25, 1.5, 1.75]
+    var speed = UserDefaults.standard.object(forKey: "speechSpeed") as? Double ?? 1.5 {
+        didSet { UserDefaults.standard.set(speed, forKey: "speechSpeed") }
+    }
+    /// The utterance rate scale is non-linear (0.5 = default, 1 = max), so the steps are small.
+    private var rate: Float { Float(AVSpeechUtteranceDefaultSpeechRate) + Float(speed - 1) * 0.16 }
     /// Called when an utterance finished on its own (not when stopped).
     var onFinished: (() -> Void)?
     private let synth = AVSpeechSynthesizer()
@@ -32,6 +39,7 @@ final class Speaker: NSObject, AVSpeechSynthesizerDelegate {
         let u = AVSpeechUtterance(string: text)
         let lang = NLLanguageRecognizer.dominantLanguage(for: text)?.rawValue ?? Locale.current.identifier
         u.voice = AVSpeechSynthesisVoice(language: lang)
+        u.rate = min(rate, AVSpeechUtteranceMaximumSpeechRate)
         synth.stopSpeaking(at: .immediate)
         synth.speak(u)
         speaking = true

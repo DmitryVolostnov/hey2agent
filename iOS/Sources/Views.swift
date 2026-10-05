@@ -142,6 +142,11 @@ struct RemoteView: View {
                 // iOS has a per-app language switch in Settings; open it.
                 Toggle(String(localized: "Read summaries aloud"), isOn: Binding(
                     get: { model.speaker.enabled }, set: { model.speaker.enabled = $0 }))
+                Picker(String(localized: "Speech speed"), selection: Binding(
+                    get: { model.speaker.speed }, set: { model.speaker.speed = $0 })) {
+                    ForEach(Speaker.speeds, id: \.self) { Text("\($0.formatted())×").tag($0) }
+                }
+                .pickerStyle(.menu)
                 Toggle(String(localized: "Listen after reading"), isOn: Binding(
                     get: { model.speaker.listenAfter }, set: { model.speaker.listenAfter = $0 }))
                 Picker(String(localized: "Appearance"), selection: $appearance) {
