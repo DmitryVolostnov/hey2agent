@@ -9,6 +9,11 @@
 <p align="center"><a href="README.md">English</a> · <b>Русский</b></p>
 
 <p align="center">
+  <a href="docs/demo.mp4"><img src="docs/demo-poster.jpg" width="860" alt="Демо hey2agent: Claude и Codex заканчивают, сводка звучит вслух, ответ надиктован"></a><br>
+  <a href="docs/demo.mp4"><b>▶ Смотреть демо (80 с, со звуком)</b></a>
+</p>
+
+<p align="center">
   <img src="docs/speaking.png" width="420" alt="Озвучка саммари">
   <img src="docs/confirming.png" width="420" alt="Ответ и 3 секунды на отмену">
 </p>
