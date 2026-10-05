@@ -8,21 +8,25 @@ Local speech recognition · Russian + English · macOS menu-bar panel</p>
 
 <p align="center"><b>English</b> · <a href="README.ru.md">Русский</a></p>
 
-
+<p align="center">
+  <a href="#quick-start"><img src="https://img.shields.io/badge/Install-2_minutes-D97757?style=for-the-badge" alt="Install 2 minutes"></a>
+  <a href="#iphone-walk-away-from-the-mac"><img src="https://img.shields.io/badge/iPhone-app-555555?style=for-the-badge" alt="iPhone app"></a>
+  <a href="#license"><img src="https://img.shields.io/badge/Free-MIT-555555?style=for-the-badge" alt="Free MIT"></a>
+</p>
 
 https://github.com/user-attachments/assets/83b9c3ef-3cdf-47e6-b128-8a782efac8f4
 
-
-
-<p align="center">
-  <img src="docs/demo.gif" width="860" alt="hey2agent demo: Claude and Codex finish, the summary is read aloud, the reply is dictated"><br>
-  <sub>With sound: <a href="https://github.com/DmitryVolostnov/hey2agent/raw/main/docs/demo.mp4">the full video</a> (80 s, 3 MB)</sub>
-</p>
-
-<p align="center">
-  <img src="docs/speaking.png" width="420" alt="Agent finished: summary is read aloud">
-  <img src="docs/confirming.png" width="420" alt="Your reply, 3 seconds to undo">
-</p>
+## Quick start
+You need macOS 15+ on Apple silicon, [Homebrew](https://brew.sh) and Claude Code. Paste these three lines
+into Claude Code, one by one:
+```
+/plugin marketplace add DmitryVolostnov/hey2agent
+/plugin install hey2agent@hey2agent
+/hey2agent:setup
+```
+Setup checks your Mac, asks before installing anything (`whisper-cpp`, `ffmpeg`, a speech model), builds
+the panel and turns voice on. Then just finish a task in Claude Code — you'll hear the summary and a *tink*.
+Using Codex too? Setup offers to connect it. No plugins? See [manual install](#manual-install).
 
 ## What it does
 ```
@@ -78,19 +82,8 @@ Summaries are read by a voice of their language: any Russian in it → the Russi
 While voice mode is on, the agent is asked to start every answer with a one-line **Summary:**
 («Кратко:» in Russian) — only that line is read aloud.
 
-## Install
+## Manual install
 Requirements: macOS 15+ on Apple silicon, Python 3, [Homebrew](https://brew.sh).
-
-**As a Claude Code plugin** (recommended) — run inside Claude Code:
-```
-/plugin marketplace add DmitryVolostnov/hey2agent
-/plugin install hey2agent@hey2agent
-/hey2agent:setup
-```
-`/hey2agent:setup` checks your Mac, asks before installing `whisper-cpp`/`ffmpeg`, lets you pick a speech
-model, builds the panel and turns voice mode on.
-
-**Manually:**
 
 ```bash
 brew install whisper-cpp ffmpeg

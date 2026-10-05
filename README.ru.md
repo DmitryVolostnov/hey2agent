@@ -9,14 +9,24 @@
 <p align="center"><a href="README.md">English</a> · <b>Русский</b></p>
 
 <p align="center">
-  <img src="docs/demo.gif" width="860" alt="Демо hey2agent: Claude и Codex заканчивают, сводка звучит вслух, ответ надиктован"><br>
-  <sub>Со звуком: <a href="https://github.com/DmitryVolostnov/hey2agent/raw/main/docs/demo.mp4">полное видео</a> (80 с, 3 МБ)</sub>
+  <a href="#быстрый-старт"><img src="https://img.shields.io/badge/%D0%A3%D1%81%D1%82%D0%B0%D0%BD%D0%BE%D0%B2%D0%B8%D1%82%D1%8C-2_%D0%BC%D0%B8%D0%BD%D1%83%D1%82%D1%8B-D97757?style=for-the-badge" alt="Установить 2 минуты"></a>
+  <a href="#iphone-отойти-от-компьютера"><img src="https://img.shields.io/badge/iPhone-%D0%BF%D1%80%D0%B8%D0%BB%D0%BE%D0%B6%D0%B5%D0%BD%D0%B8%D0%B5-555555?style=for-the-badge" alt="iPhone приложение"></a>
+  <a href="#лицензия"><img src="https://img.shields.io/badge/%D0%91%D0%B5%D1%81%D0%BF%D0%BB%D0%B0%D1%82%D0%BD%D0%BE-MIT-555555?style=for-the-badge" alt="Бесплатно MIT"></a>
 </p>
 
-<p align="center">
-  <img src="docs/speaking.png" width="420" alt="Озвучка саммари">
-  <img src="docs/confirming.png" width="420" alt="Ответ и 3 секунды на отмену">
-</p>
+https://github.com/user-attachments/assets/83b9c3ef-3cdf-47e6-b128-8a782efac8f4
+
+## Быстрый старт
+Нужны macOS 15+ на Apple Silicon, [Homebrew](https://brew.sh) и Claude Code. Вставьте в Claude Code по очереди
+три строки:
+```
+/plugin marketplace add DmitryVolostnov/hey2agent
+/plugin install hey2agent@hey2agent
+/hey2agent:setup
+```
+Настройка проверит Mac, спросит перед установкой (`whisper-cpp`, `ffmpeg`, модель распознавания), соберёт
+плашку и включит голос. Дальше просто дождитесь, пока Claude закончит задачу: прозвучит сводка и *дзынь*.
+Пользуетесь Codex? Настройка предложит подключить и его. Без плагинов — [установка вручную](#установка-вручную).
 
 ## Что умеет
 - **Ответ в ту же сессию** через Stop hook самого агента — без MCP и без ввода в терминал.
@@ -46,18 +56,9 @@
 | «стоп», «хватит», тишина | отпустить сессию |
 | «ок», «спасибо» (вся фраза) | закрыть ход, ничего не отправляется |
 
-## Установка
+## Установка вручную
 macOS 15+ на Apple Silicon, Python 3, [Homebrew](https://brew.sh).
 
-**Плагином Claude Code** (рекомендуется) — внутри Claude Code:
-```
-/plugin marketplace add DmitryVolostnov/hey2agent
-/plugin install hey2agent@hey2agent
-/hey2agent:setup
-```
-`/hey2agent:setup` проверит Mac, спросит перед установкой зависимостей, даст выбрать модель, соберёт плашку и включит голос.
-
-**Вручную:**
 ```bash
 brew install whisper-cpp ffmpeg
 git clone https://github.com/DmitryVolostnov/hey2agent && cd hey2agent
