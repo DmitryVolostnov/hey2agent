@@ -152,7 +152,9 @@
     "Read it all": "Прочитать всё",
     "Read the whole answer aloud": "Прочитать вслух весь ответ",
     "Read the summary again": "Прочитать сводку ещё раз",
-    "A 2 s pause sends it, “ok” closes": "Пауза 2 с — отправить, «ок» — закрыть"
+    "A 2 s pause sends it, “ok” closes": "Пауза 2 с — отправить, «ок» — закрыть",
+    "English voice": "Голос для английского",
+    "Automatic": "Автоматически"
   },
   "uk": {
     "Recent": "Нещодавні",
@@ -307,7 +309,9 @@
     "Read it all": "Прочитати все",
     "Read the whole answer aloud": "Прочитати вголос усю відповідь",
     "Read the summary again": "Прочитати підсумок ще раз",
-    "A 2 s pause sends it, “ok” closes": "Пауза 2 с — надіслати, «ок» — закрити"
+    "A 2 s pause sends it, “ok” closes": "Пауза 2 с — надіслати, «ок» — закрити",
+    "English voice": "Голос для англійської",
+    "Automatic": "Автоматично"
   },
   "de": {
     "Recent": "Zuletzt",
@@ -462,7 +466,9 @@
     "Read it all": "Alles vorlesen",
     "Read the whole answer aloud": "Die ganze Antwort vorlesen",
     "Read the summary again": "Zusammenfassung noch einmal vorlesen",
-    "A 2 s pause sends it, “ok” closes": "2 s Pause sendet, „ok“ schließt"
+    "A 2 s pause sends it, “ok” closes": "2 s Pause sendet, „ok“ schließt",
+    "English voice": "Stimme für Englisch",
+    "Automatic": "Automatisch"
   },
   "es": {
     "Recent": "Recientes",
@@ -617,7 +623,9 @@
     "Read it all": "Leer todo",
     "Read the whole answer aloud": "Leer en voz alta toda la respuesta",
     "Read the summary again": "Volver a leer el resumen",
-    "A 2 s pause sends it, “ok” closes": "Pausa de 2 s envía, «ok» cierra"
+    "A 2 s pause sends it, “ok” closes": "Pausa de 2 s envía, «ok» cierra",
+    "English voice": "Voz para inglés",
+    "Automatic": "Automática"
   },
   "fr": {
     "Recent": "Récents",
@@ -772,7 +780,9 @@
     "Read it all": "Tout lire",
     "Read the whole answer aloud": "Lire toute la réponse à voix haute",
     "Read the summary again": "Relire le résumé",
-    "A 2 s pause sends it, “ok” closes": "Pause de 2 s : envoyer, « ok » : fermer"
+    "A 2 s pause sends it, “ok” closes": "Pause de 2 s : envoyer, « ok » : fermer",
+    "English voice": "Voix pour l’anglais",
+    "Automatic": "Automatique"
   },
   "pt-BR": {
     "Recent": "Recentes",
@@ -927,7 +937,9 @@
     "Read it all": "Ler tudo",
     "Read the whole answer aloud": "Ler a resposta inteira em voz alta",
     "Read the summary again": "Ler o resumo de novo",
-    "A 2 s pause sends it, “ok” closes": "Pausa de 2 s envia, “ok” fecha"
+    "A 2 s pause sends it, “ok” closes": "Pausa de 2 s envia, “ok” fecha",
+    "English voice": "Voz para inglês",
+    "Automatic": "Automática"
   },
   "it": {
     "Recent": "Recenti",
@@ -1082,7 +1094,9 @@
     "Read it all": "Leggi tutto",
     "Read the whole answer aloud": "Leggi ad alta voce tutta la risposta",
     "Read the summary again": "Rileggi il riepilogo",
-    "A 2 s pause sends it, “ok” closes": "Pausa di 2 s invia, «ok» chiude"
+    "A 2 s pause sends it, “ok” closes": "Pausa di 2 s invia, «ok» chiude",
+    "English voice": "Voce per l’inglese",
+    "Automatic": "Automatica"
   },
   "ja": {
     "Recent": "最近",
@@ -1237,7 +1251,9 @@
     "Read it all": "全部読む",
     "Read the whole answer aloud": "回答全体を読み上げる",
     "Read the summary again": "要約をもう一度読む",
-    "A 2 s pause sends it, “ok” closes": "2秒黙ると送信、「OK」で閉じる"
+    "A 2 s pause sends it, “ok” closes": "2秒黙ると送信、「OK」で閉じる",
+    "English voice": "英語の声",
+    "Automatic": "自動"
   },
   "zh-Hans": {
     "Recent": "最近",
@@ -1392,6 +1408,8 @@
     "Read it all": "全部朗读",
     "Read the whole answer aloud": "朗读完整回答",
     "Read the summary again": "再读一遍摘要",
-    "A 2 s pause sends it, “ok” closes": "停顿 2 秒发送，说“好的”关闭"
+    "A 2 s pause sends it, “ok” closes": "停顿 2 秒发送，说“好的”关闭",
+    "English voice": "英语语音",
+    "Automatic": "自动"
   }
 }

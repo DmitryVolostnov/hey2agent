@@ -62,6 +62,8 @@
 "Voice mode" = "Voice mode";
 "Mute (meeting)" = "Mute (meeting)";
 "Voice" = "Voice";
+"English voice" = "English voice";
+"Automatic" = "Automatic";
 "Preview voice" = "Preview voice";
 "Downloading %@… %lld%%" = "Downloading %@… %lld%%";
 "Download model" = "Download model";
@@ -112,8 +114,6 @@
 "Type a reply" = "Type a reply";
 "Reading aloud is off (settings)" = "Reading aloud is off (settings)";
 "The phone volume is off" = "The phone volume is off";
-"A 2-second pause sends it. Transcribed on the Mac." = "A 2-second pause sends it. Transcribed on the Mac.";
-"Say “ok” to close" = "Say “ok” to close";
 "Read aloud" = "Read aloud";
 "More" = "More";
 "Reply from the phone" = "Reply from the phone";
@@ -125,6 +125,7 @@
 "Dictate with the Mac mic" = "Dictate with the Mac mic";
 "waiting for you · %@" = "waiting for you · %@";
 "done · %@" = "done · %@";
+"A 2-second pause sends it. Transcribed on the Mac." = "A 2-second pause sends it. Transcribed on the Mac.";
 "Thinking…" = "Thinking…";
 "Reading %@" = "Reading %@";
 "Editing %@" = "Editing %@";

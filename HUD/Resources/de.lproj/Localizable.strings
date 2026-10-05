@@ -62,6 +62,8 @@
 "Voice mode" = "Sprachmodus";
 "Mute (meeting)" = "Stumm (Meeting)";
 "Voice" = "Stimme";
+"English voice" = "Stimme für Englisch";
+"Automatic" = "Automatisch";
 "Preview voice" = "Stimme anhören";
 "Downloading %@… %lld%%" = "Lade %@… %lld%%";
 "Download model" = "Modell laden";
@@ -112,8 +114,6 @@
 "Type a reply" = "Antwort tippen";
 "Reading aloud is off (settings)" = "Vorlesen ist aus (Einstellungen)";
 "The phone volume is off" = "Die Lautstärke ist aus";
-"A 2-second pause sends it. Transcribed on the Mac." = "2 Sekunden Pause senden es ab. Transkription auf dem Mac.";
-"Say “ok” to close" = "Sag „ok“, um zu schließen";
 "Read aloud" = "Vorlesen";
 "More" = "Mehr";
 "Reply from the phone" = "Vom Telefon antworten";
@@ -125,6 +125,7 @@
 "Dictate with the Mac mic" = "Mit dem Mac-Mikrofon diktieren";
 "waiting for you · %@" = "wartet auf dich · %@";
 "done · %@" = "fertig · %@";
+"A 2-second pause sends it. Transcribed on the Mac." = "2 Sekunden Pause senden es ab. Transkription auf dem Mac.";
 "Thinking…" = "Denkt nach…";
 "Reading %@" = "Liest %@";
 "Editing %@" = "Bearbeitet %@";

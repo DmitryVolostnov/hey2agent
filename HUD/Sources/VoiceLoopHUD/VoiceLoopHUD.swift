@@ -123,6 +123,8 @@ final class Model {
     var showMoreRecent = false
     var config: [String: Any] = [:]
     var voices: [Voice] = []
+    /// English `say` voices for all-English summaries (novelty voices left out).
+    var englishVoices: [String] = []
     var knownProjects: [String] = []
 
     var launchAtLogin: Bool = SMAppService.mainApp.status == .enabled {
@@ -136,6 +138,7 @@ final class Model {
     init() {
         loadConfig()
         voices = Self.installedVoices()
+        englishVoices = Self.installedEnglishVoices()
         if UserDefaults.standard.object(forKey: "launchAtLoginInitialized") == nil {
             UserDefaults.standard.set(true, forKey: "launchAtLoginInitialized")
             launchAtLogin = true
@@ -374,6 +377,43 @@ final class Model {
         return engine == "piper"
             ? Voice(engine: "piper", name: config["piper_voice"] as? String ?? "ru_RU-irina-medium")
             : Voice(engine: "say", name: config["voice"] as? String ?? "Milena")
+    }
+
+    /// "" = automatic (best installed English voice, Samantha by default).
+    var englishVoice: String { (config["voices"] as? [String: String])?["en"] ?? "" }
+
+    func setEnglishVoice(_ name: String) {
+        var map = config["voices"] as? [String: String] ?? [:]
+        map["en"] = name.isEmpty ? nil : name
+        set("voices", map)
+        guard !name.isEmpty else { return }
+        let p = Process()  // preview right away
+        p.executableURL = URL(fileURLWithPath: "/usr/bin/say")
+        p.arguments = ["-v", name, "Hi! This is how I'll read English answers."]
+        try? p.run()
+    }
+
+    private static let novelty: Set<String> = ["Albert", "Bad News", "Bahh", "Bells", "Boing", "Bubbles", "Cellos",
+        "Good News", "Jester", "Organ", "Superstar", "Trinoids", "Whisper", "Wobble", "Zarvox", "Junior", "Ralph",
+        "Fred", "Kathy", "Eddy", "Flo", "Grandma", "Grandpa", "Reed", "Rocko", "Sandy", "Shelley"]
+
+    private static func installedEnglishVoices() -> [String] {
+        let p = Process()
+        let pipe = Pipe()
+        p.executableURL = URL(fileURLWithPath: "/usr/bin/say")
+        p.arguments = ["-v", "?"]
+        p.standardOutput = pipe
+        guard (try? p.run()) != nil else { return [] }
+        p.waitUntilExit()
+        let out = String(decoding: pipe.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
+        var names: [String] = []
+        for line in out.split(separator: "\n") {
+            guard let r = line.range(of: #"\s+en_[A-Z]{2}\s+#"#, options: .regularExpression) else { continue }
+            let name = String(line[..<r.lowerBound])
+            let base = name.components(separatedBy: " (").first ?? name
+            if !novelty.contains(base) { names.append(name) }
+        }
+        return names
     }
 
     func setVoice(_ v: Voice) {
@@ -1023,6 +1063,11 @@ struct SettingsMenu: View {
             Divider()
             Picker(String(localized: "Voice"), selection: Binding(get: { model.voice }, set: { model.setVoice($0) })) {
                 ForEach(model.voices) { Text($0.label).tag($0) }
+            }
+            Picker(String(localized: "English voice"), selection: Binding(
+                get: { model.englishVoice }, set: { model.setEnglishVoice($0) })) {
+                Text(String(localized: "Automatic")).tag("")
+                ForEach(model.englishVoices, id: \.self) { Text($0).tag($0) }
             }
             Button(String(localized: "Preview voice")) { model.previewVoice() }
             Menu(model.downloading.map {

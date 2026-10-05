@@ -62,6 +62,8 @@
 "Voice mode" = "语音模式";
 "Mute (meeting)" = "静音（会议）";
 "Voice" = "语音";
+"English voice" = "英语语音";
+"Automatic" = "自动";
 "Preview voice" = "试听语音";
 "Downloading %@… %lld%%" = "正在下载 %@… %lld%%";
 "Download model" = "下载模型";
@@ -112,8 +114,6 @@
 "Type a reply" = "输入回复";
 "Reading aloud is off (settings)" = "朗读已关闭（设置）";
 "The phone volume is off" = "手机音量已关闭";
-"A 2-second pause sends it. Transcribed on the Mac." = "停顿 2 秒即发送。在 Mac 上转写。";
-"Say “ok” to close" = "说“好的”即可关闭";
 "Read aloud" = "朗读";
 "More" = "详情";
 "Reply from the phone" = "从手机回复";
@@ -125,6 +125,7 @@
 "Dictate with the Mac mic" = "用 Mac 麦克风听写";
 "waiting for you · %@" = "等待你回复 · %@";
 "done · %@" = "已完成 · %@";
+"A 2-second pause sends it. Transcribed on the Mac." = "停顿 2 秒即发送。在 Mac 上转写。";
 "Thinking…" = "思考中…";
 "Reading %@" = "正在读取 %@";
 "Editing %@" = "正在编辑 %@";

@@ -62,6 +62,8 @@
 "Voice mode" = "Голосовий режим";
 "Mute (meeting)" = "Без звуку (зустріч)";
 "Voice" = "Голос";
+"English voice" = "Голос для англійської";
+"Automatic" = "Автоматично";
 "Preview voice" = "Прослухати голос";
 "Downloading %@… %lld%%" = "Завантажую %@… %lld%%";
 "Download model" = "Завантажити модель";
@@ -112,8 +114,6 @@
 "Type a reply" = "Відповісти текстом";
 "Reading aloud is off (settings)" = "Читання вголос вимкнено (налаштування)";
 "The phone volume is off" = "На телефоні вимкнено звук";
-"A 2-second pause sends it. Transcribed on the Mac." = "Пауза 2 секунди — надішлю. Розпізнавання на Mac.";
-"Say “ok” to close" = "Скажіть “ок”, щоб закрити";
 "Read aloud" = "Прочитати вголос";
 "More" = "Детальніше";
 "Reply from the phone" = "Відповісти з телефона";
@@ -125,6 +125,7 @@
 "Dictate with the Mac mic" = "Надиктувати мікрофоном Mac";
 "waiting for you · %@" = "чекає на відповідь · %@";
 "done · %@" = "готово · %@";
+"A 2-second pause sends it. Transcribed on the Mac." = "Пауза 2 секунди — надішлю. Розпізнавання на Mac.";
 "Thinking…" = "Думає…";
 "Reading %@" = "Читає %@";
 "Editing %@" = "Редагує %@";
