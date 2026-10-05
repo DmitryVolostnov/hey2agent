@@ -31,6 +31,7 @@
 "Send" = "Надіслати";
 "Send now" = "Надіслати зараз";
 "Copied. Paste into “%@” in Claude: ⌘V and ↩\n\n%@" = "Скопійовано. Вставте в чат «%@» у Claude: ⌘V і ↩\n\n%@";
+"Say “ok” to close" = "Скажіть “ок”, щоб закрити";
 "Speaking" = "Говорю";
 "Summary" = "Коротко";
 "Speak into the iPhone…" = "Говоріть в iPhone…";
@@ -104,10 +105,13 @@
 "Listen after reading" = "Слухати після читання";
 "Appearance" = "Вигляд";
 "Unpair Mac" = "Відв’язати Mac";
+"Listening…" = "Слухаю…";
+"Speak" = "Говоріть";
 "Open the chat on the Mac" = "Відкрити чат на Mac";
 "Type a reply" = "Відповісти текстом";
 "Reading aloud is off (settings)" = "Читання вголос вимкнено (налаштування)";
 "The phone volume is off" = "На телефоні вимкнено звук";
+"A 2-second pause sends it. Transcribed on the Mac." = "Пауза 2 секунди — надішлю. Розпізнавання на Mac.";
 "Read aloud" = "Прочитати вголос";
 "More" = "Детальніше";
 "Reply from the phone" = "Відповісти з телефона";
@@ -120,9 +124,6 @@
 "Dictate with the Mac mic" = "Надиктувати мікрофоном Mac";
 "waiting for you · %@" = "чекає на відповідь · %@";
 "done · %@" = "готово · %@";
-"Listening…" = "Слухаю…";
-"Speak" = "Говоріть";
-"A 2-second pause sends it. Transcribed on the Mac." = "Пауза 2 секунди — надішлю. Розпізнавання на Mac.";
 "Thinking…" = "Думає…";
 "Reading %@" = "Читає %@";
 "Editing %@" = "Редагує %@";

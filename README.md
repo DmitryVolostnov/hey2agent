@@ -59,6 +59,9 @@ cd iOS && xcodegen generate && open VoiceLoopRemote.xcodeproj   # Signing: pick 
 | «повтори» / "repeat" | replay the summary |
 | «отмена» / "cancel" | discard |
 | «стоп», «хватит» / silence | let the agent stop |
+| «ок», «спасибо» / "ok", "thanks" (the whole phrase) | close the turn, nothing is sent |
+
+Summaries are read by a voice that speaks their language (an English answer by Samantha, not Milena).
 
 While voice mode is on, the agent is asked to start every answer with a one-line **Summary:**
 («Кратко:» in Russian) — only that line is read aloud.

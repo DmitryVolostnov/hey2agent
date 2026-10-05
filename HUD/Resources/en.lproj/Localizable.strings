@@ -31,6 +31,7 @@
 "Send" = "Send";
 "Send now" = "Send now";
 "Copied. Paste into “%@” in Claude: ⌘V and ↩\n\n%@" = "Copied. Paste into “%@” in Claude: ⌘V and ↩\n\n%@";
+"Say “ok” to close" = "Say “ok” to close";
 "Speaking" = "Speaking";
 "Summary" = "Summary";
 "Speak into the iPhone…" = "Speak into the iPhone…";
@@ -104,10 +105,13 @@
 "Listen after reading" = "Listen after reading";
 "Appearance" = "Appearance";
 "Unpair Mac" = "Unpair Mac";
+"Listening…" = "Listening…";
+"Speak" = "Speak";
 "Open the chat on the Mac" = "Open the chat on the Mac";
 "Type a reply" = "Type a reply";
 "Reading aloud is off (settings)" = "Reading aloud is off (settings)";
 "The phone volume is off" = "The phone volume is off";
+"A 2-second pause sends it. Transcribed on the Mac." = "A 2-second pause sends it. Transcribed on the Mac.";
 "Read aloud" = "Read aloud";
 "More" = "More";
 "Reply from the phone" = "Reply from the phone";
@@ -120,9 +124,6 @@
 "Dictate with the Mac mic" = "Dictate with the Mac mic";
 "waiting for you · %@" = "waiting for you · %@";
 "done · %@" = "done · %@";
-"Listening…" = "Listening…";
-"Speak" = "Speak";
-"A 2-second pause sends it. Transcribed on the Mac." = "A 2-second pause sends it. Transcribed on the Mac.";
 "Thinking…" = "Thinking…";
 "Reading %@" = "Reading %@";
 "Editing %@" = "Editing %@";

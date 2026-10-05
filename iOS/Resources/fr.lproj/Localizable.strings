@@ -31,6 +31,7 @@
 "Send" = "Envoyer";
 "Send now" = "Envoyer maintenant";
 "Copied. Paste into “%@” in Claude: ⌘V and ↩\n\n%@" = "Copié. Collez dans « %@ » dans Claude : ⌘V et ↩\n\n%@";
+"Say “ok” to close" = "Dites « ok » pour fermer";
 "Speaking" = "Je parle";
 "Summary" = "Résumé";
 "Speak into the iPhone…" = "Parlez dans l’iPhone…";
@@ -104,10 +105,13 @@
 "Listen after reading" = "Écouter après la lecture";
 "Appearance" = "Apparence";
 "Unpair Mac" = "Dissocier le Mac";
+"Listening…" = "J’écoute…";
+"Speak" = "Parlez";
 "Open the chat on the Mac" = "Ouvrir le chat sur le Mac";
 "Type a reply" = "Taper une réponse";
 "Reading aloud is off (settings)" = "Lecture à voix haute désactivée (réglages)";
 "The phone volume is off" = "Le volume du téléphone est coupé";
+"A 2-second pause sends it. Transcribed on the Mac." = "Une pause de 2 secondes envoie le message. Transcription sur le Mac.";
 "Read aloud" = "Lire à voix haute";
 "More" = "Plus";
 "Reply from the phone" = "Répondre depuis le téléphone";
@@ -120,9 +124,6 @@
 "Dictate with the Mac mic" = "Dicter avec le micro du Mac";
 "waiting for you · %@" = "attend votre réponse · %@";
 "done · %@" = "terminé · %@";
-"Listening…" = "J’écoute…";
-"Speak" = "Parlez";
-"A 2-second pause sends it. Transcribed on the Mac." = "Une pause de 2 secondes envoie le message. Transcription sur le Mac.";
 "Thinking…" = "Réfléchit…";
 "Reading %@" = "Lit %@";
 "Editing %@" = "Modifie %@";

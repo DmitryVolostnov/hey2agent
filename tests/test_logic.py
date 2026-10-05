@@ -58,6 +58,16 @@ class Commands(unittest.TestCase):
         self.assertTrue(v.is_stop("Стоп."))
         self.assertTrue(v.is_stop(""))
         self.assertFalse(v.is_stop("Стоп, сначала поправь тесты"))
+        for t in ("Ок.", "Окей, спасибо!", "Спасибо большое", "OK, thanks.", "Thank you", "Danke!", "谢谢"):
+            self.assertTrue(v.is_stop(t), t)
+        for t in ("Ок, теперь сделай тесты", "Хорошо", "Okay, so do it"):
+            self.assertFalse(v.is_stop(t), t)
+
+    def test_text_language(self):
+        self.assertEqual(v.text_language("Refactored the auth flow, 42 tests pass."), "en")
+        self.assertEqual(v.text_language("Готово: обновил README и закоммитил в main"), "ru")
+        self.assertEqual(v.text_language("Зробив рефакторинг, усі тести проходять."), "uk")
+        self.assertEqual(v.text_language("Ich habe die Tests repariert, alles grün und schön."), "de")
 
 
 class Transcript(unittest.TestCase):

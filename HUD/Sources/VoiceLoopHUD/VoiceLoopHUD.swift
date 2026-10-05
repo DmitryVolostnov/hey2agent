@@ -662,7 +662,8 @@ struct ConversationView: View {
                         .onSubmit { model.reply(typed) }
                 } else {
                     Text(bodyText ?? "")
-                        .foregroundStyle(s.state == "speaking" ? .secondary : .primary)
+                        .foregroundStyle(s.state == "speaking" || (s.state == "listening" && (s.text ?? "").isEmpty)
+                                         ? .secondary : .primary)
                         .lineLimit(4)
                         .textSelection(.enabled)
                 }
@@ -813,6 +814,7 @@ struct ConversationView: View {
         case "speaking", "reading": s.summary
         case _ where s.state == "sent" && s.delivery == "clipboard":
             String(localized: "Copied. Paste into “\(s.project ?? "")” in Claude: ⌘V and ↩\n\n\(s.text ?? "")")
+        case "listening" where (s.text ?? "").isEmpty: String(localized: "Say “ok” to close")
         case "listening", "transcribing", "sent": s.text
         case "confirming": editMode ? nil : s.text
         case "error": errorText(code: s.code, detail: s.text)

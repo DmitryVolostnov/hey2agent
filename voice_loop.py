@@ -74,6 +74,23 @@ DEFAULTS = {
 
 STOP_WORDS = {"стоп", "хватит", "всё", "все", "ничего", "пока", "не надо", "отбой",
               "stop", "nothing", "that's it", "no"}
+# «Got it» replies that just close the turn — in every interface language. A phrase made only of
+# these (plus fillers like «большое») closes; «ок, теперь сделай …» still goes to the agent.
+CLOSE_WORDS = {
+    "ок", "окей", "оке", "окей-окей", "спасибо", "понял", "поняла", "понятно", "ладно", "отлично",
+    "норм", "нормально", "супер", "класс",
+    "ok", "okay", "kay", "thanks", "thank", "thx", "got", "cool", "nice", "perfect", "great",
+    "дякую", "зрозумів", "зрозуміла", "гаразд", "добре",
+    "danke", "alles", "klar", "passt", "gut",
+    "gracias", "vale", "entendido", "perfecto",
+    "merci", "d'accord", "compris", "parfait",
+    "grazie", "capito", "perfetto", "bene",
+    "obrigado", "obrigada", "entendi", "beleza",
+    "ありがとう", "ありがとうございます", "了解", "了解です", "オッケー", "わかった", "わかりました",
+    "谢谢", "好的", "明白了", "收到",
+}
+CLOSE_FILLERS = {"большое", "огромное", "you", "it", "a", "lot", "so", "much", "very", "bien", "mille",
+                 "muchas", "vielen", "bene", "va", "beaucoup", "muito", "дуже", "тебе", "вам", "всё", "все"}
 
 # Said at the end of a phrase.
 SEND_WORDS = ["отправляй", "отправить", "отправь", "отправка", "send it", "send"]
@@ -444,7 +461,10 @@ def _norm(text):
 
 def is_stop(text):
     t = _norm(text)
-    return not t or t in STOP_WORDS
+    if not t or t in STOP_WORDS:
+        return True
+    words = t.replace("-", " ").split()
+    return any(w in CLOSE_WORDS for w in words) and all(w in CLOSE_WORDS or w in CLOSE_FILLERS for w in words)
 
 
 def is_repeat(text):
@@ -788,6 +808,77 @@ def speech_text(text):
     return re.sub(r"[«»“”„‟\"]", "", text)
 
 
+# Voices worth hearing when the configured one doesn't speak the summary's language.
+GOOD_VOICES = {
+    "ru": ["Milena"], "en": ["Samantha", "Ava", "Zoe", "Daniel", "Karen", "Moira", "Tessa"],
+    "uk": ["Lesya"], "de": ["Anna", "Petra"], "fr": ["Thomas", "Amélie", "Audrey"],
+    "es": ["Mónica", "Paulina", "Marisol"], "it": ["Alice", "Federica"], "pt": ["Luciana", "Joana"],
+    "ja": ["Kyoko", "Otoya"], "zh": ["Tingting", "Lilian"],
+}
+NOVELTY_VOICES = {"Albert", "Bad News", "Bahh", "Bells", "Boing", "Bubbles", "Cellos", "Good News",
+                  "Jester", "Organ", "Superstar", "Trinoids", "Whisper", "Wobble", "Zarvox", "Junior",
+                  "Ralph", "Fred", "Kathy", "Eddy", "Flo", "Grandma", "Grandpa", "Reed", "Rocko",
+                  "Sandy", "Shelley"}
+
+
+def text_language(text):
+    """Rough language of a summary by script and tell-tale letters (en for plain Latin)."""
+    letters = [ch for ch in text.lower() if ch.isalpha()]
+    if not letters:
+        return None
+    n = len(letters)
+    if sum("\u3040" <= ch <= "\u30ff" for ch in letters) >= 2:
+        return "ja"
+    if sum("\u4e00" <= ch <= "\u9fff" for ch in letters) > n * 0.3:
+        return "zh"
+    cyr = sum("а" <= ch <= "я" or ch in "ёіїєґ" for ch in letters)
+    if cyr > n * 0.4:
+        uk = sum(ch in "іїєґ" for ch in letters)
+        ru = sum(ch in "ыэъё" for ch in letters)
+        return "uk" if uk > ru else "ru"
+    hints = {"de": "äöüß", "es": "ñ¿¡", "pt": "ãõ", "fr": "çèêëœâîôûù", "it": "ìò"}
+    counts = {lang: sum(ch in chars for ch in letters) for lang, chars in hints.items()}
+    lang, hits = max(counts.items(), key=lambda kv: kv[1])
+    return lang if hits >= 2 else "en"
+
+
+def installed_voices():
+    """[(name, language)] from `say -v ?`, cached per process."""
+    if not hasattr(installed_voices, "cache"):
+        out = subprocess.run(["say", "-v", "?"], capture_output=True, text=True).stdout
+        found = []
+        for line in out.splitlines():
+            m = re.match(r"^(.+?)\s+([a-z]{2,3})_[A-Za-z0-9]+\s+#", line)
+            if m:
+                found.append((m.group(1).strip(), m.group(2)))
+        installed_voices.cache = found
+    return installed_voices.cache
+
+
+def voice_for(text, c):
+    """The configured voice if it speaks the summary's language, else the best installed one
+    (an English answer is no longer read by Milena with a Russian accent)."""
+    voices = installed_voices()
+    lang = text_language(text)
+    langs = {name: l for name, l in voices}
+    main = c["voice"]
+    if not lang or not voices or langs.get(main, lang) == lang:
+        return main
+    override = (c.get("voices") or {}).get(lang)
+    if override in langs:
+        return override
+    mine = [name for name, l in voices if l == lang and name.split(" (")[0] not in NOVELTY_VOICES]
+    if not mine:
+        return main
+
+    def rank(name):
+        base = name.split(" (")[0]
+        good = GOOD_VOICES.get(lang, [])
+        quality = 0 if "(Premium)" in name else 1 if "(Enhanced)" in name else 2
+        return (quality, good.index(base) if base in good else len(good))
+    return min(mine, key=rank)
+
+
 def tts_process(text, c):
     """Start speaking text; returns the playing process."""
     text = speech_text(text)
@@ -801,7 +892,7 @@ def tts_process(text, c):
         if r.returncode == 0:
             return subprocess.Popen(["afplay", wav])
         log(f"piper failed, falling back to say: {r.stderr[-200:]!r}")
-    return subprocess.Popen(["say", "-v", c["voice"], "-r", str(c["rate"]), text])
+    return subprocess.Popen(["say", "-v", voice_for(text, c), "-r", str(c["rate"]), text])
 
 
 def speak(text, c):
@@ -949,6 +1040,8 @@ def remote_reply(c, ui, deadline):
         text = " ".join(x for x in (prefix, heard) if x)
         if not heard:
             continue
+        if not prefix and is_stop(heard):  # «ок», «спасибо», «стоп»: close right away, as on the Mac
+            return None
         v, edited = confirm(text, c, ui, deadline)
         if v == "send":
             return edited

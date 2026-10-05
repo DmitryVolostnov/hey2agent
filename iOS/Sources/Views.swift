@@ -328,7 +328,7 @@ struct ConversationCard: View {
             switch state.state {
             case _ where recording:
                 VStack(alignment: .leading, spacing: 12) {
-                    Text(String(localized: "A 2-second pause sends it. Transcribed on the Mac."))
+                    Text(String(localized: "A 2-second pause sends it. Transcribed on the Mac.") + " " + String(localized: "Say “ok” to close"))
                         .font(.footnote).foregroundStyle(.secondary)
                     HStack(spacing: 10) {
                         Button(role: .destructive, action: cancel) {
@@ -452,6 +452,7 @@ struct ConversationCard: View {
             state.code == "no_mic"
                 ? String(localized: "No microphone access on the Mac. Allow it for hey2agent in System Settings → Privacy & Security → Microphone.")
                 : String(localized: "Something went wrong: \(state.text ?? "")")
+        case "listening" where (state.text ?? "").isEmpty: String(localized: "Say “ok” to close")
         case "listening", "transcribing", "sent": state.text
         default: nil
         }

@@ -145,7 +145,8 @@
     "Tap a chat to open it on the Mac": "Нажмите на чат — он откроется на Mac",
     "The mic button dictates a message into that chat.": "Кнопка микрофона — надиктовать сообщение в этот чат.",
     "Quit (turns voice off)": "Выйти (голос выключится)",
-    "Speech speed": "Скорость речи"
+    "Speech speed": "Скорость речи",
+    "Say “ok” to close": "Скажите “ок”, чтобы закрыть"
   },
   "uk": {
     "Recent": "Нещодавні",
@@ -293,7 +294,8 @@
     "Tap a chat to open it on the Mac": "Натисніть на чат — він відкриється на Mac",
     "The mic button dictates a message into that chat.": "Кнопка мікрофона — надиктувати повідомлення в цей чат.",
     "Quit (turns voice off)": "Вийти (голос вимкнеться)",
-    "Speech speed": "Швидкість мовлення"
+    "Speech speed": "Швидкість мовлення",
+    "Say “ok” to close": "Скажіть “ок”, щоб закрити"
   },
   "de": {
     "Recent": "Zuletzt",
@@ -441,7 +443,8 @@
     "Tap a chat to open it on the Mac": "Tippe auf einen Chat, um ihn am Mac zu öffnen",
     "The mic button dictates a message into that chat.": "Mit dem Mikrofon diktierst du eine Nachricht in diesen Chat.",
     "Quit (turns voice off)": "Beenden (Sprache aus)",
-    "Speech speed": "Sprechtempo"
+    "Speech speed": "Sprechtempo",
+    "Say “ok” to close": "Sag „ok“, um zu schließen"
   },
   "es": {
     "Recent": "Recientes",
@@ -589,7 +592,8 @@
     "Tap a chat to open it on the Mac": "Toca un chat para abrirlo en el Mac",
     "The mic button dictates a message into that chat.": "El botón del micrófono dicta un mensaje en ese chat.",
     "Quit (turns voice off)": "Salir (apaga la voz)",
-    "Speech speed": "Velocidad de voz"
+    "Speech speed": "Velocidad de voz",
+    "Say “ok” to close": "Di “ok” para cerrar"
   },
   "fr": {
     "Recent": "Récents",
@@ -737,7 +741,8 @@
     "Tap a chat to open it on the Mac": "Touchez une conversation pour l’ouvrir sur le Mac",
     "The mic button dictates a message into that chat.": "Le bouton micro dicte un message dans cette conversation.",
     "Quit (turns voice off)": "Quitter (coupe la voix)",
-    "Speech speed": "Vitesse de la voix"
+    "Speech speed": "Vitesse de la voix",
+    "Say “ok” to close": "Dites « ok » pour fermer"
   },
   "pt-BR": {
     "Recent": "Recentes",
@@ -885,7 +890,8 @@
     "Tap a chat to open it on the Mac": "Toque num chat para abri-lo no Mac",
     "The mic button dictates a message into that chat.": "O botão do microfone dita uma mensagem nesse chat.",
     "Quit (turns voice off)": "Sair (desliga a voz)",
-    "Speech speed": "Velocidade da fala"
+    "Speech speed": "Velocidade da fala",
+    "Say “ok” to close": "Diga “ok” para fechar"
   },
   "it": {
     "Recent": "Recenti",
@@ -1033,7 +1039,8 @@
     "Tap a chat to open it on the Mac": "Tocca una chat per aprirla sul Mac",
     "The mic button dictates a message into that chat.": "Il pulsante del microfono detta un messaggio in quella chat.",
     "Quit (turns voice off)": "Esci (disattiva la voce)",
-    "Speech speed": "Velocità della voce"
+    "Speech speed": "Velocità della voce",
+    "Say “ok” to close": "Di’ “ok” per chiudere"
   },
   "ja": {
     "Recent": "最近",
@@ -1181,7 +1188,8 @@
     "Tap a chat to open it on the Mac": "チャットをタップするとMacで開きます",
     "The mic button dictates a message into that chat.": "マイクボタンでそのチャットに音声入力できます。",
     "Quit (turns voice off)": "終了（音声オフ）",
-    "Speech speed": "読み上げ速度"
+    "Speech speed": "読み上げ速度",
+    "Say “ok” to close": "「OK」と言うと閉じます"
   },
   "zh-Hans": {
     "Recent": "最近",
@@ -1329,6 +1337,7 @@
     "Tap a chat to open it on the Mac": "轻点聊天即可在 Mac 上打开",
     "The mic button dictates a message into that chat.": "麦克风按钮可向该聊天语音输入消息。",
     "Quit (turns voice off)": "退出（关闭语音）",
-    "Speech speed": "语速"
+    "Speech speed": "语速",
+    "Say “ok” to close": "说“好的”即可关闭"
   }
 }

@@ -31,6 +31,7 @@
 "Send" = "发送";
 "Send now" = "立即发送";
 "Copied. Paste into “%@” in Claude: ⌘V and ↩\n\n%@" = "已复制。粘贴到 Claude 中的“%@”：⌘V 和 ↩\n\n%@";
+"Say “ok” to close" = "说“好的”即可关闭";
 "Speaking" = "正在播报";
 "Summary" = "摘要";
 "Speak into the iPhone…" = "请对着 iPhone 说话…";
@@ -104,10 +105,13 @@
 "Listen after reading" = "朗读后开始聆听";
 "Appearance" = "外观";
 "Unpair Mac" = "取消配对 Mac";
+"Listening…" = "正在聆听…";
+"Speak" = "请说话";
 "Open the chat on the Mac" = "在 Mac 上打开聊天";
 "Type a reply" = "输入回复";
 "Reading aloud is off (settings)" = "朗读已关闭（设置）";
 "The phone volume is off" = "手机音量已关闭";
+"A 2-second pause sends it. Transcribed on the Mac." = "停顿 2 秒即发送。在 Mac 上转写。";
 "Read aloud" = "朗读";
 "More" = "详情";
 "Reply from the phone" = "从手机回复";
@@ -120,9 +124,6 @@
 "Dictate with the Mac mic" = "用 Mac 麦克风听写";
 "waiting for you · %@" = "等待你回复 · %@";
 "done · %@" = "已完成 · %@";
-"Listening…" = "正在聆听…";
-"Speak" = "请说话";
-"A 2-second pause sends it. Transcribed on the Mac." = "停顿 2 秒即发送。在 Mac 上转写。";
 "Thinking…" = "思考中…";
 "Reading %@" = "正在读取 %@";
 "Editing %@" = "正在编辑 %@";
