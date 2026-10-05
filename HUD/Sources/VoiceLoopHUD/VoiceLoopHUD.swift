@@ -379,6 +379,29 @@ final class Model {
             : Voice(engine: "say", name: config["voice"] as? String ?? "Milena")
     }
 
+    /// "auto" = a voice per language; otherwise the one voice that reads everything.
+    var voiceChoice: String {
+        (config["voice_mode"] as? String) == "fixed" ? (config["fixed_voice"] as? String ?? "auto") : "auto"
+    }
+
+    func setVoiceChoice(_ choice: String) {
+        if choice == "auto" {
+            set("voice_mode", "auto")
+        } else {
+            set("voice_mode", "fixed")
+            set("fixed_voice", choice)
+            preview(choice)
+        }
+    }
+
+    private func preview(_ name: String) {
+        let p = Process()
+        p.executableURL = URL(fileURLWithPath: "/usr/bin/say")
+        p.arguments = ["-v", name, englishVoices.contains(name) ? "Hi! This is how I'll read the answers."
+                                                                 : "Привет! Так я буду читать ответы."]
+        try? p.run()
+    }
+
     /// "" = automatic (best installed English voice, Samantha by default).
     var englishVoice: String { (config["voices"] as? [String: String])?["en"] ?? "" }
 
@@ -386,11 +409,7 @@ final class Model {
         var map = config["voices"] as? [String: String] ?? [:]
         map["en"] = name.isEmpty ? nil : name
         set("voices", map)
-        guard !name.isEmpty else { return }
-        let p = Process()  // preview right away
-        p.executableURL = URL(fileURLWithPath: "/usr/bin/say")
-        p.arguments = ["-v", name, "Hi! This is how I'll read English answers."]
-        try? p.run()
+        if !name.isEmpty { preview(name) }
     }
 
     private static let novelty: Set<String> = ["Albert", "Bad News", "Bahh", "Bells", "Boing", "Bubbles", "Cellos",
@@ -1061,13 +1080,23 @@ struct SettingsMenu: View {
             Toggle(String(localized: "Voice mode"), isOn: Binding(get: { model.enabled }, set: { model.setEnabled($0) }))
             Toggle(String(localized: "Mute (meeting)"), isOn: Binding(get: { model.muted }, set: { model.setMuted($0) }))
             Divider()
-            Picker(String(localized: "Voice"), selection: Binding(get: { model.voice }, set: { model.setVoice($0) })) {
-                ForEach(model.voices) { Text($0.label).tag($0) }
+            // One voice for everything, or a voice per language (Russian / English).
+            Picker(String(localized: "Voice"), selection: Binding(
+                get: { model.voiceChoice }, set: { model.setVoiceChoice($0) })) {
+                Text(String(localized: "Match the language")).tag("auto")
+                Divider()
+                ForEach(model.voices.filter { $0.engine == "say" }) { Text("\($0.name) · RU").tag($0.name) }
+                ForEach(model.englishVoices, id: \.self) { Text("\($0) · EN").tag($0) }
             }
-            Picker(String(localized: "English voice"), selection: Binding(
-                get: { model.englishVoice }, set: { model.setEnglishVoice($0) })) {
-                Text(String(localized: "Automatic")).tag("")
-                ForEach(model.englishVoices, id: \.self) { Text($0).tag($0) }
+            if model.voiceChoice == "auto" {
+                Picker(String(localized: "Russian voice"), selection: Binding(get: { model.voice }, set: { model.setVoice($0) })) {
+                    ForEach(model.voices) { Text($0.label).tag($0) }
+                }
+                Picker(String(localized: "English voice"), selection: Binding(
+                    get: { model.englishVoice }, set: { model.setEnglishVoice($0) })) {
+                    Text(String(localized: "Automatic")).tag("")
+                    ForEach(model.englishVoices, id: \.self) { Text($0).tag($0) }
+                }
             }
             Button(String(localized: "Preview voice")) { model.previewVoice() }
             Menu(model.downloading.map {

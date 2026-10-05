@@ -933,8 +933,10 @@ def voice_for(text, c):
     """The configured voice if it speaks the summary's language, else the best installed one
     (an English answer is no longer read by Milena with a Russian accent)."""
     voices = installed_voices()
-    lang = text_language(text)
     langs = {name: l for name, l in voices}
+    if c.get("voice_mode") == "fixed" and c.get("fixed_voice") in langs:
+        return c["fixed_voice"]  # the user picked one voice for everything
+    lang = text_language(text)
     main = c["voice"]
     if not lang or not voices or langs.get(main, lang) == lang:
         return main
@@ -1031,6 +1033,10 @@ def converse(project, summary, c, title=None, announce=True, sid=None, cancellab
         ui("speaking")
         r = None
     # The chat name only when another session spoke last; no «готово» every time.
+    # The chat name is announced only in the summary's language: a Russian Codex chat title in
+    # front of an English summary used to make the whole thing go to the Russian voice.
+    if announce and text_language(title) not in (None, text_language(summary)):
+        announce = False
     r = None if is_remote() else speak(f"{spoken_name(title)}. {summary}" if announce else summary, c)
     if r == "cancel":
         return finish(None)

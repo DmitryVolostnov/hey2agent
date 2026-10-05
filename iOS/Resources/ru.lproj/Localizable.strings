@@ -62,6 +62,8 @@
 "Voice mode" = "Голосовой режим";
 "Mute (meeting)" = "Без звука (встреча)";
 "Voice" = "Голос";
+"Match the language" = "По языку ответа";
+"Russian voice" = "Голос для русского";
 "English voice" = "Голос для английского";
 "Automatic" = "Автоматически";
 "Preview voice" = "Прослушать голос";

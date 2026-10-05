@@ -154,7 +154,9 @@
     "Read the summary again": "Прочитать сводку ещё раз",
     "A 2 s pause sends it, “ok” closes": "Пауза 2 с — отправить, «ок» — закрыть",
     "English voice": "Голос для английского",
-    "Automatic": "Автоматически"
+    "Automatic": "Автоматически",
+    "Match the language": "По языку ответа",
+    "Russian voice": "Голос для русского"
   },
   "uk": {
     "Recent": "Нещодавні",
@@ -311,7 +313,9 @@
     "Read the summary again": "Прочитати підсумок ще раз",
     "A 2 s pause sends it, “ok” closes": "Пауза 2 с — надіслати, «ок» — закрити",
     "English voice": "Голос для англійської",
-    "Automatic": "Автоматично"
+    "Automatic": "Автоматично",
+    "Match the language": "За мовою відповіді",
+    "Russian voice": "Голос для російської"
   },
   "de": {
     "Recent": "Zuletzt",
@@ -468,7 +472,9 @@
     "Read the summary again": "Zusammenfassung noch einmal vorlesen",
     "A 2 s pause sends it, “ok” closes": "2 s Pause sendet, „ok“ schließt",
     "English voice": "Stimme für Englisch",
-    "Automatic": "Automatisch"
+    "Automatic": "Automatisch",
+    "Match the language": "Nach Sprache der Antwort",
+    "Russian voice": "Stimme für Russisch"
   },
   "es": {
     "Recent": "Recientes",
@@ -625,7 +631,9 @@
     "Read the summary again": "Volver a leer el resumen",
     "A 2 s pause sends it, “ok” closes": "Pausa de 2 s envía, «ok» cierra",
     "English voice": "Voz para inglés",
-    "Automatic": "Automática"
+    "Automatic": "Automática",
+    "Match the language": "Según el idioma",
+    "Russian voice": "Voz para ruso"
   },
   "fr": {
     "Recent": "Récents",
@@ -782,7 +790,9 @@
     "Read the summary again": "Relire le résumé",
     "A 2 s pause sends it, “ok” closes": "Pause de 2 s : envoyer, « ok » : fermer",
     "English voice": "Voix pour l’anglais",
-    "Automatic": "Automatique"
+    "Automatic": "Automatique",
+    "Match the language": "Selon la langue",
+    "Russian voice": "Voix pour le russe"
   },
   "pt-BR": {
     "Recent": "Recentes",
@@ -939,7 +949,9 @@
     "Read the summary again": "Ler o resumo de novo",
     "A 2 s pause sends it, “ok” closes": "Pausa de 2 s envia, “ok” fecha",
     "English voice": "Voz para inglês",
-    "Automatic": "Automática"
+    "Automatic": "Automática",
+    "Match the language": "Conforme o idioma",
+    "Russian voice": "Voz para russo"
   },
   "it": {
     "Recent": "Recenti",
@@ -1096,7 +1108,9 @@
     "Read the summary again": "Rileggi il riepilogo",
     "A 2 s pause sends it, “ok” closes": "Pausa di 2 s invia, «ok» chiude",
     "English voice": "Voce per l’inglese",
-    "Automatic": "Automatica"
+    "Automatic": "Automatica",
+    "Match the language": "In base alla lingua",
+    "Russian voice": "Voce per il russo"
   },
   "ja": {
     "Recent": "最近",
@@ -1253,7 +1267,9 @@
     "Read the summary again": "要約をもう一度読む",
     "A 2 s pause sends it, “ok” closes": "2秒黙ると送信、「OK」で閉じる",
     "English voice": "英語の声",
-    "Automatic": "自動"
+    "Automatic": "自動",
+    "Match the language": "回答の言語に合わせる",
+    "Russian voice": "ロシア語の声"
   },
   "zh-Hans": {
     "Recent": "最近",
@@ -1410,6 +1426,8 @@
     "Read the summary again": "再读一遍摘要",
     "A 2 s pause sends it, “ok” closes": "停顿 2 秒发送，说“好的”关闭",
     "English voice": "英语语音",
-    "Automatic": "自动"
+    "Automatic": "自动",
+    "Match the language": "按回答语言",
+    "Russian voice": "俄语语音"
   }
 }
