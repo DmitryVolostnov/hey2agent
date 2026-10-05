@@ -9,8 +9,8 @@ Local speech recognition · Russian + English · macOS menu-bar panel</p>
 <p align="center"><b>English</b> · <a href="README.ru.md">Русский</a></p>
 
 <p align="center">
-  <a href="docs/demo.mp4"><img src="docs/demo-poster.jpg" width="860" alt="hey2agent demo: Claude and Codex finish, the summary is read aloud, the reply is dictated"></a><br>
-  <a href="docs/demo.mp4"><b>▶ Watch the demo (80 s, with sound)</b></a>
+  <img src="docs/demo.gif" width="860" alt="hey2agent demo: Claude and Codex finish, the summary is read aloud, the reply is dictated"><br>
+  <sub>With sound: <a href="https://github.com/DmitryVolostnov/hey2agent/raw/main/docs/demo.mp4">the full video</a> (80 s, 3 MB)</sub>
 </p>
 
 <p align="center">

@@ -9,8 +9,8 @@
 <p align="center"><a href="README.md">English</a> · <b>Русский</b></p>
 
 <p align="center">
-  <a href="docs/demo.mp4"><img src="docs/demo-poster.jpg" width="860" alt="Демо hey2agent: Claude и Codex заканчивают, сводка звучит вслух, ответ надиктован"></a><br>
-  <a href="docs/demo.mp4"><b>▶ Смотреть демо (80 с, со звуком)</b></a>
+  <img src="docs/demo.gif" width="860" alt="Демо hey2agent: Claude и Codex заканчивают, сводка звучит вслух, ответ надиктован"><br>
+  <sub>Со звуком: <a href="https://github.com/DmitryVolostnov/hey2agent/raw/main/docs/demo.mp4">полное видео</a> (80 с, 3 МБ)</sub>
 </p>
 
 <p align="center">
