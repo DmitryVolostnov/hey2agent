@@ -28,6 +28,17 @@ https://github.com/user-attachments/assets/83b9c3ef-3cdf-47e6-b128-8a782efac8f4
 плашку и включит голос. Дальше просто дождитесь, пока Claude закончит задачу: прозвучит сводка и *дзынь*.
 Пользуетесь Codex? Настройка предложит подключить и его. Без плагинов — [установка вручную](#установка-вручную).
 
+**Только Codex, без Claude Code?** Вставьте это в Codex — он сам выполнит те же шаги:
+```
+Установи hey2agent для Codex на этот Mac. Склонируй https://github.com/DmitryVolostnov/hey2agent в ~/hey2agent и в этой папке выполни: brew install whisper-cpp ffmpeg; python3 voice_loop.py setup; python3 voice_loop.py download-model turbo; python3 voice_loop.py install-codex; python3 voice_loop.py on; HUD/build.sh; open ~/Applications/VoiceLoopHUD.app. Спрашивай меня перед установкой, а в конце скажи перезапустить приложение Codex.
+```
+
+## Зачем я это сделал
+Сейчас кто угодно может собрать с Claude нужную ему утилиту. Сложно сделать так, чтобы ей было приятно
+пользоваться. Я продуктовый дизайнер, 10 лет занимаюсь интерфейсами, и постарался вложить этот опыт в
+маленькую лёгкую программу, которая просто не мешает. Пользуюсь ей каждый день — поэтому и делюсь. Работы
+ещё много, так что буду рад обратной связи в [Issues](https://github.com/DmitryVolostnov/hey2agent/issues).
+
 ## Что умеет
 - **Ответ в ту же сессию** через Stop hook самого агента — без MCP и без ввода в терминал.
 - **Всё локально:** голос macOS, распознавание [whisper.cpp](https://github.com/ggml-org/whisper.cpp). Звук не покидает Mac.

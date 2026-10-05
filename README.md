@@ -28,6 +28,17 @@ Setup checks your Mac, asks before installing anything (`whisper-cpp`, `ffmpeg`,
 the panel and turns voice on. Then just finish a task in Claude Code — you'll hear the summary and a *tink*.
 Using Codex too? Setup offers to connect it. No plugins? See [manual install](#manual-install).
 
+**Codex only, no Claude Code?** Paste this into Codex — it runs the same steps for you:
+```
+Install hey2agent for Codex on this Mac. Clone https://github.com/DmitryVolostnov/hey2agent into ~/hey2agent and, from that folder, run: brew install whisper-cpp ffmpeg; python3 voice_loop.py setup; python3 voice_loop.py download-model turbo; python3 voice_loop.py install-codex; python3 voice_loop.py on; HUD/build.sh; open ~/Applications/VoiceLoopHUD.app. Ask me before installing anything, then tell me to restart the Codex app.
+```
+
+## Why I made this
+These days anyone can build the utility they want with Claude. Making it pleasant to use is the hard
+part. I'm a product designer with 10 years of interface work, and I tried to put that into a small,
+light tool that just stays out of the way. It's what I use every day, so I'm sharing it. There's still
+plenty to polish — I'd love your feedback in [Issues](https://github.com/DmitryVolostnov/hey2agent/issues).
+
 ## What it does
 ```
 Agent finishes ─► "Refactored the auth flow, 42 tests pass. Shall I open a pull request?"
