@@ -123,7 +123,7 @@ final class RemoteModel {
                 self?.snapshot = s
                 // The Mac is silent while the phone is connected: read the summary here.
                 if let a = s.active, a.state == "reading", let text = a.summary {
-                    self?.speaker.speakOnce(text, key: a.t)
+                    self?.speaker.speakOnce(text, key: "\(a.session_id ?? a.project ?? "")|\(text)")
                 }
             }
         }

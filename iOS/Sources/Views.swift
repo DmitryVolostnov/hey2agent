@@ -315,7 +315,7 @@ struct ConversationCard: View {
                             Button { speaker?.stop() } label: { Image(systemName: "speaker.slash") }
                                 .accessibilityLabel(String(localized: "Stop voice"))
                         } else if let summary = state.summary, speaker != nil {
-                            Button { speaker?.speakOnce(summary, key: Date().timeIntervalSince1970) } label: {
+                            Button { speaker?.speak(summary) } label: {
                                 Image(systemName: "speaker.wave.2")
                             }
                             .accessibilityLabel(String(localized: "Read aloud"))

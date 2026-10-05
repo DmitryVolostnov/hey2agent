@@ -23,17 +23,25 @@ final class Speaker: NSObject, AVSpeechSynthesizerDelegate {
     /// Called when an utterance finished on its own (not when stopped).
     var onFinished: (() -> Void)?
     private let synth = AVSpeechSynthesizer()
-    private var lastSpoken: Double?
+    private var lastSpoken: String?
 
     override init() {
         super.init()
         synth.delegate = self
     }
 
-    /// Speak once per conversation step (keyed by the step timestamp).
-    func speakOnce(_ text: String, key: Double) {
+    /// Speak once per summary. The key must not be the state timestamp: cancelling a phone
+    /// recording puts the Mac back into «reading» with a new timestamp, which re-read the summary
+    /// (and then auto-started recording again).
+    func speakOnce(_ text: String, key: String) {
         guard enabled, lastSpoken != key, !text.isEmpty else { return }
         lastSpoken = key
+        speak(text)
+    }
+
+    /// «Read aloud» button: always speaks, doesn't touch the once-per-summary bookkeeping.
+    func speak(_ text: String) {
+        guard !text.isEmpty else { return }
         try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
         try? AVAudioSession.sharedInstance().setActive(true)
         let u = AVSpeechUtterance(string: text)
