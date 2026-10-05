@@ -91,7 +91,9 @@ struct RemoteView: View {
                 if let a = snap?.active, a.t != dismissed {
                     ConversationCard(state: a, send: model.send,
                                      replyByPhone: { model.speaker.stop(); model.recordOnPhone(for: nil) },
-                                     close: { dismissed = a.t }, speaker: model.speaker)
+                                     close: { dismissed = a.t }, cancel: { model.cancelConversation() },
+                                     speaker: model.speaker,
+                                     recorder: model.recordingFor == nil ? model.recorder : nil)
                         .id("\(a.project ?? "")|\(a.state)")
                 }
                 if let s = snap, !s.sessions.isEmpty {
@@ -112,7 +114,11 @@ struct RemoteView: View {
         }
         .background(AppBackground())
         .overlay(alignment: .bottom) {
-            if model.recorder.active { RecordingPanel(model: model).padding(16) }
+            // Dictating into another chat (mic on a row). Answering the running conversation
+            // records inside its card instead, like on the Mac.
+            if model.recorder.active && (model.recordingFor != nil || model.snapshot?.active == nil) {
+                RecordingPanel(model: model).padding(16)
+            }
         }
     }
 
@@ -172,7 +178,10 @@ struct ConversationCard: View {
     let send: (LinkCommand) -> Void
     var replyByPhone: () -> Void = {}
     var close: () -> Void = {}
+    var cancel: () -> Void = {}
     var speaker: Speaker? = nil
+    /// Set while the phone records the answer to this conversation: the card shows it inline.
+    var recorder: Recorder? = nil
     @State private var typed = ""
     @State private var showDetails = false
     @State private var editing = false
@@ -181,15 +190,19 @@ struct ConversationCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 10) {
-                icon.font(.title2).frame(width: 30)
+                Group { if recording { Image(systemName: "mic.fill").foregroundStyle(.red) } else { icon } }
+                    .font(.title2).frame(width: 30)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(title).font(.title3.weight(.semibold))
+                    Text(recording ? (recorder?.speaking == true ? String(localized: "Listening…") : String(localized: "Speak"))
+                         : title).font(.title3.weight(.semibold))
                     if let p = state.project {
                         Text(p).font(.subheadline).foregroundStyle(.secondary).lineLimit(1)
                     }
                 }
                 Spacer()
-                if state.state == "listening", let left = state.left {
+                if recording, let left = recorder?.secondsLeft {
+                    Text(String(localized: "\(Int(left.rounded(.up))) s")).font(.title3.monospacedDigit()).foregroundStyle(.secondary)
+                } else if !recording, state.state == "listening", let left = state.left {
                     Text(String(localized: "\(Int(left.rounded(.up))) s")).font(.title3.monospacedDigit()).foregroundStyle(.secondary)
                 }
                 if ["sent", "released", "error"].contains(state.state) {
@@ -205,27 +218,33 @@ struct ConversationCard: View {
                 }
             }
 
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    Capsule().fill(.quaternary)
-                    Capsule().fill(.red.gradient)
-                        .frame(width: max(6, geo.size.width * (state.level ?? 0)))
-                        .animation(.linear(duration: 0.15), value: state.level)
+            if !compact {
+                let level = recording ? (recorder?.level ?? 0) : (state.level ?? 0)
+                GeometryReader { geo in
+                    ZStack(alignment: .leading) {
+                        Capsule().fill(.quaternary)
+                        Capsule().fill(.red.gradient)
+                            .frame(width: max(6, geo.size.width * level))
+                            .animation(.linear(duration: 0.12), value: level)
+                    }
                 }
+                .frame(height: 6)
+                .opacity(recording || state.state == "listening" ? 1 : 0)
             }
-            .frame(height: 6)
-            .opacity(state.state == "listening" ? 1 : 0)
 
-            // Fixed height for every step so the buttons below never move between states.
-            Text(bodyText ?? "")
+            // Fixed height for every live step so the buttons below never move between states;
+            // a finished step (sent / cancelled / error) shrinks to its text.
+            Text((recording ? state.summary : bodyText) ?? "")
                 .font(.title3)
-                .foregroundStyle(state.state == "speaking" ? .secondary : .primary)
+                .foregroundStyle(state.state == "speaking" || recording ? .secondary : .primary)
                 .lineLimit(6)
                 .textSelection(.enabled)
-                .frame(maxWidth: .infinity, minHeight: 150, maxHeight: 150, alignment: .topLeading)
+                .frame(maxWidth: .infinity, minHeight: compact ? 0 : 150, maxHeight: compact ? nil : 150,
+                       alignment: .topLeading)
+                .fixedSize(horizontal: false, vertical: compact)
 
-            let field = editing || ["speaking", "listening", "reading", "phone"].contains(state.state)
-            do {
+            let field = !recording && (editing || ["speaking", "listening", "reading", "phone"].contains(state.state))
+            if !compact {
                 HStack {
                     // Single line so Return sends; editing a recognised text keeps multi-line.
                     Group {
@@ -256,8 +275,12 @@ struct ConversationCard: View {
                 }
             }
 
-            buttons
-                .frame(maxWidth: .infinity, minHeight: 104, alignment: .top)  // same size in every step
+            if !compact {
+                buttons
+                    .frame(maxWidth: .infinity, minHeight: 104, alignment: .top)  // same size in every live step
+            } else if canUndo {
+                buttons
+            }
         }
         .padding(18)
         .glassCard(26)
@@ -272,6 +295,12 @@ struct ConversationCard: View {
                 .toolbar { Button(String(localized: "Close")) { showDetails = false } }
             }
         }
+    }
+
+    private var recording: Bool { recorder?.active == true }
+    private var compact: Bool { !recording && ["sent", "released", "error"].contains(state.state) }
+    private var canUndo: Bool {
+        state.state == "sent" && state.cancellable == true && state.delivery != "clipboard" && !cancelled
     }
 
     private func submit() {
@@ -297,8 +326,26 @@ struct ConversationCard: View {
     @ViewBuilder private var buttons: some View {
         HStack(spacing: 12) {
             switch state.state {
+            case _ where recording:
+                VStack(alignment: .leading, spacing: 12) {
+                    Text(String(localized: "A 2-second pause sends it. Transcribed on the Mac."))
+                        .font(.footnote).foregroundStyle(.secondary)
+                    HStack(spacing: 10) {
+                        Button(role: .destructive, action: cancel) {
+                            Text(String(localized: "Cancel")).frame(maxWidth: .infinity)
+                        }
+                        .glassButton()
+                        .tint(.red)
+                        Button { recorder?.finish(send: true) } label: {
+                            Text(String(localized: "Send")).frame(maxWidth: .infinity)
+                        }
+                        .glassButton(prominent: true)
+                        .disabled(recorder?.speaking != true)
+                    }
+                    .lineLimit(1)
+                }
             case "speaking":
-                Button(String(localized: "Cancel")) { send(.control("cancel")) }.glassButton()
+                Button(String(localized: "Cancel"), action: cancel).glassButton()
                 Button { send(.control("quiet")) } label: {
                     Label(String(localized: "Stop voice"), systemImage: "speaker.slash")
                 }
@@ -309,7 +356,7 @@ struct ConversationCard: View {
                 // Two rows: small actions on top, one big «Reply by voice» below (thumb-friendly).
                 VStack(spacing: 12) {
                     HStack(spacing: 10) {
-                        Button(String(localized: "Cancel")) { speaker?.stop(); send(.control("cancel")) }
+                        Button(String(localized: "Cancel"), action: cancel)
                         Spacer()
                         if speaker?.speaking == true {
                             Button { speaker?.stop() } label: { Image(systemName: "speaker.slash") }
@@ -337,7 +384,7 @@ struct ConversationCard: View {
             case "listening":
                 VStack(spacing: 12) {
                     HStack(spacing: 10) {
-                        Button(String(localized: "Cancel")) { send(.control("cancel")) }
+                        Button(String(localized: "Cancel"), action: cancel)
                         Spacer()
                         Button(String(localized: "Repeat")) { send(.control("repeat")) }
                     }
@@ -364,7 +411,7 @@ struct ConversationCard: View {
                         smallAction(String(localized: "Again"), "arrow.counterclockwise") { send(.control("again")) }
                     }
                     HStack(spacing: 10) {
-                        Button(role: .destructive) { send(.control("cancel")) } label: {
+                        Button(role: .destructive, action: cancel) {
                             Text(String(localized: "Cancel")).frame(maxWidth: .infinity)
                         }
                         .glassButton()
@@ -377,7 +424,7 @@ struct ConversationCard: View {
                     .lineLimit(1)
                 }
             case "confirming":
-                Button(String(localized: "Cancel")) { send(.control("cancel")) }.glassButton()
+                Button(String(localized: "Cancel"), action: cancel).glassButton()
                 Spacer()
             case "sent" where state.cancellable == true && state.delivery != "clipboard" && !cancelled:
                 Spacer()

@@ -147,6 +147,19 @@ final class RemoteModel {
     var recordingTitle = ""
     var micDenied = false
 
+    private var cancelAll = false
+
+    /// Stop recording for the running conversation and cancel that conversation entirely.
+    func cancelConversation() {
+        speaker.stop()
+        if recorder.active && recordingFor == nil {
+            cancelAll = true
+            recorder.finish(send: false)
+        } else {
+            send(.control("cancel"))
+        }
+    }
+
     /// Record on the phone and send the audio to the Mac.
     func recordOnPhone(for session: LinkSession?) {
         guard !recorder.active else { return }
@@ -158,11 +171,12 @@ final class RemoteModel {
             if let data {
                 self.send(.audio(session: session?.id, data: data))
             } else if session == nil {
-                // Nothing said: while the Mac waits for the phone, go back to reading;
-                // while the Mac itself was listening, release the turn as before.
+                // «Cancel» ends the whole conversation, same as on the Mac. Silence alone: while
+                // the Mac waits for the phone, go back to reading; otherwise release the turn.
                 let waiting = ["reading", "phone"].contains(self.snapshot?.active?.state ?? "")
-                self.send(.control(waiting ? "reading" : "cancel"))
+                self.send(.control(waiting && !self.cancelAll ? "reading" : "cancel"))
             }
+            self.cancelAll = false
             self.recordingFor = nil
         }
     }
