@@ -11,7 +11,9 @@
 "Unmute" = "Увімкнути звук";
 "Mute (meeting): don’t speak or listen" = "Без звуку (зустріч): не говорити й не слухати";
 "Edit and press ↩" = "Виправте й натисніть ↩";
+"Speak — a 2-second pause sends it. “Ok” or “thanks” closes, “repeat” replays the summary, “read it all” reads the whole answer." = "Говоріть — пауза у 2 секунди надішле. «Ок» або «дякую» — закрити, «повтори» — ще раз, «прочитай усе» — уся відповідь.";
 "Type a reply and press ↩" = "Відповісти текстом і натиснути ↩";
+"A 2 s pause sends it, “ok” closes" = "Пауза 2 с — надіслати, «ок» — закрити";
 "Open this chat" = "Відкрити цей чат";
 "%lld s" = "%lld с";
 "Open this chat and reply there" = "Відкрити цей чат і відповісти там";
@@ -32,7 +34,6 @@
 "Reply by voice" = "Відповісти голосом";
 "Send" = "Надіслати";
 "Copied. Paste into “%@” in Claude: ⌘V and ↩\n\n%@" = "Скопійовано. Вставте в чат «%@» у Claude: ⌘V і ↩\n\n%@";
-"Speak — a 2-second pause sends it. “Ok” or “thanks” closes, “repeat” replays the summary, “read it all” reads the whole answer." = "Говоріть — пауза у 2 секунди надішле. «Ок» або «дякую» — закрити, «повтори» — ще раз, «прочитай усе» — уся відповідь.";
 "Speaking" = "Говорю";
 "Summary" = "Коротко";
 "Speak into the iPhone…" = "Говоріть в iPhone…";

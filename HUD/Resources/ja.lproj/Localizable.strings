@@ -11,7 +11,9 @@
 "Unmute" = "消音を解除";
 "Mute (meeting): don’t speak or listen" = "消音（会議）：話さず、聞き取りもしない";
 "Edit and press ↩" = "修正して↩を押す";
+"Speak — a 2-second pause sends it. “Ok” or “thanks” closes, “repeat” replays the summary, “read it all” reads the whole answer." = "話してください。2秒黙ると送信。「OK」「ありがとう」で閉じる、「もう一度」で要約、「全部読んで」で回答全体を再生。";
 "Type a reply and press ↩" = "返信を入力して↩を押す";
+"A 2 s pause sends it, “ok” closes" = "2秒黙ると送信、「OK」で閉じる";
 "Open this chat" = "このチャットを開く";
 "%lld s" = "%lld秒";
 "Open this chat and reply there" = "このチャットを開いてそこで返信";
@@ -32,7 +34,6 @@
 "Reply by voice" = "音声で返信";
 "Send" = "送信";
 "Copied. Paste into “%@” in Claude: ⌘V and ↩\n\n%@" = "コピーしました。Claudeの「%@」に貼り付け：⌘V、↩\n\n%@";
-"Speak — a 2-second pause sends it. “Ok” or “thanks” closes, “repeat” replays the summary, “read it all” reads the whole answer." = "話してください。2秒黙ると送信。「OK」「ありがとう」で閉じる、「もう一度」で要約、「全部読んで」で回答全体を再生。";
 "Speaking" = "読み上げ中";
 "Summary" = "要約";
 "Speak into the iPhone…" = "iPhoneに話してください…";

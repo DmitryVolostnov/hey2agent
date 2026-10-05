@@ -42,6 +42,7 @@ LOG = STATE_DIR / "log.txt"
 STATE = STATE_DIR / "state.json"      # read by the HUD
 SESSIONS = STATE_DIR / "sessions.json"  # sessions in progress, read by the HUD
 CONTROL = STATE_DIR / "control"       # written by the HUD: send | cancel
+HOVER = STATE_DIR / "hover"           # touched by the HUD while the mouse is over the panel
 LAST = STATE_DIR / "last.json"  # dedupe: the Stop hook can fire twice for one turn
 CONFIG = STATE_DIR / "config.json"
 CLAUDE_SETTINGS = HOME / ".claude" / "settings.json"
@@ -295,6 +296,14 @@ def write_state(state, **kw):
     os.replace(tmp, STATE)
 
 
+def hovered():
+    """The mouse is over the panel right now (the user is reading or about to click)."""
+    try:
+        return time.time() - HOVER.stat().st_mtime < 1.0
+    except OSError:
+        return False
+
+
 def take_control():
     """HUD command: 'send' | 'cancel' | 'skip' | 'repeat' | 'text\n<typed reply>'."""
     try:
@@ -357,7 +366,7 @@ class Listener:
         how = pause | send | cancel | timeout | repeat | text."""
         if cue:
             subprocess.Popen(["afplay", f"/System/Library/Sounds/{cue}.aiff"])
-        pcm, frames, loud_run, quiet, speaking = bytearray(), 0, 0, 0, False
+        pcm, frames, loud_run, quiet, speaking, hover = bytearray(), 0, 0, 0, False, False
         skip = 4 if cue else 0  # don't hear our own cue
         while True:
             chunk, db = self._frame()
@@ -379,9 +388,13 @@ class Listener:
             if frames <= skip:
                 continue
             loud = db > self.floor + self.c["speech_margin_db"]
+            if frames % 5 == 0:
+                hover = hovered()
+            if not speaking and hover:
+                wait_sec = max(wait_sec, t + 2)  # don't release the turn while the user is reading
             if frames % 2 == 0:
                 self.ui(level=max(0.0, min(1.0, (db - self.floor) / 30)),
-                        left=None if speaking else max(0.0, wait_sec - t))
+                        left=None if speaking or hover else max(0.0, wait_sec - t))
             if not speaking:
                 pcm += chunk
                 del pcm[:-self.FRAME * 2 * 5]  # keep 0.5 s pre-roll

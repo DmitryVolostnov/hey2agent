@@ -11,7 +11,9 @@
 "Unmute" = "Ativar som";
 "Mute (meeting): don’t speak or listen" = "Sem som (reunião): não falar nem ouvir";
 "Edit and press ↩" = "Edite e pressione ↩";
+"Speak — a 2-second pause sends it. “Ok” or “thanks” closes, “repeat” replays the summary, “read it all” reads the whole answer." = "Fale — uma pausa de 2 segundos envia. “Ok” ou “obrigado” fecha, “repete” relê o resumo, “leia tudo” lê a resposta inteira.";
 "Type a reply and press ↩" = "Digite uma resposta e pressione ↩";
+"A 2 s pause sends it, “ok” closes" = "Pausa de 2 s envia, “ok” fecha";
 "Open this chat" = "Abrir este chat";
 "%lld s" = "%lld s";
 "Open this chat and reply there" = "Abrir este chat e responder lá";
@@ -32,7 +34,6 @@
 "Reply by voice" = "Responder por voz";
 "Send" = "Enviar";
 "Copied. Paste into “%@” in Claude: ⌘V and ↩\n\n%@" = "Copiado. Cole em “%@” no Claude: ⌘V e ↩\n\n%@";
-"Speak — a 2-second pause sends it. “Ok” or “thanks” closes, “repeat” replays the summary, “read it all” reads the whole answer." = "Fale — uma pausa de 2 segundos envia. “Ok” ou “obrigado” fecha, “repete” relê o resumo, “leia tudo” lê a resposta inteira.";
 "Speaking" = "Falando";
 "Summary" = "Resumo";
 "Speak into the iPhone…" = "Fale no iPhone…";

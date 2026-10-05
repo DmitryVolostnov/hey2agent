@@ -11,7 +11,9 @@
 "Unmute" = "Unmute";
 "Mute (meeting): don’t speak or listen" = "Mute (meeting): don’t speak or listen";
 "Edit and press ↩" = "Edit and press ↩";
+"Speak — a 2-second pause sends it. “Ok” or “thanks” closes, “repeat” replays the summary, “read it all” reads the whole answer." = "Speak — a 2-second pause sends it. “Ok” or “thanks” closes, “repeat” replays the summary, “read it all” reads the whole answer.";
 "Type a reply and press ↩" = "Type a reply and press ↩";
+"A 2 s pause sends it, “ok” closes" = "A 2 s pause sends it, “ok” closes";
 "Open this chat" = "Open this chat";
 "%lld s" = "%lld s";
 "Open this chat and reply there" = "Open this chat and reply there";
@@ -32,7 +34,6 @@
 "Reply by voice" = "Reply by voice";
 "Send" = "Send";
 "Copied. Paste into “%@” in Claude: ⌘V and ↩\n\n%@" = "Copied. Paste into “%@” in Claude: ⌘V and ↩\n\n%@";
-"Speak — a 2-second pause sends it. “Ok” or “thanks” closes, “repeat” replays the summary, “read it all” reads the whole answer." = "Speak — a 2-second pause sends it. “Ok” or “thanks” closes, “repeat” replays the summary, “read it all” reads the whole answer.";
 "Speaking" = "Speaking";
 "Summary" = "Summary";
 "Speak into the iPhone…" = "Speak into the iPhone…";

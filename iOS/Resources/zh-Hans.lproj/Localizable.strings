@@ -11,7 +11,9 @@
 "Unmute" = "取消静音";
 "Mute (meeting): don’t speak or listen" = "静音（会议）：不播报也不收听";
 "Edit and press ↩" = "修改后按 ↩";
+"Speak — a 2-second pause sends it. “Ok” or “thanks” closes, “repeat” replays the summary, “read it all” reads the whole answer." = "请说话，停顿 2 秒即发送。说“好的”或“谢谢”关闭，“重复”再听摘要，“全部读”朗读完整回答。";
 "Type a reply and press ↩" = "输入回复并按 ↩";
+"A 2 s pause sends it, “ok” closes" = "停顿 2 秒发送，说“好的”关闭";
 "Open this chat" = "打开此聊天";
 "%lld s" = "%lld 秒";
 "Open this chat and reply there" = "打开此聊天并在其中回复";
@@ -32,7 +34,6 @@
 "Reply by voice" = "语音回复";
 "Send" = "发送";
 "Copied. Paste into “%@” in Claude: ⌘V and ↩\n\n%@" = "已复制。粘贴到 Claude 中的“%@”：⌘V 和 ↩\n\n%@";
-"Speak — a 2-second pause sends it. “Ok” or “thanks” closes, “repeat” replays the summary, “read it all” reads the whole answer." = "请说话，停顿 2 秒即发送。说“好的”或“谢谢”关闭，“重复”再听摘要，“全部读”朗读完整回答。";
 "Speaking" = "正在播报";
 "Summary" = "摘要";
 "Speak into the iPhone…" = "请对着 iPhone 说话…";

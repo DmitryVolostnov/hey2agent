@@ -642,16 +642,11 @@ struct ConversationView: View {
 
     // One fixed layout for every step of a conversation: same height, buttons never move
     // (switching from «speaking» to «listening» used to shrink the card → misclicks).
-    static let textHeight: CGFloat = 60
+    static let textHeight: CGFloat = 84
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             header
-
-            if !compact {
-                LevelBar(level: s.level ?? 0)
-                    .opacity(s.state == "listening" ? 1 : 0)
-            }
 
             if !(compact && (bodyText ?? "").isEmpty) {  // «Session released»: just the header
                 Group {
@@ -661,11 +656,18 @@ struct ConversationView: View {
                             .lineLimit(1...5)
                             .focused($editing)
                             .onSubmit { model.reply(typed) }
+                    } else if showsAnswer {
+                        // Speaking and listening look the same: the answer stays on screen (scroll
+                        // for the whole of it), so you can keep reading after you've replied.
+                        ScrollView(.vertical) {
+                            Text(answerText)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .textSelection(.enabled)
+                        }
+                        .scrollIndicators(.automatic)
                     } else {
                         Text(bodyText ?? "")
-                            .foregroundStyle(s.state == "speaking" || (s.state == "listening" && (s.text ?? "").isEmpty)
-                                             ? .secondary : .primary)
-                            .lineLimit(4)
+                            .lineLimit(5)
                             .textSelection(.enabled)
                     }
                 }
@@ -676,15 +678,21 @@ struct ConversationView: View {
             }
 
             if !compact {
-                TextField(String(localized: "Type a reply and press ↩"), text: $typed)
-                    .textFieldStyle(.roundedBorder)
-                    .font(.system(size: 12))
-                    .onSubmit {
-                        model.reply(typed)
-                        typed = ""
+                HStack(spacing: 8) {
+                    if s.state == "listening" {
+                        LevelBar(level: s.level ?? 0).frame(width: 48)
                     }
-                    .opacity(replyField ? 1 : 0)
-                    .disabled(!replyField)
+                    TextField(fieldPrompt, text: $typed)
+                        .textFieldStyle(.roundedBorder)
+                        .font(.system(size: 12))
+                        .onSubmit {
+                            model.reply(typed)
+                            typed = ""
+                        }
+                        .help(s.state == "listening" ? String(localized: "Speak — a 2-second pause sends it. “Ok” or “thanks” closes, “repeat” replays the summary, “read it all” reads the whole answer.") : "")
+                }
+                .opacity(replyField ? 1 : 0)
+                .disabled(!replyField)
             }
 
             if !compact || canUndo { buttonRow }
@@ -699,6 +707,20 @@ struct ConversationView: View {
     private var compact: Bool { ["released", "error"].contains(s.state) || (s.state == "sent" && !canUndo) }
     private var canUndo: Bool {
         s.state == "sent" && s.cancellable == true && s.delivery != "clipboard" && s.session_id != nil && !cancelled
+    }
+
+    private var showsAnswer: Bool { ["speaking", "listening", "reading"].contains(s.state) }
+
+    /// The whole answer when we have it (it starts with the summary), else just the summary.
+    private var answerText: String {
+        let full = s.details ?? ""
+        return full.isEmpty ? (s.summary ?? "") : full
+    }
+
+    private var fieldPrompt: String {
+        guard s.state == "listening" else { return String(localized: "Type a reply and press ↩") }
+        if let said = s.text, !said.isEmpty { return "… \(said)" }  // dictated so far («Add more»)
+        return String(localized: "A 2 s pause sends it, “ok” closes")
     }
 
     private var replyField: Bool { ["speaking", "listening", "reading"].contains(s.state) }
@@ -1106,6 +1128,7 @@ final class HUDPanel: NSPanel {
     private let host: FirstMouseHostingView<HUDRoot>
     private let model: Model
     private var hoverSince: Date?
+    private var hoverTouched = Date.distantPast
 
     init(model: Model) {
         self.model = model
@@ -1157,6 +1180,14 @@ final class HUDPanel: NSPanel {
         if ignoresMouseEvents == inside { ignoresMouseEvents = !inside }
         if inside {
             hoverSince = nil
+            // «The user is looking at the panel»: the script doesn't give up on silence meanwhile.
+            if Date().timeIntervalSince(hoverTouched) > 0.3 {
+                hoverTouched = Date()
+                let url = stateDir.appendingPathComponent("hover")
+                if !FileManager.default.createFile(atPath: url.path, contents: nil) {
+                    try? FileManager.default.setAttributes([.modificationDate: Date()], ofItemAtPath: url.path)
+                }
+            }
             if !model.expanded { model.expanded = true }
         } else if model.expanded {
             // Short grace period so moving the cursor along the edge doesn't flicker.
