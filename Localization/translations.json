@@ -156,7 +156,9 @@
     "English voice": "Голос для английского",
     "Automatic": "Автоматически",
     "Match the language": "По языку ответа",
-    "Russian voice": "Голос для русского"
+    "Russian voice": "Голос для русского",
+    "Mute automatically during calls": "Выключать звук во время звонков",
+    "Muted during the %@ call — unmutes when it ends": "Звук выключен на время звонка в %@ — включится сам"
   },
   "uk": {
     "Recent": "Нещодавні",
@@ -315,7 +317,9 @@
     "English voice": "Голос для англійської",
     "Automatic": "Автоматично",
     "Match the language": "За мовою відповіді",
-    "Russian voice": "Голос для російської"
+    "Russian voice": "Голос для російської",
+    "Mute automatically during calls": "Вимикати звук під час дзвінків",
+    "Muted during the %@ call — unmutes when it ends": "Звук вимкнено на час дзвінка в %@ — увімкнеться сам"
   },
   "de": {
     "Recent": "Zuletzt",
@@ -474,7 +478,9 @@
     "English voice": "Stimme für Englisch",
     "Automatic": "Automatisch",
     "Match the language": "Nach Sprache der Antwort",
-    "Russian voice": "Stimme für Russisch"
+    "Russian voice": "Stimme für Russisch",
+    "Mute automatically during calls": "Bei Anrufen automatisch stumm",
+    "Muted during the %@ call — unmutes when it ends": "Stumm während des %@-Anrufs – endet automatisch"
   },
   "es": {
     "Recent": "Recientes",
@@ -633,7 +639,9 @@
     "English voice": "Voz para inglés",
     "Automatic": "Automática",
     "Match the language": "Según el idioma",
-    "Russian voice": "Voz para ruso"
+    "Russian voice": "Voz para ruso",
+    "Mute automatically during calls": "Silenciar durante las llamadas",
+    "Muted during the %@ call — unmutes when it ends": "Silenciado durante la llamada de %@; se reactiva al terminar"
   },
   "fr": {
     "Recent": "Récents",
@@ -792,7 +800,9 @@
     "English voice": "Voix pour l’anglais",
     "Automatic": "Automatique",
     "Match the language": "Selon la langue",
-    "Russian voice": "Voix pour le russe"
+    "Russian voice": "Voix pour le russe",
+    "Mute automatically during calls": "Couper le son pendant les appels",
+    "Muted during the %@ call — unmutes when it ends": "Muet pendant l’appel %@ — se réactive à la fin"
   },
   "pt-BR": {
     "Recent": "Recentes",
@@ -951,7 +961,9 @@
     "English voice": "Voz para inglês",
     "Automatic": "Automática",
     "Match the language": "Conforme o idioma",
-    "Russian voice": "Voz para russo"
+    "Russian voice": "Voz para russo",
+    "Mute automatically during calls": "Silenciar durante chamadas",
+    "Muted during the %@ call — unmutes when it ends": "Silenciado durante a chamada no %@ — volta ao terminar"
   },
   "it": {
     "Recent": "Recenti",
@@ -1110,7 +1122,9 @@
     "English voice": "Voce per l’inglese",
     "Automatic": "Automatica",
     "Match the language": "In base alla lingua",
-    "Russian voice": "Voce per il russo"
+    "Russian voice": "Voce per il russo",
+    "Mute automatically during calls": "Silenzia durante le chiamate",
+    "Muted during the %@ call — unmutes when it ends": "Silenziato durante la chiamata %@ — si riattiva alla fine"
   },
   "ja": {
     "Recent": "最近",
@@ -1269,7 +1283,9 @@
     "English voice": "英語の声",
     "Automatic": "自動",
     "Match the language": "回答の言語に合わせる",
-    "Russian voice": "ロシア語の声"
+    "Russian voice": "ロシア語の声",
+    "Mute automatically during calls": "通話中は自動でミュート",
+    "Muted during the %@ call — unmutes when it ends": "%@ の通話中はミュート（終了後に解除）"
   },
   "zh-Hans": {
     "Recent": "最近",
@@ -1428,6 +1444,8 @@
     "English voice": "英语语音",
     "Automatic": "自动",
     "Match the language": "按回答语言",
-    "Russian voice": "俄语语音"
+    "Russian voice": "俄语语音",
+    "Mute automatically during calls": "通话时自动静音",
+    "Muted during the %@ call — unmutes when it ends": "%@ 通话期间静音，结束后自动恢复"
   }
 }

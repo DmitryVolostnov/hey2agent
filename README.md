@@ -56,7 +56,7 @@ The same session continues with your instruction
 - **A floating panel that stays out of the way:** a logo square when idle, the tasks in progress with
   their running time, recent chats on hover (click to open the chat, 🎙 to dictate into it).
 - **Safety nets:** 3 s to undo or edit what was recognised; **Undo** even after sending (Claude's next
-  actions are blocked and it stops); **Stop voice** to read the summary yourself; **Mute** for meetings.
+  actions are blocked and it stops); **Stop voice** to read the summary yourself; **Mute** for meetings — automatic while a call app (Zoom, Meet, Teams, Slack, Telegram…) uses the mic.
 - **10 languages** for the interface (follows the system, or pick one in settings).
 
 <p align="center">

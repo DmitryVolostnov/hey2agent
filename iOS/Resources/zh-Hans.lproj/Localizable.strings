@@ -8,6 +8,7 @@
 "Recent" = "最近";
 "More %lld" = "另外 %lld 个";
 "Muted" = "已静音";
+"Muted during the %@ call — unmutes when it ends" = "%@ 通话期间静音，结束后自动恢复";
 "Unmute" = "取消静音";
 "Mute (meeting): don’t speak or listen" = "静音（会议）：不播报也不收听";
 "Edit and press ↩" = "修改后按 ↩";
@@ -61,6 +62,7 @@
 "Open chat" = "打开聊天";
 "Voice mode" = "语音模式";
 "Mute (meeting)" = "静音（会议）";
+"Mute automatically during calls" = "通话时自动静音";
 "Voice" = "语音";
 "Match the language" = "按回答语言";
 "Russian voice" = "俄语语音";

@@ -8,6 +8,7 @@
 "Recent" = "Recent";
 "More %lld" = "More %lld";
 "Muted" = "Muted";
+"Muted during the %@ call — unmutes when it ends" = "Muted during the %@ call — unmutes when it ends";
 "Unmute" = "Unmute";
 "Mute (meeting): don’t speak or listen" = "Mute (meeting): don’t speak or listen";
 "Edit and press ↩" = "Edit and press ↩";
@@ -61,6 +62,7 @@
 "Open chat" = "Open chat";
 "Voice mode" = "Voice mode";
 "Mute (meeting)" = "Mute (meeting)";
+"Mute automatically during calls" = "Mute automatically during calls";
 "Voice" = "Voice";
 "Match the language" = "Match the language";
 "Russian voice" = "Russian voice";

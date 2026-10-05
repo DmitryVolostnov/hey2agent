@@ -8,6 +8,7 @@
 "Recent" = "最近";
 "More %lld" = "ほか%lld件";
 "Muted" = "消音中";
+"Muted during the %@ call — unmutes when it ends" = "%@ の通話中はミュート（終了後に解除）";
 "Unmute" = "消音を解除";
 "Mute (meeting): don’t speak or listen" = "消音（会議）：話さず、聞き取りもしない";
 "Edit and press ↩" = "修正して↩を押す";
@@ -61,6 +62,7 @@
 "Open chat" = "チャットを開く";
 "Voice mode" = "音声モード";
 "Mute (meeting)" = "消音（会議）";
+"Mute automatically during calls" = "通話中は自動でミュート";
 "Voice" = "音声";
 "Match the language" = "回答の言語に合わせる";
 "Russian voice" = "ロシア語の声";

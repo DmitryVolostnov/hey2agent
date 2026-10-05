@@ -8,6 +8,7 @@
 "Recent" = "Zuletzt";
 "More %lld" = "%lld weitere";
 "Muted" = "Stumm";
+"Muted during the %@ call — unmutes when it ends" = "Stumm während des %@-Anrufs – endet automatisch";
 "Unmute" = "Ton an";
 "Mute (meeting): don’t speak or listen" = "Stumm (Meeting): nicht sprechen, nicht zuhören";
 "Edit and press ↩" = "Bearbeiten und ↩ drücken";
@@ -61,6 +62,7 @@
 "Open chat" = "Chat öffnen";
 "Voice mode" = "Sprachmodus";
 "Mute (meeting)" = "Stumm (Meeting)";
+"Mute automatically during calls" = "Bei Anrufen automatisch stumm";
 "Voice" = "Stimme";
 "Match the language" = "Nach Sprache der Antwort";
 "Russian voice" = "Stimme für Russisch";

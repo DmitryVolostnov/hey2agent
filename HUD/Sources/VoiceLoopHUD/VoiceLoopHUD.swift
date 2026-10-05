@@ -331,7 +331,54 @@ final class Model {
         if !t.isEmpty { send("text\n\(t)") }
     }
 
-    func setMuted(_ on: Bool) {
+    // MARK: auto-mute during calls
+
+    var autoMuteCalls = UserDefaults.standard.object(forKey: "autoMuteCalls") as? Bool ?? true {
+        didSet {
+            UserDefaults.standard.set(autoMuteCalls, forKey: "autoMuteCalls")
+            if !autoMuteCalls, autoMuted { setMuted(false) }
+        }
+    }
+    /// The call that muted us (shown in the mute button's tooltip).
+    var mutedByCall: String?
+    private let callWatcher = CallWatcher()
+    private let autoMutedURL = stateDir.appendingPathComponent("automuted")
+    private var autoMuted: Bool { FileManager.default.fileExists(atPath: autoMutedURL.path) }
+    private var unmutedDuringCall = false
+    private var callGoneSince: Date?
+
+    /// Called every tick. Mutes while a call app holds the mic; unmutes 5 s after it lets go —
+    /// unless the user changed mute by hand meanwhile (then their choice wins).
+    func watchCalls() {
+        guard autoMuteCalls else { return }
+        let call = callWatcher.check(extra: config["mute_apps"] as? [String] ?? [],
+                                     ignored: config["mute_ignore"] as? [String] ?? [])
+        if let call {
+            callGoneSince = nil
+            if !muted && !unmutedDuringCall {
+                setMuted(true, auto: true)
+                mutedByCall = call
+            }
+        } else if autoMuted || unmutedDuringCall {
+            if callGoneSince == nil { callGoneSince = Date() }
+            if Date().timeIntervalSince(callGoneSince!) > 5 {
+                if autoMuted { setMuted(false, auto: true) }
+                unmutedDuringCall = false
+                callGoneSince = nil
+            }
+        }
+    }
+
+    func setMuted(_ on: Bool, auto: Bool = false) {
+        if auto {
+            if on { FileManager.default.createFile(atPath: autoMutedURL.path, contents: nil) }
+            else { try? FileManager.default.removeItem(at: autoMutedURL); mutedByCall = nil }
+        } else if autoMuted || mutedByCall != nil {
+            // A manual change during a call: keep it until the call ends.
+            if !on { unmutedDuringCall = true }
+            try? FileManager.default.removeItem(at: autoMutedURL)
+            mutedByCall = nil
+        }
         if on {
             FileManager.default.createFile(atPath: mutedURL.path, contents: nil)
             if active != nil { send("cancel") }  // stop talking right now
@@ -683,7 +730,8 @@ struct MuteButton: View {
                 .foregroundStyle(model.muted ? .orange : .secondary)
         }
         .buttonStyle(.borderless)
-        .help(model.muted ? String(localized: "Unmute") : String(localized: "Mute (meeting): don’t speak or listen"))
+        .help(model.mutedByCall.map { callName in String(localized: "Muted during the \(callName) call — unmutes when it ends") }
+              ?? (model.muted ? String(localized: "Unmute") : String(localized: "Mute (meeting): don’t speak or listen")))
     }
 }
 
@@ -1079,6 +1127,7 @@ struct SettingsMenu: View {
         Menu {
             Toggle(String(localized: "Voice mode"), isOn: Binding(get: { model.enabled }, set: { model.setEnabled($0) }))
             Toggle(String(localized: "Mute (meeting)"), isOn: Binding(get: { model.muted }, set: { model.setMuted($0) }))
+            Toggle(String(localized: "Mute automatically during calls"), isOn: $model.autoMuteCalls)
             Divider()
             // One voice for everything, or a voice per language (Russian / English).
             Picker(String(localized: "Voice"), selection: Binding(
@@ -1328,6 +1377,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func tick() {
         model.poll()
+        model.watchCalls()
         link?.tick()
         // «I have the phone» mode for the script: Mac stays silent, the iPhone reads and replies.
         let remote = stateDir.appendingPathComponent("remote")

@@ -8,6 +8,7 @@
 "Recent" = "Recientes";
 "More %lld" = "%lld más";
 "Muted" = "Silenciado";
+"Muted during the %@ call — unmutes when it ends" = "Silenciado durante la llamada de %@; se reactiva al terminar";
 "Unmute" = "Activar sonido";
 "Mute (meeting): don’t speak or listen" = "Silencio (reunión): no hablar ni escuchar";
 "Edit and press ↩" = "Edita y pulsa ↩";
@@ -61,6 +62,7 @@
 "Open chat" = "Abrir chat";
 "Voice mode" = "Modo de voz";
 "Mute (meeting)" = "Silencio (reunión)";
+"Mute automatically during calls" = "Silenciar durante las llamadas";
 "Voice" = "Voz";
 "Match the language" = "Según el idioma";
 "Russian voice" = "Voz para ruso";

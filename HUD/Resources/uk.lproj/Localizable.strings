@@ -8,6 +8,7 @@
 "Recent" = "Нещодавні";
 "More %lld" = "Ще %lld";
 "Muted" = "Без звуку";
+"Muted during the %@ call — unmutes when it ends" = "Звук вимкнено на час дзвінка в %@ — увімкнеться сам";
 "Unmute" = "Увімкнути звук";
 "Mute (meeting): don’t speak or listen" = "Без звуку (зустріч): не говорити й не слухати";
 "Edit and press ↩" = "Виправте й натисніть ↩";
@@ -61,6 +62,7 @@
 "Open chat" = "Відкрити чат";
 "Voice mode" = "Голосовий режим";
 "Mute (meeting)" = "Без звуку (зустріч)";
+"Mute automatically during calls" = "Вимикати звук під час дзвінків";
 "Voice" = "Голос";
 "Match the language" = "За мовою відповіді";
 "Russian voice" = "Голос для російської";

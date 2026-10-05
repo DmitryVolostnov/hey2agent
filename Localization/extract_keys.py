@@ -5,7 +5,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 SOURCES = list((ROOT / "HUD/Sources").rglob("*.swift")) + list((ROOT / "iOS/Sources").rglob("*.swift")) + list((ROOT / "Link/Sources").rglob("*.swift"))
-STRINGISH = ("String(", '?? ""', "project", "text", "base", ".title", ".id")
+STRINGISH = ("String(", '?? ""', "project", "text", "base", ".title", ".id", "callName")
 
 def literal_at(s, i):
     """Swift string literal starting at s[i] == '"' (handles \\( ... ) with nested quotes).

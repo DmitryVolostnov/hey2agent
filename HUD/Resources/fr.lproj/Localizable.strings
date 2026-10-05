@@ -8,6 +8,7 @@
 "Recent" = "Récents";
 "More %lld" = "%lld de plus";
 "Muted" = "Muet";
+"Muted during the %@ call — unmutes when it ends" = "Muet pendant l’appel %@ — se réactive à la fin";
 "Unmute" = "Réactiver le son";
 "Mute (meeting): don’t speak or listen" = "Muet (réunion) : ne pas parler ni écouter";
 "Edit and press ↩" = "Modifiez et appuyez sur ↩";
@@ -61,6 +62,7 @@
 "Open chat" = "Ouvrir le chat";
 "Voice mode" = "Mode vocal";
 "Mute (meeting)" = "Muet (réunion)";
+"Mute automatically during calls" = "Couper le son pendant les appels";
 "Voice" = "Voix";
 "Match the language" = "Selon la langue";
 "Russian voice" = "Voix pour le russe";
