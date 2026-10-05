@@ -56,7 +56,7 @@ macOS 15+ на Apple Silicon, Python 3, [Homebrew](https://brew.sh).
 brew install whisper-cpp ffmpeg
 git clone https://github.com/DmitryVolostnov/hey2agent && cd hey2agent
 python3 voice_loop.py install        # hooks Claude Code; спросит, какую модель распознавания скачать
-python3 voice_loop.py install-codex  # по желанию: hook для Codex, затем одобрить его в Codex через /hooks
+python3 voice_loop.py install-codex  # по желанию: хуки для Codex (сразу помечаются доверенными), перезапустить Codex
 python3 voice_loop.py on
 HUD/build.sh && open ~/Applications/VoiceLoopHUD.app
 ```

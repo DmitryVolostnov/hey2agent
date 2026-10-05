@@ -84,7 +84,7 @@ model, builds the panel and turns voice mode on.
 brew install whisper-cpp ffmpeg
 git clone https://github.com/DmitryVolostnov/hey2agent && cd hey2agent
 python3 voice_loop.py install        # Claude Code hooks; asks which speech model to download
-python3 voice_loop.py install-codex  # optional: Codex Stop hook, then approve it in Codex via /hooks
+python3 voice_loop.py install-codex  # optional: Codex hooks (marked trusted for you), restart Codex
 python3 voice_loop.py on
 HUD/build.sh && open ~/Applications/VoiceLoopHUD.app
 ```
@@ -124,7 +124,7 @@ multi-session panel for Claude Code and Codex, and local Russian/English.
 
 ## Status
 Early, built for daily personal use. Known limits: while listening the hook holds the session
-(≤ 3 min); Codex chats show the folder name and open the Codex app, not the exact chat.
+(≤ 3 min); Codex: no **Undo** after sending yet.
 
 ## License
 MIT

@@ -16,9 +16,13 @@ Set up the hey2agent plugin on this Mac. Work step by step, explain briefly in t
    then `python3 PLUGIN/voice_loop.py download-model <id>` (it resumes if interrupted).
 5. Run `python3 PLUGIN/voice_loop.py setup` (records the script location for the panel) and
    `python3 PLUGIN/voice_loop.py on`.
-6. Panel (optional but recommended): needs the Swift toolchain (`xcode-select -p`). Run `PLUGIN/HUD/build.sh`
+6. Codex (optional): if `~/.codex` exists, ask whether to enable voice for Codex too. If yes, run
+   `python3 PLUGIN/voice_loop.py install-codex`: it adds Stop / UserPromptSubmit / PreToolUse hooks to
+   `~/.codex/config.toml` (with a backup) and marks exactly these hooks as trusted (Codex skips untrusted
+   hooks, and the Codex app has no /hooks screen). Tell the user to restart the Codex app.
+7. Panel (optional but recommended): needs the Swift toolchain (`xcode-select -p`). Run `PLUGIN/HUD/build.sh`
    and `open ~/Applications/VoiceLoopHUD.app`.
-7. Tell the user what to expect: when a turn ends they hear a short summary and a *tink*, then speak;
+8. Tell the user what to expect: when a turn ends they hear a short summary and a *tink*, then speak;
    a 2-second pause sends. macOS will ask for microphone access for the app that runs Claude Code (and for
    the panel the first time they dictate from it) — they must click Allow themselves.
    Mention `python3 PLUGIN/voice_loop.py off` / `mute` and the panel settings.

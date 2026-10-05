@@ -22,6 +22,7 @@ import json
 import math
 import os
 import re
+import select
 import shutil
 import subprocess
 import sys
@@ -78,8 +79,8 @@ STOP_WORDS = {"стоп", "хватит", "всё", "все", "ничего", "�
 # these (plus fillers like «большое») closes; «ок, теперь сделай …» still goes to the agent.
 CLOSE_WORDS = {
     "ок", "окей", "оке", "окей-окей", "спасибо", "понял", "поняла", "понятно", "ладно", "отлично",
-    "норм", "нормально", "супер", "класс",
-    "ok", "okay", "kay", "thanks", "thank", "thx", "got", "cool", "nice", "perfect", "great",
+    "норм", "нормально", "супер", "класс", "молодец", "молодцы", "умница", "круто",
+    "ok", "okay", "kay", "thanks", "thank", "thx", "got", "cool", "nice", "perfect", "great", "awesome",
     "дякую", "зрозумів", "зрозуміла", "гаразд", "добре",
     "danke", "alles", "klar", "passt", "gut",
     "gracias", "vale", "entendido", "perfecto",
@@ -89,7 +90,8 @@ CLOSE_WORDS = {
     "ありがとう", "ありがとうございます", "了解", "了解です", "オッケー", "わかった", "わかりました",
     "谢谢", "好的", "明白了", "收到",
 }
-CLOSE_FILLERS = {"большое", "огромное", "you", "it", "a", "lot", "so", "much", "very", "bien", "mille",
+CLOSE_FILLERS = {"большое", "огромное", "хорошо", "ты", "вы", "очень", "you", "it", "a", "lot", "so", "much", "very",
+                 "job", "good", "well", "done", "work", "bien", "mille",
                  "muchas", "vielen", "bene", "va", "beaucoup", "muito", "дуже", "тебе", "вам", "всё", "все"}
 
 # Said at the end of a phrase.
@@ -473,8 +475,31 @@ def is_repeat(text):
 
 # ---------- sessions registry (for the HUD list) ----------
 
+CODEX_STATE = HOME / ".codex" / "state_5.sqlite"
+
+
+def codex_title(transcript_path):
+    """The chat name in the Codex sidebar (its own threads table, opened read-only)."""
+    m = re.search(r"([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\.jsonl$", transcript_path or "")
+    db = max(CODEX_STATE.parent.glob("state_*.sqlite"), default=None, key=lambda p: p.stat().st_mtime)
+    if not m or not db:
+        return None
+    try:
+        import sqlite3
+        con = sqlite3.connect(f"file:{db}?mode=ro", uri=True, timeout=1)
+        row = con.execute("select coalesce(nullif(name, ''), nullif(title, '')) from threads where id = ?",
+                          (m.group(1),)).fetchone()
+        con.close()
+    except Exception:
+        return None
+    title = (row or [None])[0]
+    return shorten(" ".join(title.split()), 60) if title else None
+
+
 def session_title(transcript_path, fallback):
     """Latest custom-title from a Claude Code transcript (the name shown in the sidebar)."""
+    if "/.codex/" in (transcript_path or ""):
+        return codex_title(transcript_path) or fallback
     try:
         with open(transcript_path, "rb") as f:
             f.seek(0, 2)
@@ -658,7 +683,9 @@ def pretool_hook():
 
 # ---------- sending to a chat that is not waiting (HUD: click a recent chat) ----------
 
-CODEX_BIN = ["/Applications/ChatGPT.app/Contents/Resources/codex", "/Applications/Codex.app/Contents/Resources/codex"]
+CODEX_BIN = ["/Applications/ChatGPT.app/Contents/Resources/codex-cli/bin/codex",
+             "/Applications/ChatGPT.app/Contents/Resources/codex",
+             "/Applications/Codex.app/Contents/Resources/codex"]
 
 
 CLAUDE_APP_SESSIONS = HOME / "Library/Application Support/Claude/claude-code-sessions"
@@ -687,7 +714,8 @@ def open_chat(sid, entry):
             return True
         subprocess.run(["open", "-a", "Claude"])
     elif agent == "codex":
-        subprocess.run(["open", "-b", "com.openai.codex"])
+        subprocess.run(["open", f"codex://threads/{sid}"])  # the Codex app's own deep link
+        return True
     return False
 
 
@@ -696,7 +724,7 @@ def deliver(sid, entry, text):
     so the text goes to the clipboard and Claude is brought to the front."""
     agent = entry.get("agent")
     if agent == "codex":
-        codex = shutil.which("codex") or next((p for p in CODEX_BIN if os.path.exists(p)), None)
+        codex = codex_bin()
         if codex:
             r = subprocess.run([codex, "queue", "--thread", sid, "--message", text],
                                capture_output=True, text=True, timeout=30)
@@ -1212,11 +1240,13 @@ def hook():
     log(f"heard: {reply!r}")
     update_session(data, "working" if reply else "done")
     if reply:
-        print(json.dumps({
-            "decision": "block",
-            "reason": f"The user replied by voice or from the hey2agent panel (speech is "
-                      f"recognized locally and may contain recognition errors): {reply}\n\n{VOICE_CONTEXT}",
-        }, ensure_ascii=False))
+        # Codex shows the reason as the user's own message, so there it is just the reply (the
+        # voice-mode instruction already came with UserPromptSubmit). Claude shows it as hook
+        # feedback; a short reminder keeps the «Summary» line coming in long sessions.
+        reason = reply if agent_of(data) == "codex" else (
+            f"Voice reply (recognized locally, may contain errors): {reply}\n\n"
+            f"(hey2agent: keep starting the answer with the «Summary» line.)")
+        print(json.dumps({"decision": "block", "reason": reason}, ensure_ascii=False))
 
 
 # ---------- install ----------
@@ -1281,31 +1311,94 @@ CODEX_CONFIG = HOME / ".codex" / "config.toml"
 CODEX_MARK = "# voice-loop (managed by voice_loop.py install-codex)"
 
 
+def codex_bin():
+    return shutil.which("codex") or next((p for p in CODEX_BIN if os.path.exists(p)), None)
+
+
+def codex_rpc(*requests, wait=4.0):
+    """Ask a short-lived `codex app-server` (JSON-RPC over stdio); returns {id: result}."""
+    codex = codex_bin()
+    if not codex:
+        return {}
+    msgs = [{"id": 0, "method": "initialize", "params": {"clientInfo": {"name": "hey2agent", "version": "1"}}},
+            {"method": "initialized"}]
+    msgs += [{"id": i, "method": m, "params": p} for i, (m, p) in enumerate(requests, 1)]
+    p = subprocess.Popen([codex, "app-server"], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                         stderr=subprocess.DEVNULL, text=True, cwd=str(HOME))
+    p.stdin.write("".join(json.dumps(m) + "\n" for m in msgs))
+    p.stdin.flush()
+    results, deadline = {}, time.time() + wait
+    while time.time() < deadline and len(results) < len(requests) + 1:
+        r, _, _ = select.select([p.stdout], [], [], 0.2)
+        if r:
+            line = p.stdout.readline()
+            if not line:
+                break
+            try:
+                m = json.loads(line)
+            except ValueError:
+                continue
+            if "id" in m and "result" in m:
+                results[m["id"]] = m["result"]
+    p.kill()
+    return results
+
+
+def codex_trust_ours():
+    """Codex runs a new hook only once it is trusted (normally via /hooks in the terminal Codex,
+    which the Codex app doesn't have). The user asked for the integration, so record trust
+    for our own hooks — with the hash Codex itself reports."""
+    listing = codex_rpc(("hooks/list", {})).get(1) or {}
+    lines = []
+    for group in listing.get("data", []):
+        for h in group.get("hooks", []):
+            if str(SCRIPT) in h.get("command", "") and h.get("source") == "user" and h.get("currentHash"):
+                lines.append(f'[hooks.state.{json.dumps(h["key"])}]\nenabled = true\n'
+                             f'trusted_hash = {json.dumps(h["currentHash"])}\n')
+    if lines:
+        text = CODEX_CONFIG.read_text()
+        CODEX_CONFIG.write_text(text.replace(f"{CODEX_MARK} end\n", "".join(lines) + f"{CODEX_MARK} end\n"))
+    return len(lines)
+
+
+# Same contract as Claude Code: Stop (decision=block → continue), UserPromptSubmit (context +
+# «in progress»), PreToolUse (live activity).
+CODEX_HOOKS = {"Stop": ("hook", HOOK_TIMEOUT + 20), "UserPromptSubmit": ("prompt", 10),
+               "PreToolUse": ("pretool", 5)}
+
+
 def install_codex():
-    """Codex has a Stop hook with the same contract (decision=block → continue with reason)."""
-    text = CODEX_CONFIG.read_text() if CODEX_CONFIG.exists() else ""
-    if CODEX_MARK in text:
-        print("already installed in Codex")
+    if not CODEX_CONFIG.parent.exists():
+        print("Codex not found (~/.codex is missing)")
         return
     backup = CODEX_CONFIG.with_suffix(".toml.voice-loop-backup")
     if CODEX_CONFIG.exists() and not backup.exists():
         shutil.copy(CODEX_CONFIG, backup)
-    block = (f"\n{CODEX_MARK}\n[[hooks.Stop]]\n[[hooks.Stop.hooks]]\n"
-             f"type = \"command\"\ncommand = {json.dumps(hook_command('hook'))}\n"
-             f"timeout = {HOOK_TIMEOUT + 20}\nstatusMessage = \"voice-loop\"\n{CODEX_MARK} end\n")
+    uninstall_codex(quiet=True)
+    text = CODEX_CONFIG.read_text() if CODEX_CONFIG.exists() else ""
+    block = f"\n{CODEX_MARK}\n"
+    for event, (sub, timeout) in CODEX_HOOKS.items():
+        block += (f"[[hooks.{event}]]\n[[hooks.{event}.hooks]]\n"
+                  f"type = \"command\"\ncommand = {json.dumps(hook_command(sub))}\n"
+                  f"timeout = {timeout}\n" + ('statusMessage = "hey2agent"\n' if event == "Stop" else ""))
+    block += f"{CODEX_MARK} end\n"
     CODEX_CONFIG.write_text(text.rstrip("\n") + "\n" + block)
-    print(f"installed Stop hook into {CODEX_CONFIG} (backup: {backup.name})")
-    print("Codex asks to trust new hooks: open Codex and approve it in /hooks.")
+    print(f"installed {', '.join(CODEX_HOOKS)} hooks into {CODEX_CONFIG} (backup: {backup.name})")
+    n = codex_trust_ours()
+    print(f"marked {n} hooks as trusted in Codex" if n else
+          "could not mark the hooks trusted: approve them in the terminal Codex via /hooks")
+    print("Restart the Codex app so it reloads its settings.")
 
 
-def uninstall_codex():
+def uninstall_codex(quiet=False):
     if not CODEX_CONFIG.exists():
         return
     text = CODEX_CONFIG.read_text()
     text = re.sub(rf"\n?{re.escape(CODEX_MARK)}\n.*?{re.escape(CODEX_MARK)} end\n", "", text,
                   flags=re.S)
     CODEX_CONFIG.write_text(text)
-    print("uninstalled from Codex")
+    if not quiet:
+        print("uninstalled from Codex")
 
 
 def uninstall():
